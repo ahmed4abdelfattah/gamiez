@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة أهل القرية - أونلاين</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; transition: background 0.5s ease; }
+        .theme-night { background: radial-gradient(circle at top, #0f172a 0%, #020617 100%); }
+        .theme-day { background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+    </style>
+</head>
+<body class="theme-night text-slate-100 min-h-screen flex flex-col">
+
+    <!-- تنبيه علوي -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 hidden bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl font-bold text-sm"></div>
+
+    <!-- نافذة الإعلانات -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl">
+            <div id="modalIcon" class="text-5xl mb-3">🌅</div>
+            <h3 id="modalTitle" class="text-xl font-bold text-amber-400 mb-2">تقرير القرية</h3>
+            <p id="modalBody" class="text-slate-200 leading-relaxed mb-6 whitespace-pre-line"></p>
+            <button onclick="closeModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-8 py-2.5 rounded-xl">حسناً</button>
+        </div>
+    </div>
+
+    <!-- شاشة البداية -->
+    <div id="homeScreen" class="flex-1 flex items-center justify-center p-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="text-6xl mb-2">🐺🏮</div>
+                <h1 class="text-3xl font-black text-amber-400">أهل القرية</h1>
+                <p class="text-slate-400 text-xs mt-1">لعبة الخداع والاستنتاج الاجتماعي أونلاين</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">اسمك في القرية</label>
+                    <input id="playerNameInput" type="text" placeholder="أدخل اسمك هنا..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-400">
+                </div>
+
+                <button onclick="createRoom()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg transition">
+                    + إنشاء غرفة جديدة
+                </button>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-800"></div>
+                    <span class="flex-shrink mx-4 text-slate-500 text-xs">أو انضم لأصدقائك</span>
+                    <div class="flex-grow border-t border-slate-800"></div>
+                </div>
+
+                <div class="flex gap-2">
+                    <input id="roomCodeInput" type="text" placeholder="كود الغرفة" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white uppercase text-center tracking-widest">
+                    <button onclick="joinRoom()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-xl transition">انضمام</button>
+                </div>
+
+                <div class="pt-2 text-center">
+                    <button onclick="resetFullSession()" class="text-xs text-slate-500 hover:text-rose-400 underline transition">
+                        مسح الجلسة المحفوظة والبدء بهوية جديدة 🔄
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة اللعب -->
+    <div id="gameScreen" class="hidden flex-1 flex flex-col max-w-7xl w-full mx-auto p-3 md:p-6 gap-4">
+        <header class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700">
+                    <span class="text-xs text-slate-400 block">كود الغرفة</span>
+                    <span id="displayRoomCode" class="font-black text-xl text-amber-400 tracking-widest">----</span>
+                </div>
+                <div>
+                    <h2 id="phaseTitle" class="font-bold text-lg text-white">ردهة الانتظار</h2>
+                    <p id="phaseSubtitle" class="text-xs text-slate-400">بانتظار تجمع اللاعبين (5 على الأقل)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div id="myRoleBadge" class="hidden bg-indigo-950/80 border border-indigo-700 px-4 py-2 rounded-xl text-right">
+                    <span class="text-xs text-indigo-300 block">دورك السري</span>
+                    <span id="myRoleName" class="font-bold text-sm text-white">---</span>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 w-16 h-16 rounded-2xl flex flex-col items-center justify-center">
+                    <span id="timerValue" class="font-black text-2xl text-amber-400">--</span>
+                    <span class="text-[10px] text-slate-400">ثانية</span>
+                </div>
+                <button onclick="leaveRoomAndClearSession()" title="مغادرة الغرفة وإنهاء الجلسة" class="bg-rose-950/80 hover:bg-rose-800 border border-rose-700/60 text-rose-200 text-xs font-bold px-3 py-3 rounded-xl transition">
+                    خروج 🚪
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div class="lg:col-span-7 flex flex-col gap-4">
+                
+                <!-- بطاقة الدور وتفاصيل فريق العصابة -->
+                <div id="roleRevealCard" class="hidden bg-gradient-to-br from-indigo-950 to-slate-900 border-2 border-indigo-500/40 rounded-2xl p-5 shadow-xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <span id="revealTeamBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300">فريق القرية</span>
+                        <span id="sniperAmmoBadge" class="hidden text-xs bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full font-bold">الذخيرة: 1 طلقة 🎯</span>
+                    </div>
+                    <h3 id="revealRoleTitle" class="text-2xl font-black text-white mb-1">---</h3>
+                    <p id="revealRoleDesc" class="text-sm text-slate-300 leading-relaxed"></p>
+                    
+                    <!-- صندوق كشف فريق العصابة لبعضهم -->
+                    <div id="mafiaTeammatesBox" class="hidden mt-4 pt-3 border-t border-rose-500/40 bg-rose-950/40 rounded-xl p-3">
+                        <div class="text-xs font-bold text-rose-300 mb-2">🔪 أعضاء فريق العصابة وأدوارهم:</div>
+                        <div id="mafiaTeammatesList" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+                    <span id="actionInstruction" class="text-sm font-semibold text-amber-300">بانتظار مدير الغرفة...</span>
+                    <div class="flex gap-2">
+                        <button id="startGameBtn" onclick="hostStartGame()" class="hidden bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-6 py-2 rounded-xl text-sm">بدء اللعبة ▶</button>
+                        <button id="skipNightBtn" onclick="submitNightAction('skip')" class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs">عدم استخدام القدرة</button>
+                        <button id="skipVoteBtn" onclick="submitDayVote('skip')" class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs">تخطي الإعدام (<span id="skipVoteCounter">0</span>)</button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex-1">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-bold text-slate-300 text-sm">قائمة اللاعبين في القرية</h3>
+                        <span id="aliveCounter" class="text-xs text-slate-400">الأحياء: 0</span>
+                    </div>
+                    <div id="playersGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 flex flex-col gap-4 h-[520px] lg:h-auto">
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col min-h-[300px]">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                        <h3 id="chatHeaderTitle" class="font-bold text-sm text-white">💬 نقاش القرية</h3>
+                        <span id="chatStatusBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400">مغلق</span>
+                    </div>
+                    <div id="chatMessages" class="flex-1 overflow-y-auto space-y-2 pr-1 text-sm mb-3"></div>
+                    <form onsubmit="handleChatSubmit(event)" class="flex gap-2">
+                        <input id="chatInput" type="text" placeholder="اكتب رسالتك..." disabled class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white disabled:opacity-50">
+                        <button id="chatSendBtn" type="submit" disabled class="bg-amber-500 text-slate-950 font-bold px-5 py-2 rounded-xl text-sm disabled:opacity-50">إرسال</button>
+                    </form>
+                </div>
+
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 h-44 flex flex-col">
+                    <h3 class="font-bold text-xs text-slate-400 mb-2">📜 سجل الأحداث</h3>
+                    <div id="gameLogs" class="flex-1 overflow-y-auto space-y-1.5 text-xs text-slate-300 pr-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_DB_URL = "https://village-gamez-default-rtdb.firebaseio.com";
+
+        const ROLES_INFO = {
+            boss: { name: 'الريس (زعيم العصابة)', shortName: 'الريس', team: 'mafia', desc: 'تختار ضحية الليل وقرارك يطغى على العصابة. تظهر لشيخ القرية كبريء!' },
+            mafia: { name: 'فرد عصابة', shortName: 'فرد عصابة', team: 'mafia', desc: 'تصوت ليلاً مع العصابة لاغتيال أحد أهل القرية وتنسق معهم في الشات السري.' },
+            silencer: { name: 'الساكت', shortName: 'الساكت', team: 'mafia', desc: 'عضو في العصابة. تختار لاعباً ليلاً لمنعه من الكلام طوال النهار التالي.' },
+            seer: { name: 'شيخ القرية', shortName: 'شيخ القرية', team: 'village', desc: 'تفحص لاعباً واحداً كل ليلة لمعرفة هويته (الريس يظهر كبريء).' },
+            doctor: { name: 'الطبيب', shortName: 'الطبيب', team: 'village', desc: 'تحمي لاعباً كل ليلة من القتل (يمكنك حماية أي شخص أو حماية نفسك في أي ليلة).' },
+            sniper: { name: 'القناص', shortName: 'القناص', team: 'village', desc: 'تمتلك طلقة واحدة طوال اللعبة لاغتيال من تشك فيه ليلاً.' },
+            villager: { name: 'مواطن (أهل القرية)', shortName: 'مواطن', team: 'village', desc: 'لا تملك قدرة ليلية. سلاحك النقاش والتصويت نهاراً لكشف العصابة.' }
+        };
+
+        let db = null;
+        let myId = sessionStorage.getItem('village_player_id');
+        if (!myId) {
+            myId = 'p_' + Math.random().toString(36).substring(2, 9);
+            sessionStorage.setItem('village_player_id', myId);
+        }
+
+        let currentRoomCode = null;
+        let roomData = null;
+        let uiInterval = null;
+        let lastAnnouncedId = null;
+        let lastSeerCheckDay = 0;
+
+        function initFirebase() {
+            if (!db) {
+                firebase.initializeApp({ databaseURL: FIREBASE_DB_URL });
+                db = firebase.database();
+            }
+            return true;
+        }
+
+        // استرجاع الغرفة تلقائياً عند عمل Refresh للصفحة
+        window.addEventListener('DOMContentLoaded', async () => {
+            initFirebase();
+            const savedRoom = sessionStorage.getItem('village_room_code');
+            const savedName = sessionStorage.getItem('village_player_name');
+            if (savedName) document.getElementById('playerNameInput').value = savedName;
+
+            if (savedRoom && myId) {
+                const snap = await db.ref(`rooms/${savedRoom}/players/${myId}`).once('value');
+                if (snap.exists()) {
+                    subscribeToRoom(savedRoom);
+                } else {
+                    sessionStorage.removeItem('village_room_code');
+                }
+            }
+        });
+
+        // دالة مسح الجلسة بالكامل وتوليد هوية جديدة
+        function resetFullSession() {
+            sessionStorage.clear();
+            myId = 'p_' + Math.random().toString(36).substring(2, 9);
+            sessionStorage.setItem('village_player_id', myId);
+            document.getElementById('playerNameInput').value = '';
+            document.getElementById('roomCodeInput').value = '';
+            showToast('تم مسح الجلسة وإنشاء هوية جديدة بنجاح!');
+        }
+
+        // دالة الخروج من الغرفة ومسح الجلسة
+        async function leaveRoomAndClearSession() {
+            if (currentRoomCode && myId) {
+                db.ref('rooms/' + currentRoomCode).off();
+                if (roomData && roomData.phase === 'LOBBY') {
+                    await db.ref(`rooms/${currentRoomCode}/players/${myId}`).remove();
+                }
+            }
+            if (uiInterval) clearInterval(uiInterval);
+            sessionStorage.clear();
+            window.location.reload();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3500);
+        }
+
+        function showModal(title, body, icon = '🌅') {
+            document.getElementById('modalIcon').textContent = icon;
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').textContent = body;
+            document.getElementById('modalOverlay').classList.replace('hidden', 'flex');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.replace('flex', 'hidden');
+        }
+
+        async function createRoom() {
+            initFirebase();
+            const name = document.getElementById('playerNameInput').value.trim();
+            if (!name) return showToast('أدخل اسمك أولاً');
+
+            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+            const initialData = {
+                code,
+                phase: 'LOBBY',
+                dayCount: 0,
+                phaseEndTime: 0,
+                hostId: myId,
+                players: {
+                    [myId]: { id: myId, name, isAlive: true, isMuted: false, role: '', team: '', ammo: 0, lastMutedId: '' }
+                }
+            };
+
+            sessionStorage.setItem('village_room_code', code);
+            sessionStorage.setItem('village_player_name', name);
+
+            await db.ref('rooms/' + code).set(initialData);
+            subscribeToRoom(code);
+        }
+
+        async function joinRoom() {
+            initFirebase();
+            const name = document.getElementById('playerNameInput').value.trim();
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            if (!name || !code) return showToast('أدخل الاسم وكود الغرفة');
+
+            const snap = await db.ref('rooms/' + code).once('value');
+            if (!snap.exists()) return showToast('الغرفة غير موجودة!');
+            const data = snap.val();
+            if (data.phase !== 'LOBBY' && (!data.players || !data.players[myId])) {
+                return showToast('اللعبة بدأت بالفعل في هذه الغرفة!');
+            }
+
+            sessionStorage.setItem('village_room_code', code);
+            sessionStorage.setItem('village_player_name', name);
+
+            await db.ref(`rooms/${code}/players/${myId}`).update({
+                id: myId, name, isAlive: true, isMuted: false
+            });
+            subscribeToRoom(code);
+        }
+
+        function subscribeToRoom(code) {
+            currentRoomCode = code;
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+
+            db.ref('rooms/' + code).on('value', (snap) => {
+                if (!snap.exists()) return;
+                roomData = snap.val();
+                renderRoom(roomData);
+            });
+
+            if (uiInterval) clearInterval(uiInterval);
+            uiInterval = setInterval(() => {
+                if (!roomData) return;
+                const now = Date.now();
+                const rem = Math.max(0, Math.ceil((roomData.phaseEndTime - now) / 1000));
+                document.getElementById('timerValue').textContent = (roomData.phase === 'LOBBY' || roomData.phase === 'GAME_OVER') ? '--' : rem;
+
+                if (roomData.hostId === myId && roomData.phase !== 'LOBBY' && roomData.phase !== 'GAME_OVER' && now >= roomData.phaseEndTime) {
+                    advancePhaseByHost();
+                }
+            }, 1000);
+        }
+
+        async function hostStartGame() {
+            const pList = Object.values(roomData.players || {});
+            if (pList.length < 5) return showToast('الحد الأدنى 5 لاعبين لبدء اللعبة!');
+
+            let pool = [];
+            if (pList.length === 5) {
+                pool = ['boss', 'mafia', 'doctor', 'seer'];
+            } else if (pList.length <= 7) {
+                pool = ['boss', 'mafia', 'doctor', 'seer', 'silencer'];
+            } else {
+                pool = ['boss', 'mafia', 'silencer', 'doctor', 'seer', 'sniper'];
+            }
+            while (pool.length < pList.length) pool.push('villager');
+
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+
+            const updates = {};
+            pList.forEach((p, idx) => {
+                const r = pool[idx];
+                updates[`players/${p.id}/role`] = r;
+                updates[`players/${p.id}/team`] = ROLES_INFO[r].team;
+                updates[`players/${p.id}/isAlive`] = true;
+                updates[`players/${p.id}/isMuted`] = false;
+                updates[`players/${p.id}/ammo`] = r === 'sniper' ? 1 : 0;
+                updates[`players/${p.id}/lastMutedId`] = '';
+            });
+
+            updates['phase'] = 'NIGHT';
+            updates['dayCount'] = 1;
+            updates['phaseEndTime'] = Date.now() + 45000;
+            updates['nightActions'] = null;
+            updates['dayVotes'] = null;
+
+            await db.ref('rooms/' + currentRoomCode).update(updates);
+            pushLog('🔔 تم توزيع الأدوار سراً وتعرف أفراد العصابة على بعضهم.. حلّ الليل الأول!');
+        }
+
+        async function advancePhaseByHost() {
+            const rRef = db.ref('rooms/' + currentRoomCode);
+            if (roomData.phase === 'NIGHT') {
+                await resolveNightByHost();
+            } else if (roomData.phase === 'DISCUSSION') {
+                await rRef.update({ phase: 'VOTING', phaseEndTime: Date.now() + 35000, dayVotes: null });
+                pushLog('⚖️ انتهى النقاش وبدأ التصويت على الإعدام!');
+            } else if (roomData.phase === 'VOTING') {
+                await resolveVotingByHost();
+            }
+        }
+
+        async function resolveNightByHost() {
+            const players = roomData.players || {};
+            const actions = roomData.nightActions || {};
+            const updates = {};
+
+            let mafiaVictim = actions.bossTarget || null;
+            if (!mafiaVictim && actions.mafiaVotes) {
+                const counts = {};
+                Object.values(actions.mafiaVotes).forEach(t => counts[t] = (counts[t] || 0) + 1);
+                mafiaVictim = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+            }
+
+            const doctor = Object.values(players).find(p => p.isAlive && p.role === 'doctor');
+            const healedId = (doctor && actions.doctorTarget) ? actions.doctorTarget : null;
+
+            const killedIds = new Set();
+            let doctorSavedSomeone = false;
+
+            if (mafiaVictim) {
+                if (mafiaVictim === healedId) {
+                    doctorSavedSomeone = true;
+                } else {
+                    killedIds.add(mafiaVictim);
+                }
+            }
+
+            const sniper = Object.values(players).find(p => p.isAlive && p.role === 'sniper');
+            if (sniper && actions.sniperTarget && actions.sniperTarget !== 'skip' && sniper.ammo > 0) {
+                updates[`players/${sniper.id}/ammo`] = 0;
+                if (actions.sniperTarget === healedId) {
+                    doctorSavedSomeone = true;
+                } else {
+                    killedIds.add(actions.sniperTarget);
+                }
+            }
+
+            const deadNames = [];
+            killedIds.forEach(id => {
+                if (players[id]) {
+                    updates[`players/${id}/isAlive`] = false;
+                    deadNames.push(players[id].name);
+                }
+            });
+
+            let doctorStatusMsg = '';
+            if (doctor) {
+                if (healedId) {
+                    if (doctorSavedSomeone) {
+                        doctorStatusMsg = '💉 تدخل الطبيب في الوقت المناسب ونجح في إنقاذ الضحية من الموت المحقق (دون كشف هويته)!';
+                    } else {
+                        doctorStatusMsg = '💊 قام الطبيب بحماية شخص لم يتعرض للهجوم الليلة (توقع خاطئ)!';
+                    }
+                } else {
+                    doctorStatusMsg = '💤 لم يقم الطبيب بحماية أي شخص هذه الليلة.';
+                }
+            }
+
+            Object.keys(players).forEach(id => updates[`players/${id}/isMuted`] = false);
+            let mutedName = '';
+            const silencer = Object.values(players).find(p => p.isAlive && p.role === 'silencer');
+            if (silencer && actions.silencerTarget) {
+                updates[`players/${silencer.id}/lastMutedId`] = actions.silencerTarget;
+                if (players[actions.silencerTarget] && !killedIds.has(actions.silencerTarget)) {
+                    updates[`players/${actions.silencerTarget}/isMuted`] = true;
+                    mutedName = players[actions.silencerTarget].name;
+                }
+            }
+
+            let reportLines = [];
+            if (deadNames.length === 0) {
+                reportLines.push('🌅 أشرقت الشمس.. ولم يمت أحد في القرية الليلة!');
+            } else {
+                reportLines.push(`🌅 أشرقت الشمس على فاجعة.. تم اغتيال: ( ${deadNames.join(' ، ')} )!`);
+            }
+
+            if (doctorStatusMsg) reportLines.push(doctorStatusMsg);
+            if (mutedName) reportLines.push(`🤐 استيقظ ( ${mutedName} ) ليجد نفسه ممنوعاً من الكلام اليوم بأمر الساكت!`);
+
+            const fullMsg = reportLines.join('\n');
+
+            updates['announcement'] = { id: Date.now(), text: fullMsg };
+            await db.ref('rooms/' + currentRoomCode).update(updates);
+            pushLog(reportLines.join(' | '));
+
+            if (!(await checkWinByHost())) {
+                await db.ref('rooms/' + currentRoomCode).update({
+                    phase: 'DISCUSSION',
+                    phaseEndTime: Date.now() + 80000
+                });
+            }
+        }
+
+        async function resolveVotingByHost() {
+            const players = roomData.players || {};
+            const votes = roomData.dayVotes || {};
+            const counts = { skip: 0 };
+            Object.values(votes).forEach(v => counts[v] = (counts[v] || 0) + 1);
+
+            let topId = null, max = 0, tie = false;
+            Object.entries(counts).forEach(([id, c]) => {
+                if (id === 'skip') return;
+                if (c > max) { max = c; topId = id; tie = false; }
+                else if (c === max && max > 0) tie = true;
+            });
+
+            let report = '';
+            if (!topId || max <= counts.skip || tie) {
+                report = '⚖️ انتهى التصويت بالتعادل أو التخطي.. لم يُعدم أحد اليوم!';
+            } else if (players[topId]) {
+                await db.ref(`rooms/${currentRoomCode}/players/${topId}/isAlive`).set(false);
+                report = `⚖️ قرر أهل القرية إعدام (${players[topId].name})! وكان دوره: [${ROLES_INFO[players[topId].role].name}]`;
+            }
+
+            pushLog(report);
+            await db.ref(`rooms/${currentRoomCode}/announcement`).set({ id: Date.now(), text: report });
+
+            if (!(await checkWinByHost())) {
+                await db.ref('rooms/' + currentRoomCode).update({
+                    phase: 'NIGHT',
+                    dayCount: (roomData.dayCount || 1) + 1,
+                    phaseEndTime: Date.now() + 45000,
+                    nightActions: null,
+                    dayVotes: null
+                });
+            }
+        }
+
+        async function checkWinByHost() {
+            const snap = await db.ref(`rooms/${currentRoomCode}/players`).once('value');
+            const pList = Object.values(snap.val() || {});
+            const mAlive = pList.filter(p => p.isAlive && p.team === 'mafia').length;
+            const vAlive = pList.filter(p => p.isAlive && p.team === 'village').length;
+
+            if (mAlive === 0 || mAlive >= vAlive) {
+                const winner = mAlive === 0 ? 'أهل القرية 🛡️' : 'العصابة 🔪';
+                const details = pList.map(p => `${p.name}: ${ROLES_INFO[p.role] ? ROLES_INFO[p.role].shortName : ''}`).join(' | ');
+                const msg = `🏆 انتهت اللعبة! الفائز: ${winner}\nالأدوار الحقيقية: (${details})`;
+                pushLog(msg);
+                await db.ref('rooms/' + currentRoomCode).update({
+                    phase: 'LOBBY',
+                    announcement: { id: Date.now(), text: msg }
+                });
+                return true;
+            }
+            return false;
+        }
+
+        function submitNightAction(targetId) {
+            const me = roomData.players[myId];
+            if (!me || !me.isAlive || roomData.phase !== 'NIGHT') return;
+
+            if (me.role === 'silencer' && targetId === me.lastMutedId) {
+                return showToast('لا يمكنك إسكات نفس الشخص ليلتين متتاليتين!');
+            }
+
+            const updates = {};
+            if (me.role === 'boss') updates['nightActions/bossTarget'] = targetId;
+            else if (me.role === 'mafia') updates[`nightActions/mafiaVotes/${myId}`] = targetId;
+            else if (me.role === 'silencer') updates['nightActions/silencerTarget'] = targetId;
+            else if (me.role === 'doctor') updates['nightActions/doctorTarget'] = targetId;
+            else if (me.role === 'sniper') updates['nightActions/sniperTarget'] = targetId;
+            else if (me.role === 'seer') {
+                const target = roomData.players[targetId];
+                if (target && lastSeerCheckDay !== roomData.dayCount) {
+                    lastSeerCheckDay = roomData.dayCount;
+                    const isGuilty = target.team === 'mafia' && target.role !== 'boss';
+                    showModal('كشف شيخ القرية 🔮', `نتيجة فحص (${target.name}): [ ${isGuilty ? 'عصابة 😈' : 'بريء 😇'} ]`, '🔮');
+                }
+            }
+
+            if (me.team === 'mafia' && roomData.players[targetId]) {
+                const actionLabel = me.role === 'silencer' ? 'إسكات 🤐' : 'اغتيال 🔪';
+                db.ref(`rooms/${currentRoomCode}/chats`).push({
+                    sender: `تنبيه العصابة`,
+                    text: `اختار (${me.name} - ${ROLES_INFO[me.role].shortName}) هدفاً لـ ${actionLabel}: [ ${roomData.players[targetId].name} ]`,
+                    channel: 'mafia'
+                });
+            }
+
+            updates[`nightActions/submitted/${myId}`] = true;
+            db.ref('rooms/' + currentRoomCode).update(updates);
+        }
+
+        function submitDayVote(targetId) {
+            db.ref(`rooms/${currentRoomCode}/dayVotes/${myId}`).set(targetId);
+        }
+
+        function handleChatSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text || !roomData) return;
+            const me = roomData.players[myId];
+            if (!me || !me.isAlive || me.isMuted) return;
+
+            const channel = (roomData.phase === 'NIGHT' && me.team === 'mafia') ? 'mafia' : 'public';
+            const senderTitle = (channel === 'mafia') ? `${me.name} (${ROLES_INFO[me.role].shortName})` : me.name;
+            db.ref(`rooms/${currentRoomCode}/chats`).push({ sender: senderTitle, text, channel });
+            input.value = '';
+        }
+
+        function pushLog(text) {
+            db.ref(`rooms/${currentRoomCode}/logs`).push({
+                time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+                text
+            });
+        }
+
+        function renderRoom(data) {
+            document.getElementById('displayRoomCode').textContent = data.code;
+            const pList = Object.values(data.players || {});
+            const me = data.players ? (data.players[myId] || {}) : {};
+            const aliveCount = pList.filter(p => p.isAlive).length;
+            document.getElementById('aliveCounter').textContent = `الأحياء: ${aliveCount} من ${pList.length}`;
+
+            document.body.className = (data.phase === 'NIGHT' || data.phase === 'LOBBY')
+                ? 'theme-night text-slate-100 min-h-screen flex flex-col'
+                : 'theme-day text-slate-100 min-h-screen flex flex-col';
+
+            const phaseNames = {
+                LOBBY: ['ردهة الانتظار', `اللاعبون المتصلون: ${pList.length} (الحد الأدنى 5)`],
+                NIGHT: [`الليلة ${data.dayCount} 🌙`, 'القرية نائمة.. العصابة وأصحاب القدرات ينفذون مهامهم'],
+                DISCUSSION: [`النقاش النهاري (اليوم ${data.dayCount}) ☀️`, 'تناقشوا لكشف أفراد العصابة قبل التصويت'],
+                VOTING: ['مرحلة التصويت ⚖️', 'صوّت على المشتبه به لإعدامه']
+            };
+            const [pTitle, pSub] = phaseNames[data.phase] || ['أهل القرية', ''];
+            document.getElementById('phaseTitle').textContent = pTitle;
+            document.getElementById('phaseSubtitle').textContent = pSub;
+
+            if (data.announcement && data.announcement.id !== lastAnnouncedId) {
+                lastAnnouncedId = data.announcement.id;
+                showModal('إعلان القرية', data.announcement.text);
+            }
+
+            if (me.role && ROLES_INFO[me.role] && data.phase !== 'LOBBY') {
+                document.getElementById('myRoleBadge').classList.remove('hidden');
+                document.getElementById('roleRevealCard').classList.remove('hidden');
+                document.getElementById('myRoleName').textContent = ROLES_INFO[me.role].name;
+                document.getElementById('revealRoleTitle').textContent = ROLES_INFO[me.role].name;
+                document.getElementById('revealRoleDesc').textContent = ROLES_INFO[me.role].desc;
+
+                const teamBadge = document.getElementById('revealTeamBadge');
+                if (me.team === 'mafia') {
+                    teamBadge.textContent = 'فريق العصابة 🔪';
+                    teamBadge.className = 'text-xs font-bold px-3 py-1 rounded-full bg-rose-500/20 text-rose-300';
+                } else {
+                    teamBadge.textContent = 'فريق أهل القرية 🛡️';
+                    teamBadge.className = 'text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300';
+                }
+
+                const matesBox = document.getElementById('mafiaTeammatesBox');
+                const matesList = document.getElementById('mafiaTeammatesList');
+                if (me.team === 'mafia') {
+                    matesBox.classList.remove('hidden');
+                    const allMafia = pList.filter(p => p.team === 'mafia');
+                    matesList.innerHTML = allMafia.map(m => `
+                        <span class="bg-rose-900/60 border border-rose-500/50 text-rose-200 px-3 py-1 rounded-lg text-xs font-bold">
+                            👤 ${m.name} ${m.id === myId ? '(أنت)' : ''} : <strong class="text-amber-300">[ ${ROLES_INFO[m.role] ? ROLES_INFO[m.role].shortName : m.role} ]</strong>
+                        </span>
+                    `).join('');
+                } else {
+                    matesBox.classList.add('hidden');
+                }
+
+                const sniperBadge = document.getElementById('sniperAmmoBadge');
+                if (me.role === 'sniper') {
+                    sniperBadge.classList.remove('hidden');
+                    sniperBadge.textContent = `الذخيرة: ${me.ammo} طلقة 🎯`;
+                } else {
+                    sniperBadge.classList.add('hidden');
+                }
+            } else {
+                document.getElementById('myRoleBadge').classList.add('hidden');
+                document.getElementById('roleRevealCard').classList.add('hidden');
+            }
+
+            const hasSubmittedNight = data.nightActions && data.nightActions.submitted && data.nightActions.submitted[myId];
+            document.getElementById('startGameBtn').classList.toggle('hidden', !(data.phase === 'LOBBY' && data.hostId === myId));
+            document.getElementById('skipNightBtn').classList.toggle('hidden', !(data.phase === 'NIGHT' && me.isAlive && me.role === 'sniper' && !hasSubmittedNight));
+            document.getElementById('skipVoteBtn').classList.toggle('hidden', !(data.phase === 'VOTING' && me.isAlive));
+
+            const instruction = document.getElementById('actionInstruction');
+            if (data.phase === 'LOBBY') {
+                instruction.textContent = data.hostId === myId ? `أنت مدير الغرفة (${pList.length}/5 لاعبين للبدء)` : 'بانتظار مدير الغرفة لبدء اللعبة...';
+            } else if (!me.isAlive) {
+                instruction.textContent = '💀 لقد قُتلت.. تتابع اللعبة الآن كمشاهد.';
+            } else if (data.phase === 'NIGHT') {
+                instruction.textContent = me.role === 'villager' ? '😴 أنت مواطن.. انتظر شروق الشمس.' : (hasSubmittedNight ? '✅ تم تنفيذ قدرتك الليلية.' : '🎯 اختر هدفك الليلي من قائمة اللاعبين!');
+            } else if (data.phase === 'DISCUSSION') {
+                instruction.textContent = '🗣️ وقت النقاش النهاري مفتوح.. اكشفوا الخونة!';
+            } else if (data.phase === 'VOTING') {
+                instruction.textContent = '⚖️ صوّت على المشتبه به لإعدامه!';
+            }
+
+            const votes = Object.values(data.dayVotes || {});
+            document.getElementById('skipVoteCounter').textContent = votes.filter(v => v === 'skip').length;
+
+            const grid = document.getElementById('playersGrid');
+            grid.innerHTML = '';
+
+            pList.forEach(p => {
+                const vCount = votes.filter(v => v === p.id).length;
+                const isTeammateMafia = (me.team === 'mafia' && p.team === 'mafia' && data.phase !== 'LOBBY');
+
+                let badges = '';
+                if (p.id === data.hostId) badges += `<span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-md">المدير 👑</span>`;
+                if (p.id === myId) badges += `<span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-md">أنت</span>`;
+                if (isTeammateMafia) {
+                    badges += `<span class="text-[11px] bg-rose-600/30 border border-rose-500 text-rose-200 px-2 py-0.5 rounded-md font-bold">🔪 ${ROLES_INFO[p.role] ? ROLES_INFO[p.role].shortName : 'عصابة'}</span>`;
+                }
+                if (!p.isAlive) badges += `<span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-md">ميت 💀</span>`;
+                if (p.isAlive && p.isMuted) badges += `<span class="text-[10px] bg-rose-500/30 text-rose-300 px-2 py-0.5 rounded-md">مُسكت 🤐</span>`;
+
+                let btn = '';
+                if (data.phase === 'NIGHT' && me.isAlive && !hasSubmittedNight && p.isAlive && me.role !== 'villager') {
+                    if ((me.role === 'boss' || me.role === 'mafia') && p.team !== 'mafia') {
+                        btn = `<button onclick="submitNightAction('${p.id}')" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl">اغتيال 🔪</button>`;
+                    } else if (me.role === 'silencer' && p.team !== 'mafia') {
+                        const isBlocked = (p.id === me.lastMutedId);
+                        btn = `<button ${isBlocked ? 'disabled' : ''} onclick="submitNightAction('${p.id}')" class="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-xs font-bold px-3 py-1.5 rounded-xl">${isBlocked ? 'ممنوع التكرار' : 'إسكات 🤐'}</button>`;
+                    } else if (me.role === 'doctor') {
+                        btn = `<button onclick="submitNightAction('${p.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl">حماية 💉</button>`;
+                    } else if (me.role === 'seer' && p.id !== myId) {
+                        btn = `<button onclick="submitNightAction('${p.id}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl">فحص 🔍</button>`;
+                    } else if (me.role === 'sniper' && p.id !== myId && me.ammo > 0) {
+                        btn = `<button onclick="submitNightAction('${p.id}')" class="bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl">قنص 🎯</button>`;
+                    }
+                } else if (data.phase === 'VOTING' && me.isAlive && p.isAlive && p.id !== myId) {
+                    btn = `<button onclick="submitDayVote('${p.id}')" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl">تصويت (${vCount})</button>`;
+                } else if (data.phase === 'VOTING' && p.isAlive) {
+                    btn = `<span class="text-xs text-amber-400 font-bold">الأصوات: ${vCount}</span>`;
+                }
+
+                grid.innerHTML += `
+                    <div class="p-3.5 rounded-2xl border flex items-center justify-between ${!p.isAlive ? 'bg-slate-950/40 border-slate-800 opacity-50' : (isTeammateMafia ? 'bg-rose-950/30 border-rose-700/60' : 'bg-slate-800/90 border-slate-700')}">
+                        <div class="flex flex-col gap-1">
+                            <span class="font-bold text-sm text-white">${p.name}</span>
+                            <div class="flex flex-wrap gap-1">${badges}</div>
+                        </div>
+                        <div>${btn}</div>
+                    </div>`;
+            });
+
+            const isMafiaNight = (data.phase === 'NIGHT' && me.team === 'mafia');
+            const canChat = me.isAlive && !me.isMuted && (data.phase === 'DISCUSSION' || data.phase === 'VOTING' || isMafiaNight);
+            document.getElementById('chatInput').disabled = !canChat;
+            document.getElementById('chatSendBtn').disabled = !canChat;
+            document.getElementById('chatHeaderTitle').textContent = isMafiaNight ? '🔪 شات العصابة السري' : '💬 نقاش القرية العام';
+            document.getElementById('chatStatusBadge').textContent = canChat ? (isMafiaNight ? 'سري للعصابة فقط 🔴' : 'مفتوح الآن 🟢') : (me.isMuted ? 'ممنوع من الكلام 🤐' : 'مغلق');
+
+            const chatBox = document.getElementById('chatMessages');
+            chatBox.innerHTML = '';
+            Object.values(data.chats || {}).slice(-35).forEach(c => {
+                if (c.channel === 'mafia' && me.team !== 'mafia') return;
+                const style = c.channel === 'mafia'
+                    ? 'bg-rose-950/70 border border-rose-800/60 text-rose-200'
+                    : 'bg-slate-800/80 text-slate-200';
+                const nameColor = c.channel === 'mafia' ? 'text-rose-400' : 'text-amber-400';
+                chatBox.innerHTML += `<div class="${style} rounded-xl p-2.5 text-xs"><strong class="${nameColor}">${c.sender}:</strong> ${c.text}</div>`;
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const logBox = document.getElementById('gameLogs');
+            logBox.innerHTML = '';
+            Object.values(data.logs || {}).slice(-25).forEach(l => {
+                logBox.innerHTML += `<div>[${l.time}] ${l.text}</div>`;
+            });
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
