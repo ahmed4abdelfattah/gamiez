@@ -55,13 +55,12 @@
                     <input id="playerNameInput" type="text" placeholder="أدخل اسمك هنا..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-400">
                 </div>
 
-                <!-- قسم التحكم في مؤقتات المراحل (الليل، النقاش، التصويت) -->
+                <!-- قسم التحكم في مؤقتات المراحل -->
                 <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
                     <div class="text-xs font-bold text-indigo-300 mb-2.5 flex items-center gap-1">
                         ⏱️ إعدادات مؤقتات اللعب (بالثواني)
                     </div>
                     <div class="grid grid-cols-3 gap-2">
-                        <!-- وقت الليل -->
                         <div class="bg-slate-900 border border-indigo-900/50 rounded-xl p-2 text-center">
                             <span class="text-[11px] text-slate-300 block mb-1">وقت الليل 🌙</span>
                             <div class="flex items-center justify-center gap-2">
@@ -70,7 +69,6 @@
                                 <button type="button" onclick="adjustTimer('night', 5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
                             </div>
                         </div>
-                        <!-- وقت النقاش النهاري -->
                         <div class="bg-slate-900 border border-amber-900/50 rounded-xl p-2 text-center">
                             <span class="text-[11px] text-slate-300 block mb-1">النقاش النهاري ☀️</span>
                             <div class="flex items-center justify-center gap-2">
@@ -79,7 +77,6 @@
                                 <button type="button" onclick="adjustTimer('discussion', 10)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
                             </div>
                         </div>
-                        <!-- وقت التصويت -->
                         <div class="bg-slate-900 border border-rose-900/50 rounded-xl p-2 text-center">
                             <span class="text-[11px] text-slate-300 block mb-1">وقت التصويت ⚖️</span>
                             <div class="flex items-center justify-center gap-2">
@@ -91,7 +88,7 @@
                     </div>
                 </div>
 
-                <!-- قسم إعدادات توزيع الأدوار والشخصيات في الشاشة الرئيسية -->
+                <!-- قسم إعدادات توزيع الأدوار والشخصيات -->
                 <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs font-bold text-amber-400 flex items-center gap-1">⚙️ إعدادات توزيع الشخصيات (عند إنشاء غرفة)</span>
@@ -105,9 +102,7 @@
                         الوضع الحالي: <strong class="text-emerald-400">توزيع تلقائي متوازن</strong> حسب عدد اللاعبين المنضمين. فعّل "تخصيص يدوي" لتحديد أعداد العصابة والمواطنين وأصحاب القدرات بنفسك.
                     </div>
 
-                    <!-- لوحة التخصيص اليدوي للأدوار -->
                     <div id="customRolesPanel" class="hidden space-y-3 pt-2 border-t border-slate-800/80 mt-2">
-                        <!-- فريق العصابة -->
                         <div>
                             <div class="text-[11px] font-bold text-rose-400 mb-1.5">🔪 فريق العصابة:</div>
                             <div class="grid grid-cols-3 gap-2">
@@ -138,7 +133,6 @@
                             </div>
                         </div>
 
-                        <!-- الشخصيات الرئيسية صاحبة المميزات + المواطنين -->
                         <div>
                             <div class="text-[11px] font-bold text-emerald-400 mb-1.5">🛡️ أصحاب المميزات والمواطنون:</div>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -177,7 +171,6 @@
                             </div>
                         </div>
 
-                        <!-- ملخص الإعدادات -->
                         <div class="bg-slate-900/90 rounded-xl px-3 py-2 flex items-center justify-between text-[11px]">
                             <span class="text-slate-400">إجمالي الشخصيات المحددة: <strong id="totalCustomCount" class="text-amber-400">8</strong></span>
                             <span id="customBalanceHint" class="text-emerald-400 font-bold">توزيعة متوازنة ✔️</span>
@@ -250,14 +243,13 @@
                     <h3 id="revealRoleTitle" class="text-2xl font-black text-white mb-1">---</h3>
                     <p id="revealRoleDesc" class="text-sm text-slate-300 leading-relaxed"></p>
                     
-                    <!-- صندوق كشف فريق العصابة لبعضهم -->
                     <div id="mafiaTeammatesBox" class="hidden mt-4 pt-3 border-t border-rose-500/40 bg-rose-950/40 rounded-xl p-3">
                         <div class="text-xs font-bold text-rose-300 mb-2">🔪 أعضاء فريق العصابة وأدوارهم:</div>
                         <div id="mafiaTeammatesList" class="flex flex-wrap gap-2"></div>
                     </div>
                 </div>
 
-                <!-- شريط معلومات التوزيعة والمؤقتات المختارة في الـ Lobby -->
+                <!-- شريط معلومات التوزيعة والمؤقتات في الـ Lobby -->
                 <div id="lobbySettingsBanner" class="bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-slate-300 flex flex-wrap items-center justify-between gap-2">
                     <span id="lobbyConfigSummary">نظام التوزيع: تلقائي متوازن</span>
                     <span id="lobbyTimersSummary" class="text-indigo-300 font-semibold"></span>
@@ -315,7 +307,6 @@
             villager: { name: 'مواطن (أهل القرية)', shortName: 'مواطن', team: 'village', desc: 'لا تملك قدرة ليلية. سلاحك النقاش والتصويت نهاراً لكشف العصابة.' }
         };
 
-        // إعدادات المؤقتات الزمنية الافتراضية (بالثواني)
         const timerSettings = {
             night: 45,
             discussion: 80,
@@ -333,7 +324,6 @@
             document.getElementById('timer_' + type).textContent = timerSettings[type];
         }
 
-        // إعدادات التخصيص اليدوي للأدوار في الشاشة الرئيسية
         const roleCounts = {
             boss: 1,
             mafia: 1,
@@ -391,6 +381,7 @@
         let uiInterval = null;
         let lastAnnouncedId = null;
         let lastSeerCheckDay = 0;
+        let isTransitioning = false; // قفل لمنع القفز المزدوج للمراحل عند الهوست
 
         function initFirebase() {
             if (!db) {
@@ -548,14 +539,20 @@
             });
 
             if (uiInterval) clearInterval(uiInterval);
-            uiInterval = setInterval(() => {
+            uiInterval = setInterval(async () => {
                 if (!roomData) return;
                 const now = Date.now();
                 const rem = Math.max(0, Math.ceil((roomData.phaseEndTime - now) / 1000));
                 document.getElementById('timerValue').textContent = (roomData.phase === 'LOBBY' || roomData.phase === 'GAME_OVER') ? '--' : rem;
 
-                if (roomData.hostId === myId && roomData.phase !== 'LOBBY' && roomData.phase !== 'GAME_OVER' && now >= roomData.phaseEndTime) {
-                    advancePhaseByHost();
+                // يعمل المؤقت من متصفح المدير سواء كان حياً أو ميتاً، مع قفل لمنع التكرار المزدوج
+                if (roomData.hostId === myId && roomData.phase !== 'LOBBY' && roomData.phase !== 'GAME_OVER' && now >= roomData.phaseEndTime && !isTransitioning) {
+                    isTransitioning = true;
+                    try {
+                        await advancePhaseByHost();
+                    } finally {
+                        isTransitioning = false;
+                    }
                 }
             }, 1000);
         }
@@ -586,8 +583,9 @@
                 }
             } else {
                 if (pList.length < 5) return showToast('في الوضع التلقائي، الحد الأدنى 5 لاعبين لبدء اللعبة!');
+                // في حالة 5 لاعبين: 1 عصابة فقط (الريس) مقابل 4 من القرية حتى لا تنتهي اللعبة من أول ليلة
                 if (pList.length === 5) {
-                    pool = ['boss', 'mafia', 'doctor', 'seer'];
+                    pool = ['boss', 'doctor', 'seer', 'villager', 'villager'];
                 } else if (pList.length <= 7) {
                     pool = ['boss', 'mafia', 'doctor', 'seer', 'silencer'];
                 } else {
@@ -619,6 +617,7 @@
             updates['nightActions'] = null;
             updates['dayVotes'] = null;
 
+            isTransitioning = false;
             await db.ref('rooms/' + currentRoomCode).update(updates);
             pushLog('🔔 تم توزيع الأدوار سراً وتعرف أفراد العصابة على بعضهم.. حلّ الليل الأول!');
         }
@@ -638,8 +637,12 @@
         }
 
         async function resolveNightByHost() {
-            const players = roomData.players || {};
-            const actions = roomData.nightActions || {};
+            const snap = await db.ref('rooms/' + currentRoomCode).once('value');
+            const latestRoom = snap.val();
+            if (!latestRoom || latestRoom.phase !== 'NIGHT') return;
+
+            const players = latestRoom.players || {};
+            const actions = latestRoom.nightActions || {};
             const updates = {};
             const roomTimers = getRoomTimers();
 
@@ -719,10 +722,12 @@
             const fullMsg = reportLines.join('\n');
 
             updates['announcement'] = { id: Date.now(), text: fullMsg };
+            // تحديث حالة الموتى أولاً وانتظار اكتمالها قبل فحص شرط الفوز
             await db.ref('rooms/' + currentRoomCode).update(updates);
             pushLog(reportLines.join(' | '));
 
-            if (!(await checkWinByHost())) {
+            const isGameEnded = await checkWinByHost();
+            if (!isGameEnded) {
                 await db.ref('rooms/' + currentRoomCode).update({
                     phase: 'DISCUSSION',
                     phaseEndTime: Date.now() + roomTimers.discussion
@@ -731,8 +736,12 @@
         }
 
         async function resolveVotingByHost() {
-            const players = roomData.players || {};
-            const votes = roomData.dayVotes || {};
+            const snap = await db.ref('rooms/' + currentRoomCode).once('value');
+            const latestRoom = snap.val();
+            if (!latestRoom || latestRoom.phase !== 'VOTING') return;
+
+            const players = latestRoom.players || {};
+            const votes = latestRoom.dayVotes || {};
             const counts = { skip: 0 };
             const roomTimers = getRoomTimers();
 
@@ -756,10 +765,11 @@
             pushLog(report);
             await db.ref(`rooms/${currentRoomCode}/announcement`).set({ id: Date.now(), text: report });
 
-            if (!(await checkWinByHost())) {
+            const isGameEnded = await checkWinByHost();
+            if (!isGameEnded) {
                 await db.ref('rooms/' + currentRoomCode).update({
                     phase: 'NIGHT',
-                    dayCount: (roomData.dayCount || 1) + 1,
+                    dayCount: (latestRoom.dayCount || 1) + 1,
                     phaseEndTime: Date.now() + roomTimers.night,
                     nightActions: null,
                     dayVotes: null
@@ -869,7 +879,6 @@
             document.getElementById('phaseTitle').textContent = pTitle;
             document.getElementById('phaseSubtitle').textContent = pSub;
 
-            // عرض ملخص إعدادات الأدوار والمؤقتات في الـ Lobby
             const lobbyBanner = document.getElementById('lobbySettingsBanner');
             if (data.phase === 'LOBBY') {
                 lobbyBanner.classList.remove('hidden');
@@ -950,7 +959,7 @@
             if (data.phase === 'LOBBY') {
                 instruction.textContent = data.hostId === myId ? `أنت مدير الغرفة (المتصلون حالياً: ${pList.length})` : 'بانتظار مدير الغرفة لبدء اللعبة...';
             } else if (!me.isAlive) {
-                instruction.textContent = '💀 لقد قُتلت.. تتابع اللعبة الآن كمشاهد.';
+                instruction.textContent = '💀 لقد قُتلت.. تتابع اللعبة الآن كمشاهد (السيرفر مستمر).';
             } else if (data.phase === 'NIGHT') {
                 instruction.textContent = me.role === 'villager' ? '😴 أنت مواطن.. انتظر شروق الشمس.' : (hasSubmittedNight ? '✅ تم تنفيذ قدرتك الليلية.' : '🎯 اختر هدفك الليلي من قائمة اللاعبين!');
             } else if (data.phase === 'DISCUSSION') {
