@@ -126,7 +126,7 @@
                                     <span class="text-[11px] text-slate-300 block mb-1">الساكت 🤐</span>
                                     <div class="flex items-center justify-center gap-2">
                                         <button type="button" onclick="adjustRoleCount('silencer', -1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
-                                        <span id="count_silencer" class="font-black text-sm text-amber-400">1</span>
+                                        <span id="count_silencer" class="font-black text-sm text-amber-400">0</span>
                                         <button type="button" onclick="adjustRoleCount('silencer', 1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
                                     </div>
                                 </div>
@@ -172,8 +172,8 @@
                         </div>
 
                         <div class="bg-slate-900/90 rounded-xl px-3 py-2 flex items-center justify-between text-[11px]">
-                            <span class="text-slate-400">إجمالي الشخصيات المحددة: <strong id="totalCustomCount" class="text-amber-400">8</strong></span>
-                            <span id="customBalanceHint" class="text-emerald-400 font-bold">توزيعة متوازنة ✔️</span>
+                            <span class="text-slate-400">إجمالي الشخصيات المحددة: <strong id="totalCustomCount" class="text-amber-400">7</strong></span>
+                            <span id="customBalanceHint" class="text-emerald-400 font-bold">عصابة (2) ضد قرية (5) ✔️</span>
                         </div>
                     </div>
                 </div>
@@ -327,7 +327,7 @@
         const roleCounts = {
             boss: 1,
             mafia: 1,
-            silencer: 1,
+            silencer: 0,
             seer: 1,
             doctor: 1,
             sniper: 1,
@@ -381,7 +381,7 @@
         let uiInterval = null;
         let lastAnnouncedId = null;
         let lastSeerCheckDay = 0;
-        let isTransitioning = false; // قفل لمنع القفز المزدوج للمراحل عند الهوست
+        let isTransitioning = false;
 
         function initFirebase() {
             if (!db) {
@@ -441,7 +441,7 @@
             const t = document.getElementById('toast');
             t.textContent = msg;
             t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3500);
+            setTimeout(() => t.classList.add('hidden'), 4000);
         }
 
         function showModal(title, body, icon = '🌅') {
@@ -545,7 +545,6 @@
                 const rem = Math.max(0, Math.ceil((roomData.phaseEndTime - now) / 1000));
                 document.getElementById('timerValue').textContent = (roomData.phase === 'LOBBY' || roomData.phase === 'GAME_OVER') ? '--' : rem;
 
-                // يعمل المؤقت من متصفح المدير سواء كان حياً أو ميتاً، مع قفل لمنع التكرار المزدوج
                 if (roomData.hostId === myId && roomData.phase !== 'LOBBY' && roomData.phase !== 'GAME_OVER' && now >= roomData.phaseEndTime && !isTransitioning) {
                     isTransitioning = true;
                     try {
@@ -558,67 +557,91 @@
         }
 
         async function hostStartGame() {
-            const pList = Object.values(roomData.players || {});
-            const cfg = roomData.roleConfig || { isCustom: false };
+            const snap = await db.ref(`rooms/${currentRoomCode}/players`).once('value');
+            const pList = Object.values(snap.val() || {});
+            const totalPlayers = pList.length;
 
+            if (totalPlayers < 4) {
+                return showToast('يجب وجود 4 لاعبين على الأقل في الغرفة لبدء اللعبة!');
+            }
+
+            const cfg = roomData.roleConfig || { isCustom: false };
             let pool = [];
 
             if (cfg.isCustom && cfg.counts) {
                 const c = cfg.counts;
-                const customRolesOrder = ['boss', 'mafia', 'silencer', 'seer', 'doctor', 'sniper', 'villager'];
-                customRolesOrder.forEach(rKey => {
-                    const count = Number(c[rKey] || 0);
-                    for (let i = 0; i < count; i++) pool.push(rKey);
-                });
+                const mafiaPool = [];
+                const villagePool = [];
 
-                if (pList.length < 3) {
-                    return showToast('يجب وجود 3 لاعبين على الأقل للبدء!');
-                }
+                for (let i = 0; i < Number(c.boss || 0); i++) mafiaPool.push('boss');
+                for (let i = 0; i < Number(c.mafia || 0); i++) mafiaPool.push('mafia');
+                for (let i = 0; i < Number(c.silencer || 0); i++) mafiaPool.push('silencer');
 
-                while (pool.length < pList.length) {
-                    pool.push('villager');
+                for (let i = 0; i < Number(c.doctor || 0); i++) villagePool.push('doctor');
+                for (let i = 0; i < Number(c.seer || 0); i++) villagePool.push('seer');
+                for (let i = 0; i < Number(c.sniper || 0); i++) villagePool.push('sniper');
+                for (let i = 0; i < Number(c.villager || 0); i++) villagePool.push('villager');
+
+                // الحد الأقصى المسموح به للعصابة بناءً على العدد الفعلي للحاضرين (حتى لا تنتهي اللعبة بعد أول قتيل!)
+                // في 4 أو 5 لاعبين: الحد الأقصى 1 عصابة فقط. في 6-8 لاعبين: الحد الأقصى 2 عصابة.
+                const maxAllowedMafia = Math.max(1, Math.floor((totalPlayers - 1) / 2));
+                const actualMafiaCount = Math.min(mafiaPool.length, maxAllowedMafia);
+
+                const selectedMafia = mafiaPool.slice(0, actualMafiaCount);
+                const neededVillage = totalPlayers - selectedMafia.length;
+
+                while (villagePool.length < neededVillage) {
+                    villagePool.push('villager');
                 }
-                if (pool.length > pList.length) {
-                    pool = pool.slice(0, pList.length);
-                }
+                const selectedVillage = villagePool.slice(0, neededVillage);
+
+                pool = [...selectedMafia, ...selectedVillage];
             } else {
-                if (pList.length < 5) return showToast('في الوضع التلقائي، الحد الأدنى 5 لاعبين لبدء اللعبة!');
-                // في حالة 5 لاعبين: 1 عصابة فقط (الريس) مقابل 4 من القرية حتى لا تنتهي اللعبة من أول ليلة
-                if (pList.length === 5) {
-                    pool = ['boss', 'doctor', 'seer', 'villager', 'villager'];
-                } else if (pList.length <= 7) {
-                    pool = ['boss', 'mafia', 'doctor', 'seer', 'silencer'];
+                // التوزيع التلقائي المتوازن
+                if (totalPlayers <= 5) {
+                    pool = ['boss', 'doctor', 'seer', 'sniper'];
+                } else if (totalPlayers <= 7) {
+                    pool = ['boss', 'mafia', 'doctor', 'seer', 'sniper'];
                 } else {
                     pool = ['boss', 'mafia', 'silencer', 'doctor', 'seer', 'sniper'];
                 }
-                while (pool.length < pList.length) pool.push('villager');
+                while (pool.length < totalPlayers) pool.push('villager');
+                pool = pool.slice(0, totalPlayers);
             }
 
+            // خلط الأدوار عشوائياً (Fisher-Yates)
             for (let i = pool.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [pool[i], pool[j]] = [pool[j], pool[i]];
             }
 
-            const updates = {};
+            // بناء كائن اللاعبين النظيف بالكامل لمنع بقاء أي بيانات قديمة
+            const cleanPlayers = {};
             pList.forEach((p, idx) => {
                 const r = pool[idx];
-                updates[`players/${p.id}/role`] = r;
-                updates[`players/${p.id}/team`] = ROLES_INFO[r].team;
-                updates[`players/${p.id}/isAlive`] = true;
-                updates[`players/${p.id}/isMuted`] = false;
-                updates[`players/${p.id}/ammo`] = r === 'sniper' ? 1 : 0;
-                updates[`players/${p.id}/lastMutedId`] = '';
+                cleanPlayers[p.id] = {
+                    id: p.id,
+                    name: p.name,
+                    role: r,
+                    team: ROLES_INFO[r].team,
+                    isAlive: true,
+                    isMuted: false,
+                    ammo: r === 'sniper' ? 1 : 0,
+                    lastMutedId: ''
+                };
             });
 
             const roomTimers = getRoomTimers();
-            updates['phase'] = 'NIGHT';
-            updates['dayCount'] = 1;
-            updates['phaseEndTime'] = Date.now() + roomTimers.night;
-            updates['nightActions'] = null;
-            updates['dayVotes'] = null;
+            await db.ref('rooms/' + currentRoomCode).update({
+                players: cleanPlayers,
+                phase: 'NIGHT',
+                dayCount: 1,
+                phaseEndTime: Date.now() + roomTimers.night,
+                nightActions: null,
+                dayVotes: null
+            });
 
             isTransitioning = false;
-            await db.ref('rooms/' + currentRoomCode).update(updates);
             pushLog('🔔 تم توزيع الأدوار سراً وتعرف أفراد العصابة على بعضهم.. حلّ الليل الأول!');
         }
 
@@ -722,7 +745,6 @@
             const fullMsg = reportLines.join('\n');
 
             updates['announcement'] = { id: Date.now(), text: fullMsg };
-            // تحديث حالة الموتى أولاً وانتظار اكتمالها قبل فحص شرط الفوز
             await db.ref('rooms/' + currentRoomCode).update(updates);
             pushLog(reportLines.join(' | '));
 
@@ -780,8 +802,8 @@
         async function checkWinByHost() {
             const snap = await db.ref(`rooms/${currentRoomCode}/players`).once('value');
             const pList = Object.values(snap.val() || {});
-            const mAlive = pList.filter(p => p.isAlive && p.team === 'mafia').length;
-            const vAlive = pList.filter(p => p.isAlive && p.team === 'village').length;
+            const mAlive = pList.filter(p => p.isAlive === true && p.team === 'mafia').length;
+            const vAlive = pList.filter(p => p.isAlive === true && p.team === 'village').length;
 
             if (mAlive === 0 || mAlive >= vAlive) {
                 const winner = mAlive === 0 ? 'أهل القرية 🛡️' : 'العصابة 🔪';
@@ -959,7 +981,7 @@
             if (data.phase === 'LOBBY') {
                 instruction.textContent = data.hostId === myId ? `أنت مدير الغرفة (المتصلون حالياً: ${pList.length})` : 'بانتظار مدير الغرفة لبدء اللعبة...';
             } else if (!me.isAlive) {
-                instruction.textContent = '💀 لقد قُتلت.. تتابع اللعبة الآن كمشاهد (السيرفر مستمر).';
+                instruction.textContent = '💀 لقد قُتلت.. تتابع اللعبة الآن كمشاهد.';
             } else if (data.phase === 'NIGHT') {
                 instruction.textContent = me.role === 'villager' ? '😴 أنت مواطن.. انتظر شروق الشمس.' : (hasSubmittedNight ? '✅ تم تنفيذ قدرتك الليلية.' : '🎯 اختر هدفك الليلي من قائمة اللاعبين!');
             } else if (data.phase === 'DISCUSSION') {
