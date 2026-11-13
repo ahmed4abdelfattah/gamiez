@@ -269,8 +269,12 @@
                         <button id="startGameBtn" onclick="hostStartGame()" class="hidden bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-6 py-2 rounded-xl text-sm">بدء اللعبة ▶</button>
                         <button id="backToLobbyBtn" onclick="hostBackToLobby()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2 rounded-xl text-sm">تجهيز جولة جديدة 🔄</button>
                         <button id="skipNightBtn" onclick="submitNightAction('skip')" class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs">تخطي القدرة هذه الليلة</button>
-                        <button id="skipDiscussBtn" onclick="voteSkipDiscussion()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs">تخطي النقاش للتصويت (<span id="skipDiscussCounter">0</span>)</button>
-                        <button id="skipVoteBtn" onclick="submitDayVote('skip')" class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs">تخطي الإعدام (<span id="skipVoteCounter">0</span>)</button>
+                        <button id="skipDiscussBtn" onclick="voteSkipDiscussion()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs">
+                            <span id="skipDiscussLabel">تخطي النقاش للتصويت</span> (<span id="skipDiscussCounter">0</span>)
+                        </button>
+                        <button id="skipVoteBtn" onclick="submitDayVote('skip')" class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs">
+                            <span id="skipVoteLabel">تخطي الإعدام</span> (<span id="skipVoteCounter">0</span>)
+                        </button>
                     </div>
                 </div>
 
@@ -404,9 +408,10 @@
         let lastAnnouncedId = null;
         let lastSeerCheckDay = 0;
         let allNightDoneTimestamp = 0;
+        let allVotesDoneTimestamp = 0;
+        let lastVotesSignature = '';
         let isTransitioning = false;
 
-        // ربط توقيت جميع الأجهزة بساعة خادم Firebase الموحدة لمنع مشكلة اختلاف ساعات الهواتف (Clock Skew Bug)
         function initFirebase() {
             if (!db) {
                 firebase.initializeApp({ databaseURL: FIREBASE_DB_URL });
@@ -456,23 +461,89 @@
             showToast('تم مسح الجلسة وإنشاء هوية جديدة بنجاح!');
         }
 
+        async function checkAndApplyMidGameWin(playersObj, actionLogText) {
+            const winCheck = evaluateWinCondition(playersObj);
+            if (winCheck.ended) {
+                const now = getServerTime();
+                const details = Object.values(playersObj).map(p => `${p.name}: ${ROLES_INFO[p.role] ? ROLES_INFO[p.role].shortName : ''}`).join(' | ');
+                const reportLines = [
+                    actionLogText,
+                    '━━━━━━━━━━━━━━',
+                    `🏆 انتهت اللعبة! الفائز: ${winCheck.winner}`,
+                    `${winCheck.reason}`,
+                    `الأدوار الحقيقية: (${details})`
+                ];
+                const fullMsg = reportLines.join('\n');
+                await db.ref('rooms/' + currentRoomCode).update({
+                    players: playersObj,
+                    phase: 'GAME_OVER',
+                    phaseEndTime: 0,
+                    announcement: { id: now, text: fullMsg }
+                });
+                pushLog(reportLines.join(' | '));
+                return true;
+            }
+            return false;
+        }
+
         async function leaveRoomAndClearSession() {
             if (currentRoomCode && myId && roomData) {
                 db.ref('rooms/' + currentRoomCode).off();
-                const pList = Object.values(roomData.players || {}).filter(p => p.id !== myId);
+                const playersCopy = JSON.parse(JSON.stringify(roomData.players || {}));
+                const me = playersCopy[myId];
+                const remainingList = Object.values(playersCopy).filter(p => p.id !== myId);
 
                 if (roomData.phase === 'LOBBY') {
                     await db.ref(`rooms/${currentRoomCode}/players/${myId}`).remove();
+                } else if (roomData.phase !== 'GAME_OVER' && me && me.isAlive) {
+                    playersCopy[myId].isAlive = false;
+                    playersCopy[myId].isMuted = false;
+                    const leaveMsg = `🚪 غادر (${me.name}) القرية أثناء الجولة وتم اعتباره ميتاً!`;
+                    pushLog(leaveMsg);
+                    const ended = await checkAndApplyMidGameWin(playersCopy, leaveMsg);
+                    if (!ended) {
+                        await db.ref(`rooms/${currentRoomCode}/players/${myId}`).update({
+                            isAlive: false,
+                            isMuted: false
+                        });
+                    }
                 }
 
-                if (roomData.hostId === myId && pList.length > 0) {
-                    const nextHost = pList.find(p => p.isAlive) || pList[0];
+                if (roomData.hostId === myId && remainingList.length > 0) {
+                    const nextHost = remainingList.find(p => p.isAlive) || remainingList[0];
                     await db.ref(`rooms/${currentRoomCode}/hostId`).set(nextHost.id);
                 }
             }
             if (uiInterval) clearInterval(uiInterval);
             sessionStorage.removeItem('village_room_code');
             window.location.reload();
+        }
+
+        async function hostKickPlayer(targetId) {
+            if (!roomData || roomData.hostId !== myId || targetId === myId) return;
+            const snap = await db.ref('rooms/' + currentRoomCode).once('value');
+            const latest = snap.val();
+            if (!latest || !latest.players || !latest.players[targetId]) return;
+
+            const playersCopy = JSON.parse(JSON.stringify(latest.players));
+            const target = playersCopy[targetId];
+
+            if (latest.phase === 'LOBBY' || latest.phase === 'GAME_OVER') {
+                await db.ref(`rooms/${currentRoomCode}/players/${targetId}`).remove();
+                pushLog(`🚫 قام مدير الغرفة بطرد (${target.name}) من الغرفة.`);
+            } else if (target.isAlive) {
+                playersCopy[targetId].isAlive = false;
+                playersCopy[targetId].isMuted = false;
+                const kickMsg = `🚫 قام مدير الغرفة باستبعاد (${target.name}) لعدم التفاعل وتم اعتباره ميتاً!`;
+                pushLog(kickMsg);
+                const ended = await checkAndApplyMidGameWin(playersCopy, kickMsg);
+                if (!ended) {
+                    await db.ref(`rooms/${currentRoomCode}/players/${targetId}`).update({
+                        isAlive: false,
+                        isMuted: false
+                    });
+                }
+            }
         }
 
         function showToast(msg) {
@@ -506,7 +577,6 @@
             return Object.values(playersObj || {}).some(p => p.isAlive && (p.role === 'boss' || p.role === 'mafia'));
         }
 
-        // التصحيح الجذري لمعادلة الفوز: لا تفوز العصابة عند التساوي العددي طالما يوجد لاعبان أو أكثر من القرية (vAlive >= 2)
         function evaluateWinCondition(playersObj) {
             const pList = Object.values(playersObj || {});
             const mAlive = pList.filter(p => p.isAlive === true && p.team === 'mafia').length;
@@ -610,9 +680,20 @@
             db.ref('rooms/' + code).on('value', (snap) => {
                 if (!snap.exists()) return;
                 roomData = snap.val();
+
+                if (!roomData.players || !roomData.players[myId]) {
+                    db.ref('rooms/' + code).off();
+                    if (uiInterval) clearInterval(uiInterval);
+                    sessionStorage.removeItem('village_room_code');
+                    window.location.reload();
+                    return;
+                }
+
                 if (roomData.phase === 'LOBBY') {
                     lastSeerCheckDay = 0;
                     allNightDoneTimestamp = 0;
+                    allVotesDoneTimestamp = 0;
+                    lastVotesSignature = '';
                 }
                 renderRoom(roomData);
             });
@@ -626,33 +707,57 @@
 
                 if (roomData.phase !== 'LOBBY' && roomData.phase !== 'GAME_OVER' && !isTransitioning) {
                     const isHost = (roomData.hostId === myId);
-                    // نظام الطوارئ المربوط بتوقيت الخادم الموحد
-                    const isBackupFailover = (!isHost && now >= (roomData.phaseEndTime + 6000));
+                    const pList = Object.values(roomData.players || {});
+                    const alivePlayers = pList.filter(p => p.isAlive);
+
+                    // اختيار مدير بديل واحد فقط محدداً بالترتيب الأبجدي لمعرفات اللاعبين الأحياء لمنع تزاحم الأجهزة (Backup Host Failover)
+                    const aliveCandidates = alivePlayers.filter(p => p.id !== roomData.hostId).sort((a, b) => a.id.localeCompare(b.id));
+                    const allCandidates = pList.filter(p => p.id !== roomData.hostId).sort((a, b) => a.id.localeCompare(b.id));
+                    const designatedBackupId = aliveCandidates.length > 0
+                        ? aliveCandidates[0].id
+                        : (allCandidates.length > 0 ? allCandidates[0].id : null);
+
+                    const isBackupFailover = (!isHost && designatedBackupId === myId && now >= (roomData.phaseEndTime + 6000));
 
                     if (isHost || isBackupFailover) {
                         let shouldAdvance = (now >= roomData.phaseEndTime);
 
-                        if (!shouldAdvance && isHost && (now - Number(roomData.phaseStartTime || 0)) > 4000) {
-                            const pList = Object.values(roomData.players || {});
-                            const alivePlayers = pList.filter(p => p.isAlive);
-
-                            if (roomData.phase === 'NIGHT') {
-                                const activeNightRoles = alivePlayers.filter(p => p.role !== 'villager' && !(p.role === 'sniper' && Number(p.ammo || 0) <= 0));
-                                const submittedMap = (roomData.nightActions && roomData.nightActions.submitted) || {};
-                                if (activeNightRoles.length > 0 && activeNightRoles.every(p => submittedMap[p.id])) {
-                                    // مهلة أمان 3 ثوانٍ بعد انتهاء آخر لاعب ليلاً ليتمكن شيخ القرية من قراءة نافذته
-                                    if (!allNightDoneTimestamp) {
-                                        allNightDoneTimestamp = now;
-                                    } else if (now - allNightDoneTimestamp >= 3000) {
-                                        shouldAdvance = true;
-                                    }
-                                } else {
-                                    allNightDoneTimestamp = 0;
-                                }
-                            } else if (roomData.phase === 'VOTING') {
-                                const votesMap = roomData.dayVotes || {};
-                                if (alivePlayers.length > 0 && alivePlayers.every(p => votesMap[p.id])) {
+                        if (!shouldAdvance && isHost) {
+                            if (roomData.phase === 'DISCUSSION') {
+                                // فحص اكتمال أغلبية تخطي النقاش للأحياء فقط من قِبل المدير حصرياً
+                                const rawSkip = roomData.skipDiscussVotes || {};
+                                const validSkipCount = alivePlayers.filter(p => rawSkip[p.id]).length;
+                                const majority = Math.floor(alivePlayers.length / 2) + 1;
+                                if (alivePlayers.length > 0 && validSkipCount >= majority) {
                                     shouldAdvance = true;
+                                }
+                            } else if ((now - Number(roomData.phaseStartTime || 0)) > 4000) {
+                                if (roomData.phase === 'NIGHT') {
+                                    const activeNightRoles = alivePlayers.filter(p => p.role !== 'villager' && !(p.role === 'sniper' && Number(p.ammo || 0) <= 0));
+                                    const submittedMap = (roomData.nightActions && roomData.nightActions.submitted) || {};
+                                    if (activeNightRoles.length > 0 && activeNightRoles.every(p => submittedMap[p.id])) {
+                                        if (!allNightDoneTimestamp) {
+                                            allNightDoneTimestamp = now;
+                                        } else if (now - allNightDoneTimestamp >= 3000) {
+                                            shouldAdvance = true;
+                                        }
+                                    } else {
+                                        allNightDoneTimestamp = 0;
+                                    }
+                                } else if (roomData.phase === 'VOTING') {
+                                    const votesMap = roomData.dayVotes || {};
+                                    if (alivePlayers.length > 0 && alivePlayers.every(p => votesMap[p.id])) {
+                                        const currentSig = alivePlayers.map(p => `${p.id}:${votesMap[p.id]}`).sort().join('|');
+                                        if (!allVotesDoneTimestamp || currentSig !== lastVotesSignature) {
+                                            allVotesDoneTimestamp = now;
+                                            lastVotesSignature = currentSig;
+                                        } else if (now - allVotesDoneTimestamp >= 5000) {
+                                            shouldAdvance = true;
+                                        }
+                                    } else {
+                                        allVotesDoneTimestamp = 0;
+                                        lastVotesSignature = '';
+                                    }
                                 }
                             }
                         }
@@ -660,6 +765,8 @@
                         if (shouldAdvance) {
                             isTransitioning = true;
                             allNightDoneTimestamp = 0;
+                            allVotesDoneTimestamp = 0;
+                            lastVotesSignature = '';
                             try {
                                 if (isBackupFailover) {
                                     await db.ref(`rooms/${currentRoomCode}/hostId`).set(myId);
@@ -692,6 +799,7 @@
                     seerNotes: []
                 };
             });
+            lastAnnouncedId = null;
             await db.ref('rooms/' + currentRoomCode).update({
                 phase: 'LOBBY',
                 dayCount: 0,
@@ -700,7 +808,8 @@
                 players: cleanPlayers,
                 nightActions: null,
                 dayVotes: null,
-                skipDiscussVotes: null
+                skipDiscussVotes: null,
+                announcement: null
             });
         }
 
@@ -784,6 +893,9 @@
             const now = getServerTime();
             lastSeerCheckDay = 0;
             allNightDoneTimestamp = 0;
+            allVotesDoneTimestamp = 0;
+            lastVotesSignature = '';
+            lastAnnouncedId = null;
 
             await db.ref('rooms/' + currentRoomCode).update({
                 players: cleanPlayers,
@@ -813,6 +925,16 @@
             if (roomData.phase === 'NIGHT') {
                 await resolveNightByHost();
             } else if (roomData.phase === 'DISCUSSION') {
+                const snap = await rRef.once('value');
+                const latest = snap.val();
+                if (!latest || latest.phase !== 'DISCUSSION') return;
+
+                const alivePlayers = Object.values(latest.players || {}).filter(p => p.isAlive);
+                const rawSkip = latest.skipDiscussVotes || {};
+                const validSkipCount = alivePlayers.filter(p => rawSkip[p.id]).length;
+                const majority = Math.floor(alivePlayers.length / 2) + 1;
+                const skippedByMajority = (alivePlayers.length > 0 && validSkipCount >= majority && now < latest.phaseEndTime);
+
                 await rRef.update({
                     phase: 'VOTING',
                     phaseStartTime: now,
@@ -820,7 +942,9 @@
                     dayVotes: null,
                     skipDiscussVotes: null
                 });
-                pushLog('⚖️ انتهى وقت النقاش وبدأ التصويت على الإعدام!');
+                pushLog(skippedByMajority
+                    ? '⏩ اتفق أغلبية الأحياء على إنهاء النقاش والانتقال للتصويت فوراً!'
+                    : '⚖️ انتهى وقت النقاش وبدأ التصويت على الإعدام!');
             } else if (roomData.phase === 'VOTING') {
                 await resolveVotingByHost();
             }
@@ -831,7 +955,6 @@
             const latestRoom = snap.val();
             if (!latestRoom || latestRoom.phase !== 'NIGHT') return;
 
-            // قفل عدم التكرار (Idempotency Lock) لمنع معالجة نفس الليلة مرتين
             const currentDay = Number(latestRoom.dayCount || 1);
             if (Number(latestRoom.lastResolvedNight || 0) === currentDay) return;
 
@@ -840,14 +963,17 @@
             const roomTimers = getRoomTimers();
             const now = getServerTime();
 
-            // 1. تحديد ضحية العصابة (قرار الريس يطغى، وإلا الأغلبية مع كسر تعادل عشوائي)
-            const bossChoices = Object.values(actions.bossTargets || {}).filter(t => t && t !== 'skip');
+            const bossChoices = Object.entries(actions.bossTargets || {})
+                .filter(([bossId, t]) => players[bossId] && players[bossId].isAlive && players[bossId].role === 'boss' && t && t !== 'skip' && players[t] && players[t].isAlive)
+                .map(([, t]) => t);
             let mafiaVictim = bossChoices.length > 0 ? bossChoices[0] : null;
 
             if (!mafiaVictim && actions.mafiaVotes) {
                 const counts = {};
-                Object.values(actions.mafiaVotes).forEach(t => {
-                    if (t && t !== 'skip') counts[t] = (counts[t] || 0) + 1;
+                Object.entries(actions.mafiaVotes).forEach(([voterId, t]) => {
+                    if (players[voterId] && players[voterId].isAlive && players[voterId].team === 'mafia' && t && t !== 'skip' && players[t] && players[t].isAlive) {
+                        counts[t] = (counts[t] || 0) + 1;
+                    }
                 });
                 const maxVotes = Math.max(0, ...Object.values(counts));
                 if (maxVotes > 0) {
@@ -856,7 +982,6 @@
                 }
             }
 
-            // 2. جمع جميع أهداف الأطباء الأحياء
             const aliveDoctors = Object.values(players).filter(p => p.isAlive && p.role === 'doctor');
             const healedIds = new Set(
                 Object.entries(actions.doctorTargets || {})
@@ -864,7 +989,6 @@
                     .map(([, targetId]) => targetId)
             );
 
-            // 3. حساب الهجمات (العصابة + جميع القناصين الأحياء) وتوضيح أثر رصاصة القناص
             const killedIds = new Set();
             let doctorSavedSomeone = false;
             let sniperFired = false;
@@ -880,7 +1004,7 @@
 
             Object.entries(actions.sniperTargets || {}).forEach(([sniperId, targetId]) => {
                 const sniper = players[sniperId];
-                if (sniper && sniper.isAlive && sniper.role === 'sniper' && Number(sniper.ammo || 0) > 0 && targetId && targetId !== 'skip') {
+                if (sniper && sniper.isAlive && sniper.role === 'sniper' && Number(sniper.ammo || 0) > 0 && targetId && targetId !== 'skip' && players[targetId] && players[targetId].isAlive) {
                     sniper.ammo = 0;
                     sniperFired = true;
                     if (healedIds.has(targetId)) {
@@ -892,7 +1016,6 @@
                 }
             });
 
-            // تطبيق القتل على نسخة اللاعبين
             const deadNames = [];
             killedIds.forEach(id => {
                 if (players[id] && players[id].isAlive) {
@@ -901,7 +1024,6 @@
                 }
             });
 
-            // 4. صياغة حالة الطبيب والقناص في الصباح دون ذكر اسم المحمي أو هوية القناص
             let doctorStatusMsg = '';
             if (aliveDoctors.length > 0) {
                 if (healedIds.size > 0) {
@@ -922,7 +1044,6 @@
                     : '🎯 انطلقت رصاصة القناص في الظلام وأصابت هدفها!';
             }
 
-            // 5. إعادة ضبط الكتم وتطبيق كتم الساكتين الأحياء
             Object.values(players).forEach(p => {
                 p.isMuted = false;
                 p.usedGesture = false;
@@ -956,7 +1077,6 @@
                 reportLines.push(`🤐 استيقظ ( ${mutedNames.join(' ، ')} ) ليجد نفسه ممنوعاً من الكلام اليوم بأمر الساكت!`);
             }
 
-            // 6. فحص شرط الفوز مباشرة في الذاكرة لتنفيذ تحديث ذري واحد (Atomic Update)
             const winCheck = evaluateWinCondition(players);
             if (winCheck.ended) {
                 const details = Object.values(players).map(p => `${p.name}: ${ROLES_INFO[p.role] ? ROLES_INFO[p.role].shortName : ''}`).join(' | ');
@@ -994,7 +1114,6 @@
             const latestRoom = snap.val();
             if (!latestRoom || latestRoom.phase !== 'VOTING') return;
 
-            // قفل عدم التكرار (Idempotency Lock) لمنع معالجة نفس التصويت مرتين
             const currentDay = Number(latestRoom.dayCount || 1);
             if (Number(latestRoom.lastResolvedVote || 0) === currentDay) return;
 
@@ -1025,7 +1144,6 @@
                 reportLines.push(`⚖️ قرر أهل القرية إعدام ( ${players[topId].name} )! وكان دوره: [ ${ROLES_INFO[players[topId].role].name} ]`);
             }
 
-            // فحص شرط الفوز مباشرة في الذاكرة لتنفيذ تحديث ذري واحد
             const winCheck = evaluateWinCondition(players);
             if (winCheck.ended) {
                 const details = Object.values(players).map(p => `${p.name}: ${ROLES_INFO[p.role] ? ROLES_INFO[p.role].shortName : ''}`).join(' | ');
@@ -1087,7 +1205,6 @@
                     lastSeerCheckDay = roomData.dayCount;
                     const isGuilty = target.team === 'mafia' && target.role !== 'boss';
                     const noteLine = `الليلة ${roomData.dayCount} ⬅️ ${target.name}: ${isGuilty ? 'عصابة 😈' : 'بريء 😇'}`;
-                    // استخدام Object.values ليتوافق مع هيكل كائنات Firebase
                     const existingNotes = Object.values(me.seerNotes || {});
                     existingNotes.push(noteLine);
                     updates[`players/${myId}/seerNotes`] = existingNotes;
@@ -1108,39 +1225,16 @@
             db.ref('rooms/' + currentRoomCode).update(updates);
         }
 
-        async function voteSkipDiscussion() {
-            const me = roomData.players[myId];
+        // قصر وظيفة زر تخطي النقاش على تسجيل صوت اللاعب فقط، وترك الانتقال لحلقة فحص المدير
+        function voteSkipDiscussion() {
+            const me = roomData && roomData.players ? roomData.players[myId] : null;
             if (!me || !me.isAlive || roomData.phase !== 'DISCUSSION') return;
-
-            await db.ref(`rooms/${currentRoomCode}/skipDiscussVotes/${myId}`).set(true);
-            const snap = await db.ref('rooms/' + currentRoomCode).once('value');
-            const latest = snap.val();
-            if (!latest || latest.phase !== 'DISCUSSION') return;
-
-            const aliveCount = Object.values(latest.players || {}).filter(p => p.isAlive).length;
-            const skipCount = Object.keys(latest.skipDiscussVotes || {}).length;
-            const majority = Math.floor(aliveCount / 2) + 1;
-
-            if (skipCount >= majority && !isTransitioning) {
-                isTransitioning = true;
-                try {
-                    const roomTimers = getRoomTimers();
-                    const now = getServerTime();
-                    await db.ref('rooms/' + currentRoomCode).update({
-                        phase: 'VOTING',
-                        phaseStartTime: now,
-                        phaseEndTime: now + roomTimers.voting,
-                        dayVotes: null,
-                        skipDiscussVotes: null
-                    });
-                    pushLog('⏩ اتفق أغلبية الأحياء على إنهاء النقاش والانتقال للتصويت فوراً!');
-                } finally {
-                    isTransitioning = false;
-                }
-            }
+            db.ref(`rooms/${currentRoomCode}/skipDiscussVotes/${myId}`).set(true);
         }
 
         function submitDayVote(targetId) {
+            const me = roomData && roomData.players ? roomData.players[myId] : null;
+            if (!me || !me.isAlive || roomData.phase !== 'VOTING') return;
             db.ref(`rooms/${currentRoomCode}/dayVotes/${myId}`).set(targetId);
         }
 
@@ -1180,7 +1274,8 @@
             document.getElementById('displayRoomCode').textContent = data.code;
             const pList = Object.values(data.players || {});
             const me = data.players ? (data.players[myId] || {}) : {};
-            const aliveCount = pList.filter(p => p.isAlive).length;
+            const alivePlayers = pList.filter(p => p.isAlive);
+            const aliveCount = alivePlayers.length;
             document.getElementById('aliveCounter').textContent = `الأحياء: ${aliveCount} من ${pList.length}`;
 
             document.body.className = (data.phase === 'NIGHT' || data.phase === 'LOBBY')
@@ -1227,12 +1322,16 @@
                 showModal('إعلان القرية', data.announcement.text);
             }
 
+            const silencerActsAsKiller = (me.role === 'silencer' && !hasAliveKillingMafia(data.players));
+
             if (me.role && ROLES_INFO[me.role] && data.phase !== 'LOBBY') {
                 document.getElementById('myRoleBadge').classList.remove('hidden');
                 document.getElementById('roleRevealCard').classList.remove('hidden');
-                document.getElementById('myRoleName').textContent = ROLES_INFO[me.role].name;
-                document.getElementById('revealRoleTitle').textContent = ROLES_INFO[me.role].name;
-                document.getElementById('revealRoleDesc').textContent = ROLES_INFO[me.role].desc;
+                document.getElementById('myRoleName').textContent = silencerActsAsKiller ? 'الساكت (قاتل العصابة 🔪)' : ROLES_INFO[me.role].name;
+                document.getElementById('revealRoleTitle').textContent = silencerActsAsKiller ? 'الساكت (تمت ترقيتك لقاتل العصابة 🔪)' : ROLES_INFO[me.role].name;
+                document.getElementById('revealRoleDesc').textContent = silencerActsAsKiller
+                    ? '🔥 بعد سقوط الريس وأفراد العصابة، أصبحت أنت المسؤول الوحيد عن تنفيذ الاغتيال الليلي للعصابة!'
+                    : ROLES_INFO[me.role].desc;
 
                 const teamBadge = document.getElementById('revealTeamBadge');
                 if (me.team === 'mafia') {
@@ -1286,12 +1385,43 @@
             document.getElementById('startGameBtn').classList.toggle('hidden', !(data.phase === 'LOBBY' && data.hostId === myId));
             document.getElementById('backToLobbyBtn').classList.toggle('hidden', !(data.phase === 'GAME_OVER' && data.hostId === myId));
             document.getElementById('skipNightBtn').classList.toggle('hidden', !(data.phase === 'NIGHT' && me.isAlive && hasActiveNightPower && !hasSubmittedNight));
-            document.getElementById('skipDiscussBtn').classList.toggle('hidden', !(data.phase === 'DISCUSSION' && me.isAlive));
-            document.getElementById('skipVoteBtn').classList.toggle('hidden', !(data.phase === 'VOTING' && me.isAlive));
 
-            const skipDiscussCount = Object.keys(data.skipDiscussVotes || {}).length;
+            // تصفية أصوات تخطي النقاش للأحياء فقط وتلوين الزر لمن صوّت
+            const rawSkipDiscuss = data.skipDiscussVotes || {};
+            const validSkipDiscussCount = alivePlayers.filter(p => rawSkipDiscuss[p.id]).length;
             const majorityNeeded = Math.floor(aliveCount / 2) + 1;
-            document.getElementById('skipDiscussCounter').textContent = `${skipDiscussCount}/${majorityNeeded}`;
+            const hasVotedSkipDiscuss = Boolean(rawSkipDiscuss[myId]);
+            const skipDiscussBtn = document.getElementById('skipDiscussBtn');
+            const skipDiscussLabel = document.getElementById('skipDiscussLabel');
+            skipDiscussBtn.classList.toggle('hidden', !(data.phase === 'DISCUSSION' && me.isAlive));
+            if (hasVotedSkipDiscuss) {
+                skipDiscussBtn.className = 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-bold px-4 py-2 rounded-xl text-xs transition';
+                skipDiscussLabel.textContent = 'تم طلب التخطي ✓';
+            } else {
+                skipDiscussBtn.className = 'bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition';
+                skipDiscussLabel.textContent = 'تخطي النقاش للتصويت';
+            }
+            document.getElementById('skipDiscussCounter').textContent = `${validSkipDiscussCount}/${majorityNeeded}`;
+
+            // تصفية أصوات التصويت النهاري في واجهة العرض بحيث لا تُحسب ولا تُعرض إلا أصوات اللاعبين الأحياء حالياً
+            const rawVotesMap = data.dayVotes || {};
+            const validVotesEntries = Object.entries(rawVotesMap).filter(([voterId]) => data.players && data.players[voterId] && data.players[voterId].isAlive);
+            const votesList = validVotesEntries.map(([, targetId]) => targetId);
+            const myCurrentVote = (me && me.isAlive) ? (rawVotesMap[myId] || null) : null;
+
+            const skipVoteBtn = document.getElementById('skipVoteBtn');
+            const skipVoteLabel = document.getElementById('skipVoteLabel');
+            skipVoteBtn.classList.toggle('hidden', !(data.phase === 'VOTING' && me.isAlive));
+            if (myCurrentVote === 'skip') {
+                skipVoteBtn.className = 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-bold px-4 py-2 rounded-xl text-xs transition';
+                skipVoteLabel.textContent = 'تخطي الإعدام ✓';
+            } else {
+                skipVoteBtn.className = 'bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition';
+                skipVoteLabel.textContent = 'تخطي الإعدام';
+            }
+            document.getElementById('skipVoteCounter').textContent = votesList.filter(v => v === 'skip').length;
+
+            const allAliveVoted = (data.phase === 'VOTING' && alivePlayers.length > 0 && alivePlayers.every(p => rawVotesMap[p.id]));
 
             const instruction = document.getElementById('actionInstruction');
             if (data.phase === 'LOBBY') {
@@ -1307,21 +1437,19 @@
                     instruction.textContent = '🎯 لقد استنفدت طلقتك الوحيدة.. انتظر شروق الشمس.';
                 } else if (hasSubmittedNight) {
                     instruction.textContent = '✅ تم تسجيل قرارك الليلي.. بانتظار البقية.';
+                } else if (silencerActsAsKiller) {
+                    instruction.textContent = '🔪 قُتل زملاؤك في العصابة! أنت الآن القاتل الوحيد.. اختر ضحية لاغتيالها الليلة!';
                 } else {
                     instruction.textContent = '🎯 اختر هدفك الليلي من قائمة اللاعبين!';
                 }
             } else if (data.phase === 'DISCUSSION') {
                 instruction.textContent = '🗣️ وقت النقاش النهاري مفتوح.. اكشفوا الخونة!';
             } else if (data.phase === 'VOTING') {
-                instruction.textContent = '⚖️ صوّت على المشتبه به لإعدامه!';
+                instruction.textContent = allAliveVoted
+                    ? '⏳ صوّت الجميع! يُغلق التصويت خلال 5 ثوانٍ (يمكنك تعديل صوتك الآن)...'
+                    : '⚖️ صوّت على المشتبه به لإعدامه!';
             }
 
-            const votesMap = data.dayVotes || {};
-            const votesList = Object.values(votesMap);
-            const myCurrentVote = votesMap[myId] || null;
-            document.getElementById('skipVoteCounter').textContent = votesList.filter(v => v === 'skip').length;
-
-            const silencerActsAsKiller = (me.role === 'silencer' && !hasAliveKillingMafia(data.players));
             const grid = document.getElementById('playersGrid');
             grid.innerHTML = '';
 
@@ -1365,13 +1493,22 @@
                     btn = `<span class="text-xs text-amber-400 font-bold">الأصوات: ${vCount}</span>`;
                 }
 
+                let hostKickBtn = '';
+                if (data.hostId === myId && p.id !== myId) {
+                    if (data.phase === 'LOBBY' || data.phase === 'GAME_OVER') {
+                        hostKickBtn = `<button onclick="hostKickPlayer('${p.id}')" title="طرد من الغرفة" class="bg-rose-950 hover:bg-rose-800 border border-rose-700/60 text-rose-300 text-[10px] font-bold px-2 py-1 rounded-lg transition">طرد ❌</button>`;
+                    } else if (p.isAlive) {
+                        hostKickBtn = `<button onclick="hostKickPlayer('${p.id}')" title="استبعاد اللاعب الغائب واعتباره ميتاً" class="bg-slate-900 hover:bg-rose-900 border border-slate-700 text-slate-400 hover:text-rose-200 text-[10px] font-bold px-2 py-1 rounded-lg transition">استبعاد 💀</button>`;
+                    }
+                }
+
                 grid.innerHTML += `
                     <div class="p-3.5 rounded-2xl border flex items-center justify-between ${!p.isAlive ? 'bg-slate-950/40 border-slate-800 opacity-50' : (isTeammateMafia ? 'bg-rose-950/30 border-rose-700/60' : 'bg-slate-800/90 border-slate-700')}">
                         <div class="flex flex-col gap-1">
                             <span class="font-bold text-sm text-white">${p.name}</span>
                             <div class="flex flex-wrap gap-1">${badges}</div>
                         </div>
-                        <div>${btn}</div>
+                        <div class="flex items-center gap-1.5">${btn}${hostKickBtn}</div>
                     </div>`;
             });
 
