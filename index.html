@@ -334,15 +334,15 @@
 
         const timerSettings = {
             night: 45,
-            discussion: 80,
+            discussion: 80000,
             voting: 35
         };
 
         function adjustTimer(type, delta) {
             const limits = {
-                night: { min: 15, max: 180 },
-                discussion: { min: 20, max: 300 },
-                voting: { min: 15, max: 120 }
+                night: { min: 15, max: 1800 },
+                discussion: { min: 20, max: 300000 },
+                voting: { min: 15, max: 1200 }
             };
             const lim = limits[type];
             timerSettings[type] = Math.max(lim.min, Math.min(lim.max, timerSettings[type] + delta));
