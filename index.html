@@ -34,11 +34,19 @@
 
     <!-- شاشة البداية -->
     <div id="homeScreen" class="flex-1 flex items-center justify-center p-4">
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl my-4">
             <div class="text-center mb-6">
                 <div class="text-6xl mb-2">🐺🏮</div>
                 <h1 class="text-3xl font-black text-amber-400">أهل القرية</h1>
                 <p class="text-slate-400 text-xs mt-1">لعبة الخداع والاستنتاج الاجتماعي أونلاين</p>
+            </div>
+
+            <!-- زر العودة السريعة للغرفة الحالية إن وجدت -->
+            <div id="rejoinContainer" class="hidden mb-6 bg-emerald-950/60 border border-emerald-600/60 rounded-2xl p-4 text-center">
+                <p class="text-xs text-emerald-300 mb-2 font-bold">لديك غرفة نشطة سابقة (<span id="rejoinCodeText" class="text-amber-400"></span>)</p>
+                <button onclick="rejoinRoom()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-xl text-sm transition shadow-lg">
+                    العودة للعبة مباشرة ↩️
+                </button>
             </div>
 
             <div class="space-y-4">
@@ -47,8 +55,138 @@
                     <input id="playerNameInput" type="text" placeholder="أدخل اسمك هنا..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-400">
                 </div>
 
+                <!-- قسم التحكم في مؤقتات المراحل (الليل، النقاش، التصويت) -->
+                <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
+                    <div class="text-xs font-bold text-indigo-300 mb-2.5 flex items-center gap-1">
+                        ⏱️ إعدادات مؤقتات اللعب (بالثواني)
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <!-- وقت الليل -->
+                        <div class="bg-slate-900 border border-indigo-900/50 rounded-xl p-2 text-center">
+                            <span class="text-[11px] text-slate-300 block mb-1">وقت الليل 🌙</span>
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" onclick="adjustTimer('night', -5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                <span id="timer_night" class="font-black text-sm text-indigo-400">45</span>
+                                <button type="button" onclick="adjustTimer('night', 5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                            </div>
+                        </div>
+                        <!-- وقت النقاش النهاري -->
+                        <div class="bg-slate-900 border border-amber-900/50 rounded-xl p-2 text-center">
+                            <span class="text-[11px] text-slate-300 block mb-1">النقاش النهاري ☀️</span>
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" onclick="adjustTimer('discussion', -10)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                <span id="timer_discussion" class="font-black text-sm text-amber-400">80</span>
+                                <button type="button" onclick="adjustTimer('discussion', 10)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                            </div>
+                        </div>
+                        <!-- وقت التصويت -->
+                        <div class="bg-slate-900 border border-rose-900/50 rounded-xl p-2 text-center">
+                            <span class="text-[11px] text-slate-300 block mb-1">وقت التصويت ⚖️</span>
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" onclick="adjustTimer('voting', -5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                <span id="timer_voting" class="font-black text-sm text-rose-400">35</span>
+                                <button type="button" onclick="adjustTimer('voting', 5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- قسم إعدادات توزيع الأدوار والشخصيات في الشاشة الرئيسية -->
+                <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-amber-400 flex items-center gap-1">⚙️ إعدادات توزيع الشخصيات (عند إنشاء غرفة)</span>
+                        <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+                            <input type="checkbox" id="customRolesToggle" onchange="toggleCustomRolesUI()" class="accent-amber-500 w-4 h-4 rounded cursor-pointer">
+                            <span>تخصيص يدوي</span>
+                        </label>
+                    </div>
+
+                    <div id="autoRolesHint" class="text-[11px] text-slate-400 leading-relaxed">
+                        الوضع الحالي: <strong class="text-emerald-400">توزيع تلقائي متوازن</strong> حسب عدد اللاعبين المنضمين. فعّل "تخصيص يدوي" لتحديد أعداد العصابة والمواطنين وأصحاب القدرات بنفسك.
+                    </div>
+
+                    <!-- لوحة التخصيص اليدوي للأدوار -->
+                    <div id="customRolesPanel" class="hidden space-y-3 pt-2 border-t border-slate-800/80 mt-2">
+                        <!-- فريق العصابة -->
+                        <div>
+                            <div class="text-[11px] font-bold text-rose-400 mb-1.5">🔪 فريق العصابة:</div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="bg-slate-900 border border-rose-900/40 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">الريس</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="adjustRoleCount('boss', -1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="count_boss" class="font-black text-sm text-amber-400">1</span>
+                                        <button type="button" onclick="adjustRoleCount('boss', 1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-900 border border-rose-900/40 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">فرد عصابة</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="adjustRoleCount('mafia', -1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="count_mafia" class="font-black text-sm text-amber-400">1</span>
+                                        <button type="button" onclick="adjustRoleCount('mafia', 1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-900 border border-rose-900/40 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">الساكت 🤐</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="adjustRoleCount('silencer', -1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="count_silencer" class="font-black text-sm text-amber-400">1</span>
+                                        <button type="button" onclick="adjustRoleCount('silencer', 1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- الشخصيات الرئيسية صاحبة المميزات + المواطنين -->
+                        <div>
+                            <div class="text-[11px] font-bold text-emerald-400 mb-1.5">🛡️ أصحاب المميزات والمواطنون:</div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <div class="bg-slate-900 border border-emerald-900/40 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">شيخ القرية 🔍</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="adjustRoleCount('seer', -1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="count_seer" class="font-black text-sm text-emerald-400">1</span>
+                                        <button type="button" onclick="adjustRoleCount('seer', 1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-900 border border-emerald-900/40 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">الطبيب 💉</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="adjustRoleCount('doctor', -1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="count_doctor" class="font-black text-sm text-emerald-400">1</span>
+                                        <button type="button" onclick="adjustRoleCount('doctor', 1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-900 border border-emerald-900/40 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">القناص 🎯</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="adjustRoleCount('sniper', -1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="count_sniper" class="font-black text-sm text-emerald-400">1</span>
+                                        <button type="button" onclick="adjustRoleCount('sniper', 1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-900 border border-slate-700 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">مواطن عادي</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="adjustRoleCount('villager', -1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="count_villager" class="font-black text-sm text-slate-200">2</span>
+                                        <button type="button" onclick="adjustRoleCount('villager', 1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ملخص الإعدادات -->
+                        <div class="bg-slate-900/90 rounded-xl px-3 py-2 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400">إجمالي الشخصيات المحددة: <strong id="totalCustomCount" class="text-amber-400">8</strong></span>
+                            <span id="customBalanceHint" class="text-emerald-400 font-bold">توزيعة متوازنة ✔️</span>
+                        </div>
+                    </div>
+                </div>
+
                 <button onclick="createRoom()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg transition">
-                    + إنشاء غرفة جديدة
+                    + إنشاء غرفة جديدة بهذه الإعدادات
                 </button>
 
                 <div class="relative flex py-1 items-center">
@@ -81,7 +219,7 @@
                 </div>
                 <div>
                     <h2 id="phaseTitle" class="font-bold text-lg text-white">ردهة الانتظار</h2>
-                    <p id="phaseSubtitle" class="text-xs text-slate-400">بانتظار تجمع اللاعبين (5 على الأقل)</p>
+                    <p id="phaseSubtitle" class="text-xs text-slate-400">بانتظار تجمع اللاعبين</p>
                 </div>
             </div>
 
@@ -94,7 +232,7 @@
                     <span id="timerValue" class="font-black text-2xl text-amber-400">--</span>
                     <span class="text-[10px] text-slate-400">ثانية</span>
                 </div>
-                <button onclick="leaveRoomAndClearSession()" title="مغادرة الغرفة وإنهاء الجلسة" class="bg-rose-950/80 hover:bg-rose-800 border border-rose-700/60 text-rose-200 text-xs font-bold px-3 py-3 rounded-xl transition">
+                <button onclick="leaveRoomAndClearSession()" title="مغادرة الغرفة والعودة لشاشة البداية" class="bg-rose-950/80 hover:bg-rose-800 border border-rose-700/60 text-rose-200 text-xs font-bold px-3 py-3 rounded-xl transition">
                     خروج 🚪
                 </button>
             </div>
@@ -117,6 +255,12 @@
                         <div class="text-xs font-bold text-rose-300 mb-2">🔪 أعضاء فريق العصابة وأدوارهم:</div>
                         <div id="mafiaTeammatesList" class="flex flex-wrap gap-2"></div>
                     </div>
+                </div>
+
+                <!-- شريط معلومات التوزيعة والمؤقتات المختارة في الـ Lobby -->
+                <div id="lobbySettingsBanner" class="bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-slate-300 flex flex-wrap items-center justify-between gap-2">
+                    <span id="lobbyConfigSummary">نظام التوزيع: تلقائي متوازن</span>
+                    <span id="lobbyTimersSummary" class="text-indigo-300 font-semibold"></span>
                 </div>
 
                 <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
@@ -164,12 +308,76 @@
         const ROLES_INFO = {
             boss: { name: 'الريس (زعيم العصابة)', shortName: 'الريس', team: 'mafia', desc: 'تختار ضحية الليل وقرارك يطغى على العصابة. تظهر لشيخ القرية كبريء!' },
             mafia: { name: 'فرد عصابة', shortName: 'فرد عصابة', team: 'mafia', desc: 'تصوت ليلاً مع العصابة لاغتيال أحد أهل القرية وتنسق معهم في الشات السري.' },
-            silencer: { name: 'الساكت', shortName: 'الساكت', team: 'mafia', desc: 'عضو في العصابة. تختار لاعباً ليلاً لمنعه من الكلام طوال النهار التالي.' },
+            silencer: { name: 'الساكت', shortName: 'الساكت', team: 'mafia', desc: 'عضو في العصابة. تختار أي لاعب ليلاً (حتى من فريقك) لمنعه من الكلام طوال النهار التالي.' },
             seer: { name: 'شيخ القرية', shortName: 'شيخ القرية', team: 'village', desc: 'تفحص لاعباً واحداً كل ليلة لمعرفة هويته (الريس يظهر كبريء).' },
             doctor: { name: 'الطبيب', shortName: 'الطبيب', team: 'village', desc: 'تحمي لاعباً كل ليلة من القتل (يمكنك حماية أي شخص أو حماية نفسك في أي ليلة).' },
             sniper: { name: 'القناص', shortName: 'القناص', team: 'village', desc: 'تمتلك طلقة واحدة طوال اللعبة لاغتيال من تشك فيه ليلاً.' },
             villager: { name: 'مواطن (أهل القرية)', shortName: 'مواطن', team: 'village', desc: 'لا تملك قدرة ليلية. سلاحك النقاش والتصويت نهاراً لكشف العصابة.' }
         };
+
+        // إعدادات المؤقتات الزمنية الافتراضية (بالثواني)
+        const timerSettings = {
+            night: 45,
+            discussion: 80,
+            voting: 35
+        };
+
+        function adjustTimer(type, delta) {
+            const limits = {
+                night: { min: 15, max: 180 },
+                discussion: { min: 20, max: 300 },
+                voting: { min: 15, max: 120 }
+            };
+            const lim = limits[type];
+            timerSettings[type] = Math.max(lim.min, Math.min(lim.max, timerSettings[type] + delta));
+            document.getElementById('timer_' + type).textContent = timerSettings[type];
+        }
+
+        // إعدادات التخصيص اليدوي للأدوار في الشاشة الرئيسية
+        const roleCounts = {
+            boss: 1,
+            mafia: 1,
+            silencer: 1,
+            seer: 1,
+            doctor: 1,
+            sniper: 1,
+            villager: 2
+        };
+
+        function toggleCustomRolesUI() {
+            const isCustom = document.getElementById('customRolesToggle').checked;
+            document.getElementById('customRolesPanel').classList.toggle('hidden', !isCustom);
+            document.getElementById('autoRolesHint').classList.toggle('hidden', isCustom);
+            updateCustomSummaryUI();
+        }
+
+        function adjustRoleCount(roleKey, delta) {
+            const minVal = 0;
+            const maxVal = (roleKey === 'villager' || roleKey === 'mafia') ? 12 : 3;
+            roleCounts[roleKey] = Math.max(minVal, Math.min(maxVal, roleCounts[roleKey] + delta));
+            document.getElementById('count_' + roleKey).textContent = roleCounts[roleKey];
+            updateCustomSummaryUI();
+        }
+
+        function updateCustomSummaryUI() {
+            const mafiaTotal = roleCounts.boss + roleCounts.mafia + roleCounts.silencer;
+            const villageTotal = roleCounts.seer + roleCounts.doctor + roleCounts.sniper + roleCounts.villager;
+            const total = mafiaTotal + villageTotal;
+
+            document.getElementById('totalCustomCount').textContent = total;
+            const hint = document.getElementById('customBalanceHint');
+
+            if (mafiaTotal === 0) {
+                hint.textContent = '⚠️ يجب وجود فرد عصابة أو ريس واحد على الأقل!';
+                hint.className = 'text-rose-400 font-bold';
+            } else if (mafiaTotal >= villageTotal) {
+                hint.textContent = '⚠️ عدد القرية يجب أن يكون أكبر من العصابة!';
+                hint.className = 'text-amber-400 font-bold';
+            } else {
+                hint.textContent = `عصابة (${mafiaTotal}) ضد قرية (${villageTotal}) ✔️`;
+                hint.className = 'text-emerald-400 font-bold';
+            }
+        }
 
         let db = null;
         let myId = sessionStorage.getItem('village_player_id');
@@ -192,7 +400,6 @@
             return true;
         }
 
-        // استرجاع الغرفة تلقائياً عند عمل Refresh للصفحة
         window.addEventListener('DOMContentLoaded', async () => {
             initFirebase();
             const savedRoom = sessionStorage.getItem('village_room_code');
@@ -202,24 +409,31 @@
             if (savedRoom && myId) {
                 const snap = await db.ref(`rooms/${savedRoom}/players/${myId}`).once('value');
                 if (snap.exists()) {
-                    subscribeToRoom(savedRoom);
+                    document.getElementById('rejoinContainer').classList.remove('hidden');
+                    document.getElementById('rejoinCodeText').textContent = savedRoom;
                 } else {
                     sessionStorage.removeItem('village_room_code');
                 }
             }
         });
 
-        // دالة مسح الجلسة بالكامل وتوليد هوية جديدة
+        function rejoinRoom() {
+            const savedRoom = sessionStorage.getItem('village_room_code');
+            if (savedRoom) {
+                subscribeToRoom(savedRoom);
+            }
+        }
+
         function resetFullSession() {
             sessionStorage.clear();
             myId = 'p_' + Math.random().toString(36).substring(2, 9);
             sessionStorage.setItem('village_player_id', myId);
             document.getElementById('playerNameInput').value = '';
             document.getElementById('roomCodeInput').value = '';
+            document.getElementById('rejoinContainer').classList.add('hidden');
             showToast('تم مسح الجلسة وإنشاء هوية جديدة بنجاح!');
         }
 
-        // دالة الخروج من الغرفة ومسح الجلسة
         async function leaveRoomAndClearSession() {
             if (currentRoomCode && myId) {
                 db.ref('rooms/' + currentRoomCode).off();
@@ -228,7 +442,7 @@
                 }
             }
             if (uiInterval) clearInterval(uiInterval);
-            sessionStorage.clear();
+            sessionStorage.removeItem('village_room_code');
             window.location.reload();
         }
 
@@ -250,10 +464,27 @@
             document.getElementById('modalOverlay').classList.replace('flex', 'hidden');
         }
 
+        function getRoomTimers() {
+            const t = (roomData && roomData.timers) ? roomData.timers : timerSettings;
+            return {
+                night: Number(t.night || 45) * 1000,
+                discussion: Number(t.discussion || 80) * 1000,
+                voting: Number(t.voting || 35) * 1000
+            };
+        }
+
         async function createRoom() {
             initFirebase();
             const name = document.getElementById('playerNameInput').value.trim();
             if (!name) return showToast('أدخل اسمك أولاً');
+
+            const isCustom = document.getElementById('customRolesToggle').checked;
+            if (isCustom) {
+                const mCount = roleCounts.boss + roleCounts.mafia + roleCounts.silencer;
+                const vCount = roleCounts.seer + roleCounts.doctor + roleCounts.sniper + roleCounts.villager;
+                if (mCount === 0) return showToast('يجب اختيار فرد عصابة أو ريس واحد على الأقل!');
+                if (mCount >= vCount) return showToast('يجب أن يكون عدد فريق القرية أكبر من عدد العصابة!');
+            }
 
             const code = Math.random().toString(36).substring(2, 6).toUpperCase();
             const initialData = {
@@ -262,6 +493,15 @@
                 dayCount: 0,
                 phaseEndTime: 0,
                 hostId: myId,
+                timers: {
+                    night: timerSettings.night,
+                    discussion: timerSettings.discussion,
+                    voting: timerSettings.voting
+                },
+                roleConfig: {
+                    isCustom: isCustom,
+                    counts: { ...roleCounts }
+                },
                 players: {
                     [myId]: { id: myId, name, isAlive: true, isMuted: false, role: '', team: '', ammo: 0, lastMutedId: '' }
                 }
@@ -322,17 +562,39 @@
 
         async function hostStartGame() {
             const pList = Object.values(roomData.players || {});
-            if (pList.length < 5) return showToast('الحد الأدنى 5 لاعبين لبدء اللعبة!');
+            const cfg = roomData.roleConfig || { isCustom: false };
 
             let pool = [];
-            if (pList.length === 5) {
-                pool = ['boss', 'mafia', 'doctor', 'seer'];
-            } else if (pList.length <= 7) {
-                pool = ['boss', 'mafia', 'doctor', 'seer', 'silencer'];
+
+            if (cfg.isCustom && cfg.counts) {
+                const c = cfg.counts;
+                const customRolesOrder = ['boss', 'mafia', 'silencer', 'seer', 'doctor', 'sniper', 'villager'];
+                customRolesOrder.forEach(rKey => {
+                    const count = Number(c[rKey] || 0);
+                    for (let i = 0; i < count; i++) pool.push(rKey);
+                });
+
+                if (pList.length < 3) {
+                    return showToast('يجب وجود 3 لاعبين على الأقل للبدء!');
+                }
+
+                while (pool.length < pList.length) {
+                    pool.push('villager');
+                }
+                if (pool.length > pList.length) {
+                    pool = pool.slice(0, pList.length);
+                }
             } else {
-                pool = ['boss', 'mafia', 'silencer', 'doctor', 'seer', 'sniper'];
+                if (pList.length < 5) return showToast('في الوضع التلقائي، الحد الأدنى 5 لاعبين لبدء اللعبة!');
+                if (pList.length === 5) {
+                    pool = ['boss', 'mafia', 'doctor', 'seer'];
+                } else if (pList.length <= 7) {
+                    pool = ['boss', 'mafia', 'doctor', 'seer', 'silencer'];
+                } else {
+                    pool = ['boss', 'mafia', 'silencer', 'doctor', 'seer', 'sniper'];
+                }
+                while (pool.length < pList.length) pool.push('villager');
             }
-            while (pool.length < pList.length) pool.push('villager');
 
             for (let i = pool.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -350,9 +612,10 @@
                 updates[`players/${p.id}/lastMutedId`] = '';
             });
 
+            const roomTimers = getRoomTimers();
             updates['phase'] = 'NIGHT';
             updates['dayCount'] = 1;
-            updates['phaseEndTime'] = Date.now() + 45000;
+            updates['phaseEndTime'] = Date.now() + roomTimers.night;
             updates['nightActions'] = null;
             updates['dayVotes'] = null;
 
@@ -362,10 +625,12 @@
 
         async function advancePhaseByHost() {
             const rRef = db.ref('rooms/' + currentRoomCode);
+            const roomTimers = getRoomTimers();
+
             if (roomData.phase === 'NIGHT') {
                 await resolveNightByHost();
             } else if (roomData.phase === 'DISCUSSION') {
-                await rRef.update({ phase: 'VOTING', phaseEndTime: Date.now() + 35000, dayVotes: null });
+                await rRef.update({ phase: 'VOTING', phaseEndTime: Date.now() + roomTimers.voting, dayVotes: null });
                 pushLog('⚖️ انتهى النقاش وبدأ التصويت على الإعدام!');
             } else if (roomData.phase === 'VOTING') {
                 await resolveVotingByHost();
@@ -376,6 +641,7 @@
             const players = roomData.players || {};
             const actions = roomData.nightActions || {};
             const updates = {};
+            const roomTimers = getRoomTimers();
 
             let mafiaVictim = actions.bossTarget || null;
             if (!mafiaVictim && actions.mafiaVotes) {
@@ -459,7 +725,7 @@
             if (!(await checkWinByHost())) {
                 await db.ref('rooms/' + currentRoomCode).update({
                     phase: 'DISCUSSION',
-                    phaseEndTime: Date.now() + 80000
+                    phaseEndTime: Date.now() + roomTimers.discussion
                 });
             }
         }
@@ -468,6 +734,8 @@
             const players = roomData.players || {};
             const votes = roomData.dayVotes || {};
             const counts = { skip: 0 };
+            const roomTimers = getRoomTimers();
+
             Object.values(votes).forEach(v => counts[v] = (counts[v] || 0) + 1);
 
             let topId = null, max = 0, tie = false;
@@ -492,7 +760,7 @@
                 await db.ref('rooms/' + currentRoomCode).update({
                     phase: 'NIGHT',
                     dayCount: (roomData.dayCount || 1) + 1,
-                    phaseEndTime: Date.now() + 45000,
+                    phaseEndTime: Date.now() + roomTimers.night,
                     nightActions: null,
                     dayVotes: null
                 });
@@ -592,7 +860,7 @@
                 : 'theme-day text-slate-100 min-h-screen flex flex-col';
 
             const phaseNames = {
-                LOBBY: ['ردهة الانتظار', `اللاعبون المتصلون: ${pList.length} (الحد الأدنى 5)`],
+                LOBBY: ['ردهة الانتظار', `اللاعبون المتصلون: ${pList.length}`],
                 NIGHT: [`الليلة ${data.dayCount} 🌙`, 'القرية نائمة.. العصابة وأصحاب القدرات ينفذون مهامهم'],
                 DISCUSSION: [`النقاش النهاري (اليوم ${data.dayCount}) ☀️`, 'تناقشوا لكشف أفراد العصابة قبل التصويت'],
                 VOTING: ['مرحلة التصويت ⚖️', 'صوّت على المشتبه به لإعدامه']
@@ -600,6 +868,31 @@
             const [pTitle, pSub] = phaseNames[data.phase] || ['أهل القرية', ''];
             document.getElementById('phaseTitle').textContent = pTitle;
             document.getElementById('phaseSubtitle').textContent = pSub;
+
+            // عرض ملخص إعدادات الأدوار والمؤقتات في الـ Lobby
+            const lobbyBanner = document.getElementById('lobbySettingsBanner');
+            if (data.phase === 'LOBBY') {
+                lobbyBanner.classList.remove('hidden');
+                if (data.roleConfig && data.roleConfig.isCustom && data.roleConfig.counts) {
+                    const c = data.roleConfig.counts;
+                    const summaryParts = [];
+                    if (c.boss) summaryParts.push(`ريس (${c.boss})`);
+                    if (c.mafia) summaryParts.push(`عصابة (${c.mafia})`);
+                    if (c.silencer) summaryParts.push(`ساكت (${c.silencer})`);
+                    if (c.seer) summaryParts.push(`شيخ (${c.seer})`);
+                    if (c.doctor) summaryParts.push(`طبيب (${c.doctor})`);
+                    if (c.sniper) summaryParts.push(`قناص (${c.sniper})`);
+                    if (c.villager) summaryParts.push(`مواطن (${c.villager})`);
+                    document.getElementById('lobbyConfigSummary').innerHTML = `⚙️ <strong class="text-amber-400">توزيع مخصص:</strong> ${summaryParts.join(' ، ')}`;
+                } else {
+                    document.getElementById('lobbyConfigSummary').innerHTML = `⚙️ <strong class="text-emerald-400">نظام التوزيع:</strong> تلقائي متوازن`;
+                }
+
+                const t = data.timers || { night: 45, discussion: 80, voting: 35 };
+                document.getElementById('lobbyTimersSummary').textContent = `⏱️ الليل: ${t.night}ث | النقاش: ${t.discussion}ث | التصويت: ${t.voting}ث`;
+            } else {
+                lobbyBanner.classList.add('hidden');
+            }
 
             if (data.announcement && data.announcement.id !== lastAnnouncedId) {
                 lastAnnouncedId = data.announcement.id;
@@ -655,7 +948,7 @@
 
             const instruction = document.getElementById('actionInstruction');
             if (data.phase === 'LOBBY') {
-                instruction.textContent = data.hostId === myId ? `أنت مدير الغرفة (${pList.length}/5 لاعبين للبدء)` : 'بانتظار مدير الغرفة لبدء اللعبة...';
+                instruction.textContent = data.hostId === myId ? `أنت مدير الغرفة (المتصلون حالياً: ${pList.length})` : 'بانتظار مدير الغرفة لبدء اللعبة...';
             } else if (!me.isAlive) {
                 instruction.textContent = '💀 لقد قُتلت.. تتابع اللعبة الآن كمشاهد.';
             } else if (data.phase === 'NIGHT') {
@@ -689,9 +982,10 @@
                 if (data.phase === 'NIGHT' && me.isAlive && !hasSubmittedNight && p.isAlive && me.role !== 'villager') {
                     if ((me.role === 'boss' || me.role === 'mafia') && p.team !== 'mafia') {
                         btn = `<button onclick="submitNightAction('${p.id}')" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl">اغتيال 🔪</button>`;
-                    } else if (me.role === 'silencer' && p.team !== 'mafia') {
+                    } else if (me.role === 'silencer' && p.id !== myId) {
                         const isBlocked = (p.id === me.lastMutedId);
-                        btn = `<button ${isBlocked ? 'disabled' : ''} onclick="submitNightAction('${p.id}')" class="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-xs font-bold px-3 py-1.5 rounded-xl">${isBlocked ? 'ممنوع التكرار' : 'إسكات 🤐'}</button>`;
+                        const actionColor = p.team === 'mafia' ? 'bg-purple-600 hover:bg-purple-500' : 'bg-amber-600 hover:bg-amber-500';
+                        btn = `<button ${isBlocked ? 'disabled' : ''} onclick="submitNightAction('${p.id}')" class="${actionColor} disabled:opacity-40 text-white text-xs font-bold px-3 py-1.5 rounded-xl">${isBlocked ? 'ممنوع التكرار' : 'إسكات 🤐'}</button>`;
                     } else if (me.role === 'doctor') {
                         btn = `<button onclick="submitNightAction('${p.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl">حماية 💉</button>`;
                     } else if (me.role === 'seer' && p.id !== myId) {
