@@ -320,7 +320,7 @@
             boss: { name: 'الريس (زعيم العصابة)', shortName: 'الريس', team: 'mafia', desc: 'تختار ضحية الليل وقرارك يطغى على تصويت بقية أفراد العصابة.' },
             mafia: { name: 'فرد عصابة', shortName: 'فرد عصابة', team: 'mafia', desc: 'تصوت ليلاً مع العصابة لاغتيال أحد أهل القرية وتنسق معهم في الشات السري.' },
             silencer: { name: 'الساكت', shortName: 'الساكت', team: 'mafia', desc: 'عضو في العصابة. تختار أي لاعب ليلاً لمنعه من الكلام طوال النهار التالي (وإذا مات باقي العصابة تتولى أنت القتل الليلي).' },
-            seer: { name: 'شيخ القرية', shortName: 'شيخ القرية', team: 'village', desc: 'صوتك يحسب بصوت واحد طالما لم تكشف عن نفسك. يوجد زر بجوار اسمك في النهار (نقاش أو تصويت) لكشف نفسك كشيخ للقرية، وعندها يحسب صوتك بـ 3 أصوات حتى نهاية دور اللعبة الحالي!' },
+            seer: { name: 'شيخ القرية', shortName: 'شيخ القرية', team: 'village', desc: 'صوتك يحسب بصوت واحد طالما لم تكشف عن نفسك. يوجد زر بجوار اسمك في النهار (نقاش أو تصويت) لكشف نفسك كشيخ للقرية، وعندها يحسب صوتك بـ 3 أصوات ويعاد المؤقت والتصويت من البداية!' },
             doctor: { name: 'الطبيب', shortName: 'الطبيب', team: 'village', desc: 'تحمي لاعباً كل ليلة من القتل (يمكنك حماية أي شخص أو حماية نفسك في أي ليلة).' },
             sniper: { name: 'القناص', shortName: 'القناص', team: 'village', desc: 'تمتلك طلقة واحدة طوال اللعبة لاغتيال من تشك فيه ليلاً.' },
             villager: { name: 'مواطن (أهل القرية)', shortName: 'مواطن', team: 'village', desc: 'لا تملك قدرة هجومية، ويظهر لك ليلاً زر "تمويه ليلي" بجوار اسمك للتمويه على باقي اللاعبين والعبور إلى النهار. سلاحك النقاش والتصويت نهاراً لكشف العصابة.' }
@@ -730,7 +730,6 @@
                                 }
                             } else if ((now - Number(roomData.phaseStartTime || 0)) > 4000) {
                                 if (roomData.phase === 'NIGHT') {
-                                    // اشتراط ضغط جميع الأحياء (أصحاب القدرات + المواطنين عبر زر التمويه) للعبور المبكر إلى النهار
                                     const submittedMap = (roomData.nightActions && roomData.nightActions.submitted) || {};
                                     if (alivePlayers.length > 0 && alivePlayers.every(p => submittedMap[p.id])) {
                                         if (!allNightDoneTimestamp) {
@@ -1188,7 +1187,6 @@
 
             const updates = {};
 
-            // إذا كان الزر هو زر التمويه الليلي للمواطن (أو لمن لا يملك قدرة ليلية)، يسجل الحضور فقط دون أي تأثير
             if (targetId !== 'decoy') {
                 const silencerActsAsKiller = (me.role === 'silencer' && !hasAliveKillingMafia(roomData.players));
 
@@ -1222,6 +1220,7 @@
             db.ref('rooms/' + currentRoomCode).update(updates);
         }
 
+        // كشف شيخ القرية لنفسه مع إعادة المؤقت من البداية بالكامل، وحذف الأصوات السابقة إذا كان الكشف في مرحلة التصويت
         async function revealSeerRole() {
             if (!roomData || isRevealingSeer) return;
             const isDayPhase = (roomData.phase === 'DISCUSSION' || roomData.phase === 'VOTING');
@@ -1233,24 +1232,44 @@
             isRevealingSeer = true;
             try {
                 const now = getServerTime();
-                const revealMsg = `📢 كشف ( ${me.name} ) عن نفسه رسمياً بأنه "شيخ القرية"! ومن هذه اللحظة يُحسب صوته بـ 3 أصوات حتى نهاية دور اللعبة الحالي!`;
+                const roomTimers = getRoomTimers();
+                const isVotingPhase = (roomData.phase === 'VOTING');
+
+                let revealLines = [
+                    `📢 كشف ( ${me.name} ) عن نفسه رسمياً بأنه "شيخ القرية"!`,
+                    `⚖️ من هذه اللحظة يُحسب صوته بـ 3 أصوات حتى نهاية دور اللعبة الحالي!`
+                ];
 
                 const updates = {
                     [`players/${myId}/isRevealedSeer`]: true,
-                    announcement: { id: now, text: revealMsg }
+                    phaseStartTime: now
                 };
 
-                if (roomData.phase === 'VOTING') {
-                    allVotesDoneTimestamp = now;
-                    updates['phaseEndTime'] = Math.max(Number(roomData.phaseEndTime || 0), now + 8000);
+                if (isVotingPhase) {
+                    // إعادة مؤقت التصويت من البداية بالكامل وحذف جميع الأصوات السابقة
+                    allVotesDoneTimestamp = 0;
+                    lastVotesSignature = '';
+                    updates['phaseEndTime'] = now + roomTimers.voting;
+                    updates['dayVotes'] = null;
+                    revealLines.push('🔄 تم حذف جميع الأصوات السابقة وإعادة ضبط مؤقت التصويت من البداية.. صوّتوا من جديد!');
+                } else {
+                    // إعادة مؤقت النقاش من البداية بالكامل وتصفير طلبات التخطي
+                    updates['phaseEndTime'] = now + roomTimers.discussion;
+                    updates['skipDiscussVotes'] = null;
+                    revealLines.push('⏱️ تم إعادة ضبط مؤقت النقاش ليبدأ من البداية بالكامل!');
                 }
+
+                const revealMsg = revealLines.join('\n');
+                updates['announcement'] = { id: now, text: revealMsg };
 
                 await db.ref('rooms/' + currentRoomCode).update(updates);
 
-                pushLog(revealMsg);
+                pushLog(revealLines.join(' | '));
                 db.ref(`rooms/${currentRoomCode}/chats`).push({
                     sender: `📢 إعلان شيخ القرية (${me.name})`,
-                    text: `يا أهل القرية، أنا شيخ القرية! صوتي الآن محسوب بـ 3 أصوات حتى نهاية اللعبة!`,
+                    text: isVotingPhase
+                        ? `أنا شيخ القرية! صوتي الآن بـ 3 أصوات، وتم حذف الأصوات السابقة وإعادة وقت التصويت من البداية!`
+                        : `أنا شيخ القرية! صوتي الآن بـ 3 أصوات، وتم إعادة وقت النقاش من البداية!`,
                     channel: 'public'
                 });
             } finally {
@@ -1532,7 +1551,6 @@
                             btn = `<button onclick="submitNightAction('${p.id}')" class="bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl">قنص 🎯</button>`;
                         }
                     } else if (p.id === myId) {
-                        // زر التمويه الليلي يظهر بجوار المواطن نفسه فقط على شاشته الخاصة للعبور إلى النهار
                         btn = `<button onclick="submitNightAction('decoy')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-md transition">تمويه ليلي 🎭</button>`;
                     }
                 } else if (data.phase === 'VOTING' && me.isAlive && p.isAlive && p.id !== myId) {
