@@ -273,24 +273,52 @@
                     <span id="lobbyTimersSummary" class="text-indigo-300 font-semibold"></span>
                 </div>
 
-                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
-                    <span id="actionInstruction" class="text-sm font-semibold text-amber-300">بانتظار مدير الغرفة...</span>
-                    <div class="flex flex-wrap gap-2">
-                        <button id="startGameBtn" onclick="hostStartGame()" class="hidden bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-6 py-2 rounded-xl text-sm">بدء اللعبة ▶</button>
-                        <button id="backToLobbyBtn" onclick="hostBackToLobby()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2 rounded-xl text-sm">تجهيز جولة جديدة 🔄</button>
-                        <button id="skipNightBtn" onclick="submitNightAction('skip')" class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs">تخطي القدرة هذه الليلة</button>
-                        <!-- يظهر فقط في جولة النقاش (DISCUSSION) ويختفي في باقي الجولات -->
-                        <button id="skipDiscussBtn" onclick="voteSkipDiscussion()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs">
-                            <span id="skipDiscussLabel">تخطي النقاش للتصويت</span> (<span id="skipDiscussCounter">0</span>)
-                        </button>
-                        <!-- زر مدير الغرفة لزيادة وقت التصويت بمقدار 1 دقيقة (بحد أقصى 5 دقائق في الجولة) -->
-                        <button id="hostExtendVoteBtn" onclick="hostAddVotingMinute()" class="hidden bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition">
-                            +1 دقيقة للتصويت (<span id="hostExtendVoteCounter">0/5</span>) ⏱️
-                        </button>
-                        <!-- يظهر فقط في جولة التصويت (VOTING) ويختفي في باقي الجولات -->
-                        <button id="skipVoteBtn" onclick="submitDayVote('skip')" class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs">
-                            <span id="skipVoteLabel">تخطي الإعدام</span> (<span id="skipVoteCounter">0</span>)
-                        </button>
+                <!-- شريط الأزرار التفاعلية وأسماء المصوتين بجوار كل زر -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <span id="actionInstruction" class="text-sm font-semibold text-amber-300">بانتظار مدير الغرفة...</span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button id="startGameBtn" onclick="hostStartGame()" class="hidden bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-6 py-2 rounded-xl text-sm">بدء اللعبة ▶</button>
+                            <button id="backToLobbyBtn" onclick="hostBackToLobby()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2 rounded-xl text-sm">تجهيز جولة جديدة 🔄</button>
+                            <button id="skipNightBtn" onclick="submitNightAction('skip')" class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs">تخطي القدرة هذه الليلة</button>
+
+                            <!-- زر تخطي النقاش (يعمل كزر تبديل Toggle) + أسماء المصوتين بجواره -->
+                            <div id="skipDiscussWrapper" class="hidden flex flex-wrap items-center gap-2 bg-slate-950/60 border border-indigo-900/50 p-1.5 rounded-xl">
+                                <button id="skipDiscussBtn" onclick="voteSkipDiscussion()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs">
+                                    <span id="skipDiscussLabel">تخطي النقاش للتصويت</span> (<span id="skipDiscussCounter">0</span>)
+                                </button>
+                                <div id="skipDiscussVotersList" class="flex flex-wrap items-center gap-1 text-[11px]"></div>
+                            </div>
+
+                            <!-- زر مدير الغرفة لزيادة وقت التصويت بمقدار 1 دقيقة (بحد أقصى 5 دقائق في الجولة) -->
+                            <button id="hostExtendVoteBtn" onclick="hostAddVotingMinute()" class="hidden bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition">
+                                +1 دقيقة للتصويت (<span id="hostExtendVoteCounter">0/5</span>) ⏱️
+                            </button>
+
+                            <!-- زر تخطي الإعدام + أسماء المصوتين بجواره -->
+                            <div id="skipVoteWrapper" class="hidden flex flex-wrap items-center gap-2 bg-slate-950/60 border border-slate-700/70 p-1.5 rounded-xl">
+                                <button id="skipVoteBtn" onclick="submitDayVote('skip')" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs">
+                                    <span id="skipVoteLabel">تخطي الإعدام</span> (<span id="skipVoteCounter">0</span>)
+                                </button>
+                                <div id="skipVoteVotersList" class="flex flex-wrap items-center gap-1 text-[11px]"></div>
+                            </div>
+
+                            <!-- زر إنهاء التصويت الآن + أسماء المؤكدين بجواره -->
+                            <div id="finishVotingEarlyWrapper" class="hidden flex flex-wrap items-center gap-2 bg-slate-950/60 border border-teal-800/60 p-1.5 rounded-xl">
+                                <button id="finishVotingEarlyBtn" onclick="confirmFinishVotingEarly()" class="bg-teal-600 hover:bg-teal-500 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs transition">
+                                    <span id="finishVotingEarlyLabel">إنهاء التصويت الآن ⚡</span> (<span id="finishVotingEarlyCounter">0/0</span>)
+                                </button>
+                                <div id="finishVotingEarlyVotersList" class="flex flex-wrap items-center gap-1 text-[11px]"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- سجل الجولة الحالية الحي (يظهر في النقاش والتصويت لتوثيق كل صوت في الجولة) -->
+                    <div id="roundVoteSummaryBox" class="hidden border-t border-slate-800 pt-2.5 text-xs">
+                        <div class="font-bold text-amber-400 mb-1.5 flex items-center gap-1">
+                            <span>📋 سجل تصويت الجولة الحالية:</span>
+                        </div>
+                        <div id="roundVoteSummaryContent" class="flex flex-wrap gap-1.5 text-[11px] text-slate-300"></div>
                     </div>
                 </div>
 
@@ -303,8 +331,8 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-5 flex flex-col gap-4 h-[520px] lg:h-auto">
-                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col min-h-[300px]">
+            <div class="lg:col-span-5 flex flex-col gap-4 h-[560px] lg:h-auto">
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col min-h-[280px]">
                     <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
                         <h3 id="chatHeaderTitle" class="font-bold text-sm text-white">💬 نقاش القرية</h3>
                         <span id="chatStatusBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400">مغلق</span>
@@ -327,8 +355,8 @@
                     </form>
                 </div>
 
-                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 h-44 flex flex-col">
-                    <h3 class="font-bold text-xs text-slate-400 mb-2">📜 سجل الأحداث</h3>
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 h-52 flex flex-col">
+                    <h3 class="font-bold text-xs text-amber-400 mb-2">📜 سجل أحداث اللعبة والجولات</h3>
                     <div id="gameLogs" class="flex-1 overflow-y-auto space-y-1.5 text-xs text-slate-300 pr-1"></div>
                 </div>
             </div>
@@ -734,6 +762,12 @@
             return (playerObj.role === 'seer' && playerObj.isRevealedSeer === true) ? 3 : 1;
         }
 
+        function formatVoterDisplayName(playerObj) {
+            if (!playerObj) return '';
+            const w = getPlayerVoteWeight(playerObj);
+            return w > 1 ? `${playerObj.name} (×${w})` : playerObj.name;
+        }
+
         function evaluateWinCondition(playersObj) {
             const pList = Object.values(playersObj || {});
             const mAlive = pList.filter(p => p.isAlive === true && p.team === 'mafia').length;
@@ -891,6 +925,13 @@
                                 if (alivePlayers.length > 0 && validSkipCount >= majority) {
                                     shouldAdvance = true;
                                 }
+                            } else if (roomData.phase === 'VOTING') {
+                                const rawVotes = roomData.dayVotes || {};
+                                const allVoted = alivePlayers.length > 0 && alivePlayers.every(p => Boolean(rawVotes[p.id]));
+                                const rawConfirmFinish = roomData.finishVoteConfirmations || {};
+                                if (allVoted && alivePlayers.every(p => Boolean(rawConfirmFinish[p.id]))) {
+                                    shouldAdvance = true;
+                                }
                             } else if ((now - Number(roomData.phaseStartTime || 0)) > 4000) {
                                 if (roomData.phase === 'NIGHT') {
                                     const submittedMap = (roomData.nightActions && roomData.nightActions.submitted) || {};
@@ -958,6 +999,7 @@
                 nightActions: null,
                 dayVotes: null,
                 skipDiscussVotes: null,
+                finishVoteConfirmations: null,
                 voteChangeExtended: null,
                 hostVotingBonusMins: null,
                 votingAlert: null,
@@ -1063,6 +1105,7 @@
                 nightActions: null,
                 dayVotes: null,
                 skipDiscussVotes: null,
+                finishVoteConfirmations: null,
                 voteChangeExtended: null,
                 hostVotingBonusMins: null,
                 votingAlert: null,
@@ -1089,7 +1132,8 @@
 
                 const alivePlayers = Object.values(latest.players || {}).filter(p => p.isAlive);
                 const rawSkip = latest.skipDiscussVotes || {};
-                const validSkipCount = alivePlayers.filter(p => rawSkip[p.id]).length;
+                const skipVoterNames = alivePlayers.filter(p => rawSkip[p.id]).map(p => p.name);
+                const validSkipCount = skipVoterNames.length;
                 const majority = Math.floor(alivePlayers.length / 2) + 1;
                 const skippedByMajority = (alivePlayers.length > 0 && validSkipCount >= majority && now < latest.phaseEndTime);
 
@@ -1099,12 +1143,13 @@
                     phaseEndTime: now + roomTimers.voting,
                     dayVotes: null,
                     skipDiscussVotes: null,
+                    finishVoteConfirmations: null,
                     voteChangeExtended: false,
                     hostVotingBonusMins: 0,
                     votingAlert: null
                 });
                 pushLog(skippedByMajority
-                    ? '⏩ اتفق أغلبية الأحياء على إنهاء النقاش والانتقال للتصويت فوراً!'
+                    ? `⏩ اتفق أغلبية الأحياء (${skipVoterNames.join(' ، ')}) على تخطي النقاش والانتقال للتصويت فوراً!`
                     : '⚖️ انتهى وقت النقاش وبدأ التصويت على الإعدام!');
             } else if (roomData.phase === 'VOTING') {
                 await resolveVotingByHost();
@@ -1283,6 +1328,7 @@
             const players = JSON.parse(JSON.stringify(latestRoom.players || {}));
             const votes = latestRoom.dayVotes || {};
             const counts = { skip: 0 };
+            const votersByTarget = { skip: [] };
             const roomTimers = getRoomTimers();
             const now = getServerTime();
 
@@ -1290,10 +1336,14 @@
                 const voter = players[voterId];
                 if (voter && voter.isAlive) {
                     const weight = getPlayerVoteWeight(voter);
+                    const voterLabel = formatVoterDisplayName(voter);
                     if (targetId === 'skip') {
                         counts.skip = (counts.skip || 0) + weight;
+                        votersByTarget.skip.push(voterLabel);
                     } else if (players[targetId] && players[targetId].isAlive) {
                         counts[targetId] = (counts[targetId] || 0) + weight;
+                        if (!votersByTarget[targetId]) votersByTarget[targetId] = [];
+                        votersByTarget[targetId].push(voterLabel);
                     }
                 }
             });
@@ -1305,6 +1355,19 @@
                 else if (c === max && max > 0) tie = true;
             });
 
+            const voteBreakdownParts = [];
+            Object.entries(votersByTarget).forEach(([tId, vNames]) => {
+                if (!vNames || vNames.length === 0) return;
+                if (tId === 'skip') {
+                    voteBreakdownParts.push(`تخطي الإعدام (${counts.skip}): [${vNames.join(' ، ')}]`);
+                } else if (players[tId]) {
+                    voteBreakdownParts.push(`ضد ${players[tId].name} (${counts[tId]}): [${vNames.join(' ، ')}]`);
+                }
+            });
+            const breakdownText = voteBreakdownParts.length > 0
+                ? `📊 تفاصيل التصويت: ${voteBreakdownParts.join(' | ')}`
+                : '📊 لم يصوّت أحد في هذه الجولة.';
+
             let reportLines = [];
             if (!topId || max <= counts.skip || tie) {
                 reportLines.push('⚖️ انتهى التصويت بالتعادل أو التخطي.. لم يُعدم أحد اليوم!');
@@ -1313,6 +1376,7 @@
                 players[topId].deathReason = 'أُعدم بالتصويت ⚖️';
                 reportLines.push(`⚖️ قرر أهل القرية إعدام ( ${players[topId].name} )! وكان دوره: [ ${ROLES_INFO[players[topId].role].name} ]`);
             }
+            reportLines.push(breakdownText);
 
             const winCheck = evaluateWinCondition(players);
             if (winCheck.ended) {
@@ -1328,6 +1392,7 @@
                     lastResolvedVote: currentDay,
                     phase: 'GAME_OVER',
                     phaseEndTime: 0,
+                    finishVoteConfirmations: null,
                     voteChangeExtended: null,
                     hostVotingBonusMins: null,
                     votingAlert: null,
@@ -1345,6 +1410,7 @@
                     phaseEndTime: now + roomTimers.night,
                     nightActions: null,
                     dayVotes: null,
+                    finishVoteConfirmations: null,
                     voteChangeExtended: null,
                     hostVotingBonusMins: null,
                     votingAlert: null,
@@ -1423,6 +1489,7 @@
                 if (isVotingPhase) {
                     updates['phaseEndTime'] = now + roomTimers.voting;
                     updates['dayVotes'] = null;
+                    updates['finishVoteConfirmations'] = null;
                     updates['voteChangeExtended'] = false;
                     revealLines.push('🔄 تم حذف جميع الأصوات السابقة وإعادة ضبط مؤقت التصويت من البداية.. صوّتوا من جديد!');
                 } else {
@@ -1449,13 +1516,41 @@
             }
         }
 
+        // زر تخطي وقت النقاش يعمل كزر تبديل (Toggle): ضغطة لطلب التخطي وضغطة ثانية للتراجع عنه مع توثيق الحدث في السجل
         function voteSkipDiscussion() {
             const me = roomData && roomData.players ? roomData.players[myId] : null;
             if (!me || !me.isAlive || roomData.phase !== 'DISCUSSION') return;
-            db.ref(`rooms/${currentRoomCode}/skipDiscussVotes/${myId}`).set(true);
+
+            const hasVoted = Boolean(roomData.skipDiscussVotes && roomData.skipDiscussVotes[myId]);
+            if (hasVoted) {
+                db.ref(`rooms/${currentRoomCode}/skipDiscussVotes/${myId}`).remove();
+                pushLog(`↩️ [اليوم ${roomData.dayCount}] تراجع (${me.name}) عن طلب تخطي وقت النقاش.`);
+            } else {
+                db.ref(`rooms/${currentRoomCode}/skipDiscussVotes/${myId}`).set(true);
+                pushLog(`⏩ [اليوم ${roomData.dayCount}] صوّت (${me.name}) على تخطي وقت النقاش.`);
+            }
         }
 
-        // التصويت النهاري: إذا كان الجميع قد صوّت وغيّر لاعب صوته في آخر دقيقة، تُضاف دقيقة إضافية لمرة واحدة في الجولة مع إشعار وهزاز للجميع
+        // زر تأكيد إنهاء التصويت مبكراً في الحال مع تسجيل اسم اللاعب في السجل
+        function confirmFinishVotingEarly() {
+            const me = roomData && roomData.players ? roomData.players[myId] : null;
+            if (!me || !me.isAlive || roomData.phase !== 'VOTING') return;
+
+            const alivePlayers = Object.values(roomData.players || {}).filter(p => p.isAlive);
+            const rawVotesMap = roomData.dayVotes || {};
+            const allAliveVoted = alivePlayers.length > 0 && alivePlayers.every(p => Boolean(rawVotesMap[p.id]));
+
+            if (!allAliveVoted) {
+                return showToast('يجب أن يصوّت جميع الأحياء أولاً قبل إنهاء التصويت!', true);
+            }
+
+            if (roomData.finishVoteConfirmations && roomData.finishVoteConfirmations[myId]) return;
+
+            db.ref(`rooms/${currentRoomCode}/finishVoteConfirmations/${myId}`).set(true);
+            pushLog(`⚡ [اليوم ${roomData.dayCount}] وافق (${me.name}) على إنهاء التصويت في الحال.`);
+        }
+
+        // التصويت النهاري (ضد لاعب أو تخطي الإعدام) مع تسجيل التصويت في سجل اللعبة وتفعيل الدقيقة الإضافية عند التغيير في آخر دقيقة
         async function submitDayVote(targetId) {
             const me = roomData && roomData.players ? roomData.players[myId] : null;
             if (!me || !me.isAlive || roomData.phase !== 'VOTING') return;
@@ -1474,8 +1569,25 @@
             const alreadyExtended = Boolean(roomData.voteChangeExtended);
 
             const updates = {
-                [`dayVotes/${myId}`]: targetId
+                [`dayVotes/${myId}`]: targetId,
+                finishVoteConfirmations: null
             };
+
+            const voterTitle = formatVoterDisplayName(me);
+            const targetTitle = targetId === 'skip'
+                ? 'تخطي الإعدام'
+                : (roomData.players[targetId] ? roomData.players[targetId].name : 'لاعب');
+
+            if (isChangingVote) {
+                const prevTitle = myPrevVote === 'skip'
+                    ? 'تخطي الإعدام'
+                    : (roomData.players[myPrevVote] ? roomData.players[myPrevVote].name : 'لاعب');
+                pushLog(`🔄 [اليوم ${roomData.dayCount}] غيّر (${voterTitle}) صوته من [${prevTitle}] إلى [${targetTitle}].`);
+            } else {
+                pushLog(targetId === 'skip'
+                    ? `🏳️ [اليوم ${roomData.dayCount}] صوّت (${voterTitle}) على [تخطي الإعدام].`
+                    : `⚖️ [اليوم ${roomData.dayCount}] صوّت (${voterTitle}) لإعدام [${targetTitle}].`);
+            }
 
             if (allHadVoted && isChangingVote && isLastMinute && !alreadyExtended) {
                 const newEndTime = Number(roomData.phaseEndTime || now) + 60000;
@@ -1542,7 +1654,7 @@
 
         function pushLog(text) {
             db.ref(`rooms/${currentRoomCode}/logs`).push({
-                time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+                time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
                 text
             });
         }
@@ -1685,52 +1797,121 @@
             hostExtendBtn.disabled = (usedBonusMins >= 5);
             document.getElementById('hostExtendVoteCounter').textContent = `${usedBonusMins}/5`;
 
-            // 1. زر تخطي وقت النقاش: يظهر فقط في جولة النقاش (DISCUSSION) ويختفي في باقي الجولات
+            // 1. زر تخطي وقت النقاش (يعمل كزر تبديل Toggle) + عرض أسماء اللاعبين المصوتين بجواره
             const rawSkipDiscuss = data.skipDiscussVotes || {};
-            const validSkipDiscussCount = alivePlayers.filter(p => rawSkipDiscuss[p.id]).length;
+            const skipDiscussVoters = alivePlayers.filter(p => rawSkipDiscuss[p.id]);
+            const validSkipDiscussCount = skipDiscussVoters.length;
             const majorityNeeded = Math.floor(aliveCount / 2) + 1;
             const hasVotedSkipDiscuss = Boolean(rawSkipDiscuss[myId]);
+            const skipDiscussWrapper = document.getElementById('skipDiscussWrapper');
             const skipDiscussBtn = document.getElementById('skipDiscussBtn');
             const skipDiscussLabel = document.getElementById('skipDiscussLabel');
-            const showSkipDiscussBtn = (data.phase === 'DISCUSSION' && Boolean(me.isAlive));
+            const skipDiscussVotersList = document.getElementById('skipDiscussVotersList');
+            const showSkipDiscuss = (data.phase === 'DISCUSSION');
 
             if (hasVotedSkipDiscuss) {
-                skipDiscussBtn.className = 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-bold px-4 py-2 rounded-xl text-xs transition';
-                skipDiscussLabel.textContent = 'تم طلب التخطي ✓';
+                skipDiscussBtn.className = 'bg-amber-500 hover:bg-amber-400 text-slate-950 ring-2 ring-amber-300 font-bold px-3.5 py-1.5 rounded-lg text-xs transition';
+                skipDiscussLabel.textContent = 'تم طلب التخطي ✓ (إلغاء)';
             } else {
-                skipDiscussBtn.className = 'bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition';
+                skipDiscussBtn.className = 'bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs transition';
                 skipDiscussLabel.textContent = 'تخطي النقاش للتصويت';
             }
-            skipDiscussBtn.classList.toggle('hidden', !showSkipDiscussBtn);
+            skipDiscussBtn.disabled = !me.isAlive;
+            skipDiscussWrapper.classList.toggle('hidden', !showSkipDiscuss);
             document.getElementById('skipDiscussCounter').textContent = `${validSkipDiscussCount}/${majorityNeeded}`;
+            skipDiscussVotersList.innerHTML = skipDiscussVoters.length > 0
+                ? `<span class="text-indigo-300 font-bold">المصوتون:</span> ` + skipDiscussVoters.map(v => `<span class="bg-indigo-900/70 border border-indigo-600/60 text-indigo-100 px-2 py-0.5 rounded-md font-semibold">${v.name}</span>`).join('')
+                : `<span class="text-slate-500">لم يصوّت أحد للتخطي بعد</span>`;
 
-            // 2. زر تخطي وقت الإعدام: يظهر فقط في جولة التصويت (VOTING) ويختفي في باقي الجولات
+            // 2. زر تخطي وقت الإعدام + عرض أسماء اللاعبين المصوتين بجواره
             const rawVotesMap = data.dayVotes || {};
             const validVotesEntries = Object.entries(rawVotesMap).filter(([voterId]) => data.players && data.players[voterId] && data.players[voterId].isAlive);
             const myCurrentVote = (me && me.isAlive) ? (rawVotesMap[myId] || null) : null;
 
             let skipWeightedCount = 0;
+            const skipVoteVoters = [];
             validVotesEntries.forEach(([voterId, targetId]) => {
                 if (targetId === 'skip') {
-                    skipWeightedCount += getPlayerVoteWeight(data.players[voterId]);
+                    const voterObj = data.players[voterId];
+                    skipWeightedCount += getPlayerVoteWeight(voterObj);
+                    skipVoteVoters.push(formatVoterDisplayName(voterObj));
                 }
             });
 
+            const skipVoteWrapper = document.getElementById('skipVoteWrapper');
             const skipVoteBtn = document.getElementById('skipVoteBtn');
             const skipVoteLabel = document.getElementById('skipVoteLabel');
-            const showSkipVoteBtn = (data.phase === 'VOTING' && Boolean(me.isAlive));
+            const skipVoteVotersList = document.getElementById('skipVoteVotersList');
+            const showSkipVote = (data.phase === 'VOTING');
 
             if (myCurrentVote === 'skip') {
-                skipVoteBtn.className = 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-bold px-4 py-2 rounded-xl text-xs transition';
+                skipVoteBtn.className = 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-bold px-3.5 py-1.5 rounded-lg text-xs transition';
                 skipVoteLabel.textContent = 'تخطي الإعدام ✓';
             } else {
-                skipVoteBtn.className = 'bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition';
+                skipVoteBtn.className = 'bg-slate-700 hover:bg-slate-600 disabled:opacity-40 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs transition';
                 skipVoteLabel.textContent = 'تخطي الإعدام';
             }
-            skipVoteBtn.classList.toggle('hidden', !showSkipVoteBtn);
+            skipVoteBtn.disabled = !me.isAlive;
+            skipVoteWrapper.classList.toggle('hidden', !showSkipVote);
             document.getElementById('skipVoteCounter').textContent = skipWeightedCount;
+            skipVoteVotersList.innerHTML = skipVoteVoters.length > 0
+                ? `<span class="text-amber-300 font-bold">المصوتون للتخطي:</span> ` + skipVoteVoters.map(vName => `<span class="bg-slate-800 border border-amber-500/50 text-amber-200 px-2 py-0.5 rounded-md font-semibold">${vName}</span>`).join('')
+                : `<span class="text-slate-500">لا أحد</span>`;
 
-            const allAliveVoted = (data.phase === 'VOTING' && alivePlayers.length > 0 && alivePlayers.every(p => rawVotesMap[p.id]));
+            // 3. زر إنهاء التصويت الآن + عرض أسماء اللاعبين المؤكدين بجواره
+            const allAliveVoted = (data.phase === 'VOTING' && alivePlayers.length > 0 && alivePlayers.every(p => Boolean(rawVotesMap[p.id])));
+            const rawConfirmFinish = data.finishVoteConfirmations || {};
+            const confirmFinishVoters = alivePlayers.filter(p => Boolean(rawConfirmFinish[p.id]));
+            const validConfirmFinishCount = confirmFinishVoters.length;
+            const hasConfirmedFinish = Boolean(rawConfirmFinish[myId]);
+            const finishVotingEarlyWrapper = document.getElementById('finishVotingEarlyWrapper');
+            const finishVotingEarlyBtn = document.getElementById('finishVotingEarlyBtn');
+            const finishVotingEarlyLabel = document.getElementById('finishVotingEarlyLabel');
+            const finishVotingEarlyVotersList = document.getElementById('finishVotingEarlyVotersList');
+            const showFinishVotingEarly = (data.phase === 'VOTING' && allAliveVoted);
+
+            if (hasConfirmedFinish) {
+                finishVotingEarlyBtn.className = 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-bold px-3.5 py-1.5 rounded-lg text-xs transition';
+                finishVotingEarlyLabel.textContent = 'تم التأكيد للإنهاء ✓';
+            } else {
+                finishVotingEarlyBtn.className = 'bg-teal-600 hover:bg-teal-500 disabled:opacity-40 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs transition animate-pulse';
+                finishVotingEarlyLabel.textContent = 'إنهاء التصويت الآن ⚡';
+            }
+            finishVotingEarlyBtn.disabled = !me.isAlive;
+            finishVotingEarlyWrapper.classList.toggle('hidden', !showFinishVotingEarly);
+            document.getElementById('finishVotingEarlyCounter').textContent = `${validConfirmFinishCount}/${aliveCount}`;
+            finishVotingEarlyVotersList.innerHTML = confirmFinishVoters.length > 0
+                ? `<span class="text-teal-300 font-bold">موافقون:</span> ` + confirmFinishVoters.map(v => `<span class="bg-teal-950 border border-teal-600/60 text-teal-200 px-2 py-0.5 rounded-md font-semibold">${v.name}</span>`).join('')
+                : `<span class="text-slate-400">بانتظار ضغط الجميع للإنهاء الفوري</span>`;
+
+            // 4. تحديث صندوق "سجل تصويت الجولة الحالية" الحي
+            const roundVoteSummaryBox = document.getElementById('roundVoteSummaryBox');
+            const roundVoteSummaryContent = document.getElementById('roundVoteSummaryContent');
+            if (data.phase === 'DISCUSSION') {
+                roundVoteSummaryBox.classList.remove('hidden');
+                if (skipDiscussVoters.length > 0) {
+                    roundVoteSummaryContent.innerHTML = skipDiscussVoters.map(v => `<span class="bg-slate-800 border border-indigo-500/40 px-2.5 py-1 rounded-lg">⏩ <strong>${v.name}</strong> طلب تخطي النقاش</span>`).join('');
+                } else {
+                    roundVoteSummaryContent.innerHTML = `<span class="text-slate-500">لم يطلب أحد تخطي النقاش في هذه الجولة حتى الآن.</span>`;
+                }
+            } else if (data.phase === 'VOTING') {
+                roundVoteSummaryBox.classList.remove('hidden');
+                if (validVotesEntries.length > 0) {
+                    roundVoteSummaryContent.innerHTML = validVotesEntries.map(([voterId, targetId]) => {
+                        const voterObj = data.players[voterId];
+                        const voterLabel = formatVoterDisplayName(voterObj);
+                        if (targetId === 'skip') {
+                            return `<span class="bg-slate-800 border border-amber-500/40 px-2.5 py-1 rounded-lg">🏳️ <strong>${voterLabel}</strong> ⬅️ <span class="text-amber-300">تخطي الإعدام</span></span>`;
+                        }
+                        const targetName = data.players[targetId] ? data.players[targetId].name : 'لاعب';
+                        return `<span class="bg-slate-800 border border-rose-500/40 px-2.5 py-1 rounded-lg">⚖️ <strong>${voterLabel}</strong> ⬅️ ضد <strong class="text-rose-400">${targetName}</strong></span>`;
+                    }).join('');
+                } else {
+                    roundVoteSummaryContent.innerHTML = `<span class="text-slate-500">لم يدلِ أي لاعب بصوته في هذه الجولة حتى الآن.</span>`;
+                }
+            } else {
+                roundVoteSummaryBox.classList.add('hidden');
+            }
 
             const instruction = document.getElementById('actionInstruction');
             if (data.phase === 'LOBBY') {
@@ -1755,9 +1936,7 @@
                     : '🗣️ وقت النقاش النهاري مفتوح.. اكشفوا الخونة!';
             } else if (data.phase === 'VOTING') {
                 instruction.textContent = allAliveVoted
-                    ? (data.voteChangeExtended
-                        ? '✅ صوّت الجميع! يستمر التصويت حتى انتهاء المؤقت (تم استنفاد الدقيقة الإضافية لتغيير الصوت).'
-                        : '✅ صوّت الجميع! يستمر التصويت حتى انتهاء المؤقت (تغيير الصوت في آخر دقيقة يضيف +1 د لمرة واحدة).')
+                    ? '✅ صوّت الجميع! اضغطوا على "إنهاء التصويت الآن ⚡" لحسم النتيجة فوراً دون انتظار المؤقت.'
                     : '⚖️ صوّت على المشتبه به لإعدامه!';
             }
 
@@ -1766,9 +1945,12 @@
 
             pList.forEach(p => {
                 let pWeightedVotesCount = 0;
+                const votersAgainstThisPlayer = [];
                 validVotesEntries.forEach(([voterId, targetId]) => {
                     if (targetId === p.id) {
-                        pWeightedVotesCount += getPlayerVoteWeight(data.players[voterId]);
+                        const voterObj = data.players[voterId];
+                        pWeightedVotesCount += getPlayerVoteWeight(voterObj);
+                        votersAgainstThisPlayer.push(formatVoterDisplayName(voterObj));
                     }
                 });
 
@@ -1806,6 +1988,16 @@
                 }
 
                 if (p.isAlive && p.isMuted) badges += `<span class="text-[10px] bg-rose-500/30 text-rose-300 px-2 py-0.5 rounded-md">مُسكت 🤐</span>`;
+
+                let votersAgainstHtml = '';
+                if (data.phase === 'VOTING' && p.isAlive && votersAgainstThisPlayer.length > 0) {
+                    votersAgainstHtml = `
+                        <div class="flex flex-wrap items-center gap-1 mt-1">
+                            <span class="text-[10px] text-rose-300 font-bold">🗳️ صوّت ضده:</span>
+                            ${votersAgainstThisPlayer.map(vName => `<span class="text-[10px] bg-rose-950/90 border border-rose-500/60 text-rose-200 px-2 py-0.5 rounded-md font-bold">${vName}</span>`).join('')}
+                        </div>
+                    `;
+                }
 
                 let btn = '';
                 if (data.phase === 'NIGHT' && me.isAlive && !hasSubmittedNight && p.isAlive) {
@@ -1848,14 +2040,15 @@
 
                 grid.innerHTML += `
                     <div class="p-3.5 rounded-2xl border flex items-center justify-between ${!p.isAlive ? 'bg-slate-950/60 border-slate-800 opacity-80' : (isTeammateMafia ? 'bg-rose-950/30 border-rose-700/60' : 'bg-slate-800/90 border-slate-700')}">
-                        <div class="flex flex-col gap-1.5">
+                        <div class="flex flex-col gap-1">
                             <div class="flex flex-wrap items-center gap-1.5">
                                 <span class="font-bold text-sm ${!p.isAlive ? 'text-slate-300 line-through' : 'text-white'}">${p.name}</span>
                                 ${exitAndRoleInline}
                             </div>
                             <div class="flex flex-wrap gap-1">${badges}</div>
+                            ${votersAgainstHtml}
                         </div>
-                        <div class="flex flex-wrap items-center justify-end gap-1.5">${seerSelfRevealBtn}${btn}${hostKickBtn}</div>
+                        <div class="flex flex-wrap items-center justify-end gap-1.5 shrink-0">${seerSelfRevealBtn}${btn}${hostKickBtn}</div>
                     </div>`;
             });
 
@@ -1894,8 +2087,8 @@
 
             const logBox = document.getElementById('gameLogs');
             logBox.innerHTML = '';
-            Object.values(data.logs || {}).slice(-25).forEach(l => {
-                logBox.innerHTML += `<div>[${l.time}] ${l.text}</div>`;
+            Object.values(data.logs || {}).slice(-60).forEach(l => {
+                logBox.innerHTML += `<div class="border-b border-slate-800/60 pb-1">[${l.time}] ${l.text}</div>`;
             });
             logBox.scrollTop = logBox.scrollHeight;
         }
