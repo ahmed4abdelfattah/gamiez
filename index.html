@@ -9,22 +9,38 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Cairo', sans-serif; transition: background 0.5s ease; }
+        body { font-family: 'Cairo', sans-serif; transition: background 0.5s ease; overflow-x: hidden; }
         .theme-night { background: radial-gradient(circle at top, #0f172a 0%, #020617 100%); }
         .theme-day { background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%); }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+        @keyframes screenShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px) rotate(-0.4deg); }
+            40%, 80% { transform: translateX(6px) rotate(0.4deg); }
+        }
+        .shake-effect { animation: screenShake 0.45s ease-in-out; }
     </style>
 </head>
 <body class="theme-night text-slate-100 min-h-screen flex flex-col">
 
-    <!-- تنبيه علوي -->
-    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 hidden bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl font-bold text-sm text-center"></div>
+    <!-- عنصر مخفي لتفعيل محرك الاهتزاز Taptic Engine على هواتف iPhone (iOS 18+ Safari) -->
+    <div class="fixed -top-96 left-0 opacity-0 pointer-events-none" aria-hidden="true">
+        <input type="checkbox" id="iosHapticSwitch" switch>
+        <label for="iosHapticSwitch" id="iosHapticLabel"></label>
+    </div>
+
+    <!-- إشعار علوي ذكي يختفي بعد 3 ثوانٍ أو بزر إغلاق X ويدعم هزاز الموبايل -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 hidden bg-slate-900/95 border-2 border-amber-400 text-white px-4 py-3 rounded-2xl shadow-2xl font-bold text-xs sm:text-sm items-center gap-3 max-w-md w-[92%] transition-all">
+        <span id="toastText" class="flex-1 text-right leading-relaxed"></span>
+        <button type="button" onclick="hideToast()" class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-black text-xs transition shrink-0" title="إغلاق">✕</button>
+    </div>
 
     <!-- نافذة الإعلانات -->
     <div id="modalOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl">
+        <div id="modalBox" class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl">
             <div id="modalIcon" class="text-5xl mb-3">🌅</div>
             <h3 id="modalTitle" class="text-xl font-bold text-amber-400 mb-2">تقرير القرية</h3>
             <p id="modalBody" class="text-slate-200 leading-relaxed mb-6 whitespace-pre-line text-sm"></p>
@@ -58,31 +74,31 @@
                 <!-- قسم التحكم في مؤقتات المراحل -->
                 <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
                     <div class="text-xs font-bold text-indigo-300 mb-2.5 flex items-center gap-1">
-                        ⏱️ إعدادات مؤقتات اللعب (بالثواني)
+                        ⏱️ إعدادات مؤقتات اللعب
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <div class="bg-slate-900 border border-indigo-900/50 rounded-xl p-2 text-center">
                             <span class="text-[11px] text-slate-300 block mb-1">وقت الليل 🌙</span>
-                            <div class="flex items-center justify-center gap-2">
+                            <div class="flex items-center justify-center gap-1.5">
                                 <button type="button" onclick="adjustTimer('night', -5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
-                                <span id="timer_night" class="font-black text-sm text-indigo-400">45</span>
+                                <span id="timer_night" class="font-black text-xs sm:text-sm text-indigo-400">45 ث</span>
                                 <button type="button" onclick="adjustTimer('night', 5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
                             </div>
                         </div>
                         <div class="bg-slate-900 border border-amber-900/50 rounded-xl p-2 text-center">
-                            <span class="text-[11px] text-slate-300 block mb-1">النقاش النهاري ☀️</span>
-                            <div class="flex items-center justify-center gap-2">
-                                <button type="button" onclick="adjustTimer('discussion', -10)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
-                                <span id="timer_discussion" class="font-black text-sm text-amber-400">80</span>
-                                <button type="button" onclick="adjustTimer('discussion', 10)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                            <span class="text-[11px] text-slate-300 block mb-1">النقاش (دقائق) ☀️</span>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button type="button" onclick="adjustTimer('discussion', -60)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                <span id="timer_discussion" class="font-black text-xs sm:text-sm text-amber-400">2 د</span>
+                                <button type="button" onclick="adjustTimer('discussion', 60)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
                             </div>
                         </div>
                         <div class="bg-slate-900 border border-rose-900/50 rounded-xl p-2 text-center">
                             <span class="text-[11px] text-slate-300 block mb-1">وقت التصويت ⚖️</span>
-                            <div class="flex items-center justify-center gap-2">
-                                <button type="button" onclick="adjustTimer('voting', -5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
-                                <span id="timer_voting" class="font-black text-sm text-rose-400">35</span>
-                                <button type="button" onclick="adjustTimer('voting', 5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button type="button" onclick="adjustTimer('voting', -30)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                <span id="timer_voting" class="font-black text-xs sm:text-sm text-rose-400">5 د</span>
+                                <button type="button" onclick="adjustTimer('voting', 30)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
                             </div>
                         </div>
                     </div>
@@ -223,9 +239,9 @@
                     <span class="text-xs text-indigo-300 block">دورك السري</span>
                     <span id="myRoleName" class="font-bold text-sm text-white">---</span>
                 </div>
-                <div class="bg-slate-800 border border-slate-700 w-16 h-16 rounded-2xl flex flex-col items-center justify-center">
-                    <span id="timerValue" class="font-black text-2xl text-amber-400">--</span>
-                    <span class="text-[10px] text-slate-400">ثانية</span>
+                <div class="bg-slate-800 border border-slate-700 min-w-[4.5rem] px-3 h-16 rounded-2xl flex flex-col items-center justify-center">
+                    <span id="timerValue" class="font-black text-xl sm:text-2xl text-amber-400 tracking-wider">--</span>
+                    <span id="timerUnitLabel" class="text-[10px] text-slate-400">ثانية</span>
                 </div>
                 <button onclick="leaveRoomAndClearSession()" title="مغادرة الغرفة والعودة لشاشة البداية" class="bg-rose-950/80 hover:bg-rose-800 border border-rose-700/60 text-rose-200 text-xs font-bold px-3 py-3 rounded-xl transition">
                     خروج 🚪
@@ -265,6 +281,10 @@
                         <button id="skipNightBtn" onclick="submitNightAction('skip')" class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs">تخطي القدرة هذه الليلة</button>
                         <button id="skipDiscussBtn" onclick="voteSkipDiscussion()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs">
                             <span id="skipDiscussLabel">تخطي النقاش للتصويت</span> (<span id="skipDiscussCounter">0</span>)
+                        </button>
+                        <!-- زر مدير الغرفة لزيادة وقت التصويت بمقدار 1 دقيقة (بحد أقصى 5 دقائق في الجولة) -->
+                        <button id="hostExtendVoteBtn" onclick="hostAddVotingMinute()" class="hidden bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition">
+                            +1 دقيقة للتصويت (<span id="hostExtendVoteCounter">0/5</span>) ⏱️
                         </button>
                         <button id="skipVoteBtn" onclick="submitDayVote('skip')" class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs">
                             <span id="skipVoteLabel">تخطي الإعدام</span> (<span id="skipVoteCounter">0</span>)
@@ -326,21 +346,42 @@
             villager: { name: 'مواطن (أهل القرية)', shortName: 'مواطن', team: 'village', desc: 'لا تملك قدرة هجومية، ويظهر لك ليلاً زر "تمويه ليلي" بجوار اسمك للتمويه على باقي اللاعبين والعبور إلى النهار. سلاحك النقاش والتصويت نهاراً لكشف العصابة.' }
         };
 
+        // تخزين المؤقتات بالثواني داخلياً:
+        // الليل: 45 ثانية | النقاش: 120 ثانية (2 دقيقة، وبحد أقصى 60 دقيقة) | التصويت: 300 ثانية (5 دقائق افتراضياً، بين 30 ثانية و10 دقائق)
         const timerSettings = {
             night: 45,
-            discussion: 80,
-            voting: 35
+            discussion: 120,
+            voting: 300
         };
+
+        function formatDurationSetting(sec) {
+            const s = Number(sec || 0);
+            if (s < 60) return `${s} ث`;
+            const mins = Math.floor(s / 60);
+            const remSec = s % 60;
+            if (remSec === 0) return `${mins} د`;
+            return `${mins}:${remSec < 10 ? '0' + remSec : remSec} د`;
+        }
+
+        function formatCountdownClock(sec) {
+            const s = Math.max(0, Number(sec || 0));
+            if (s < 60) return { text: String(s), unit: 'ثانية' };
+            const mins = Math.floor(s / 60);
+            const remSec = s % 60;
+            const mm = mins < 10 ? '0' + mins : String(mins);
+            const ss = remSec < 10 ? '0' + remSec : String(remSec);
+            return { text: `${mm}:${ss}`, unit: 'دقيقة:ثانية' };
+        }
 
         function adjustTimer(type, delta) {
             const limits = {
-                night: { min: 15, max: 180 },
-                discussion: { min: 20, max: 300 },
-                voting: { min: 15, max: 120 }
+                night: { min: 15, max: 180 },       // من 15 ثانية إلى 180 ثانية
+                discussion: { min: 60, max: 3600 }, // من 1 دقيقة (60ث) إلى 60 دقيقة / ساعة (3600ث)
+                voting: { min: 30, max: 600 }       // من 30 ثانية إلى 10 دقائق (600ث)
             };
             const lim = limits[type];
             timerSettings[type] = Math.max(lim.min, Math.min(lim.max, timerSettings[type] + delta));
-            document.getElementById('timer_' + type).textContent = timerSettings[type];
+            document.getElementById('timer_' + type).textContent = formatDurationSetting(timerSettings[type]);
         }
 
         const roleCounts = {
@@ -399,12 +440,122 @@
         let currentRoomCode = null;
         let roomData = null;
         let uiInterval = null;
-        let lastAnnouncedId = null;
+        // حفظ معرفات الإعلانات والتنبيهات في sessionStorage لمنع تكرارها أو تكرار الاهتزاز عند تحديث الصفحة (F5)
+        let lastAnnouncedId = Number(sessionStorage.getItem('village_last_announced_id') || 0);
+        let lastVotingAlertId = Number(sessionStorage.getItem('village_last_voting_alert_id') || 0);
         let allNightDoneTimestamp = 0;
-        let allVotesDoneTimestamp = 0;
-        let lastVotesSignature = '';
         let isTransitioning = false;
         let isRevealingSeer = false;
+        let toastTimeout = null;
+        let sharedAudioCtx = null;
+
+        // فتح قناة الصوت في متصفح Safari/Chrome عند أول لمسة للمستخدم لتعمل التنبيهات الصوتية لاحقاً
+        function unlockAudioContext() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!sharedAudioCtx) {
+                    sharedAudioCtx = new AudioCtx();
+                }
+                if (sharedAudioCtx.state === 'suspended') {
+                    sharedAudioCtx.resume();
+                }
+            } catch (e) {}
+        }
+        window.addEventListener('touchstart', unlockAudioContext, { once: true, passive: true });
+        window.addEventListener('click', unlockAudioContext, { once: true });
+
+        function playAlertTone(isHeavy = false) {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!sharedAudioCtx) sharedAudioCtx = new AudioCtx();
+                if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+
+                const osc = sharedAudioCtx.createOscillator();
+                const gain = sharedAudioCtx.createGain();
+                osc.type = isHeavy ? 'triangle' : 'sine';
+                osc.frequency.setValueAtTime(isHeavy ? 520 : 440, sharedAudioCtx.currentTime);
+                if (isHeavy) {
+                    osc.frequency.exponentialRampToValueAtTime(880, sharedAudioCtx.currentTime + 0.28);
+                }
+
+                gain.gain.setValueAtTime(0.14, sharedAudioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, sharedAudioCtx.currentTime + 0.35);
+
+                osc.connect(gain);
+                gain.connect(sharedAudioCtx.destination);
+                osc.start();
+                osc.stop(sharedAudioCtx.currentTime + 0.35);
+            } catch (e) {}
+        }
+
+        function triggerScreenShake() {
+            document.body.classList.remove('shake-effect');
+            void document.body.offsetWidth; // إعادة تفعيل الأنيميشن
+            document.body.classList.add('shake-effect');
+            setTimeout(() => {
+                document.body.classList.remove('shake-effect');
+            }, 500);
+        }
+
+        // دالة موحدة للاهتزاز تعمل على Android (navigator.vibrate) و iPhone iOS 18+ (Taptic Switch) مع اهتزاز الشاشة ونغمة التنبيه
+        function triggerMobileVibration(pattern = [250, 100, 250], isHeavyAlert = false) {
+            triggerScreenShake();
+            playAlertTone(isHeavyAlert);
+
+            // 1. لهواتف أندرويد والمتصفحات الداعمة لـ Vibration API
+            let vibratedNatively = false;
+            if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+                try {
+                    vibratedNatively = navigator.vibrate(pattern);
+                } catch (e) {}
+            }
+
+            // 2. لهواتف آيفون (iOS Safari): تفعيل محرك Taptic Engine عبر عنصر switch المخفي
+            if (!vibratedNatively) {
+                const iosLabel = document.getElementById('iosHapticLabel');
+                if (iosLabel) {
+                    const pulses = isHeavyAlert ? [0, 120, 240, 360] : [0, 140];
+                    pulses.forEach(delay => {
+                        setTimeout(() => {
+                            try { iosLabel.click(); } catch (e) {}
+                        }, delay);
+                    });
+                }
+            }
+        }
+
+        function hideToast() {
+            const t = document.getElementById('toast');
+            if (t) {
+                t.classList.remove('flex');
+                t.classList.add('hidden');
+            }
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+                toastTimeout = null;
+            }
+        }
+
+        // إشعار يظهر ويختفي تلقائياً بعد 3 ثوانٍ أو بزر X مع تشغيل هزاز الموبايل إن كان متاحاً
+        function showToast(msg, withVibrate = false, duration = 3000) {
+            const t = document.getElementById('toast');
+            const txt = document.getElementById('toastText');
+            if (!t || !txt) return;
+            txt.textContent = msg;
+            t.classList.remove('hidden');
+            t.classList.add('flex');
+
+            if (withVibrate) {
+                triggerMobileVibration([250, 100, 250], false);
+            }
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                hideToast();
+            }, duration);
+        }
 
         function initFirebase() {
             if (!db) {
@@ -449,6 +600,8 @@
             sessionStorage.clear();
             myId = 'p_' + Math.random().toString(36).substring(2, 9);
             sessionStorage.setItem('village_player_id', myId);
+            lastAnnouncedId = 0;
+            lastVotingAlertId = 0;
             document.getElementById('playerNameInput').value = '';
             document.getElementById('roomCodeInput').value = '';
             document.getElementById('rejoinContainer').classList.add('hidden');
@@ -510,6 +663,8 @@
             }
             if (uiInterval) clearInterval(uiInterval);
             sessionStorage.removeItem('village_room_code');
+            sessionStorage.removeItem('village_last_announced_id');
+            sessionStorage.removeItem('village_last_voting_alert_id');
             window.location.reload();
         }
 
@@ -540,13 +695,6 @@
             }
         }
 
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 4000);
-        }
-
         function showModal(title, body, icon = '🌅') {
             document.getElementById('modalIcon').textContent = icon;
             document.getElementById('modalTitle').textContent = title;
@@ -562,8 +710,8 @@
             const t = (roomData && roomData.timers) ? roomData.timers : timerSettings;
             return {
                 night: Number(t.night || 45) * 1000,
-                discussion: Number(t.discussion || 80) * 1000,
-                voting: Number(t.voting || 35) * 1000
+                discussion: Number(t.discussion || 120) * 1000,
+                voting: Number(t.voting || 300) * 1000
             };
         }
 
@@ -604,14 +752,14 @@
         async function createRoom() {
             initFirebase();
             const name = document.getElementById('playerNameInput').value.trim();
-            if (!name) return showToast('أدخل اسمك أولاً');
+            if (!name) return showToast('أدخل اسمك أولاً', true);
 
             const isCustom = document.getElementById('customRolesToggle').checked;
             if (isCustom) {
                 const mCount = roleCounts.boss + roleCounts.mafia + roleCounts.silencer;
                 const vCount = roleCounts.seer + roleCounts.doctor + roleCounts.sniper + roleCounts.villager;
-                if (mCount === 0) return showToast('يجب اختيار فرد عصابة أو ريس واحد على الأقل!');
-                if (mCount >= vCount) return showToast('يجب أن يكون عدد فريق القرية أكبر من عدد العصابة!');
+                if (mCount === 0) return showToast('يجب اختيار فرد عصابة أو ريس واحد على الأقل!', true);
+                if (mCount >= vCount) return showToast('يجب أن يكون عدد فريق القرية أكبر من عدد العصابة!', true);
             }
 
             const code = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -649,13 +797,13 @@
             initFirebase();
             const name = document.getElementById('playerNameInput').value.trim();
             const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-            if (!name || !code) return showToast('أدخل الاسم وكود الغرفة');
+            if (!name || !code) return showToast('أدخل الاسم وكود الغرفة', true);
 
             const snap = await db.ref('rooms/' + code).once('value');
-            if (!snap.exists()) return showToast('الغرفة غير موجودة!');
+            if (!snap.exists()) return showToast('الغرفة غير موجودة!', true);
             const data = snap.val();
             if (data.phase !== 'LOBBY' && data.phase !== 'GAME_OVER' && (!data.players || !data.players[myId])) {
-                return showToast('اللعبة جارية بالفعل في هذه الغرفة! انتظر حتى تنتهي الجولة.');
+                return showToast('اللعبة جارية بالفعل في هذه الغرفة! انتظر حتى تنتهي الجولة.', true);
             }
 
             sessionStorage.setItem('village_room_code', code);
@@ -690,8 +838,6 @@
 
                 if (roomData.phase === 'LOBBY') {
                     allNightDoneTimestamp = 0;
-                    allVotesDoneTimestamp = 0;
-                    lastVotesSignature = '';
                     isRevealingSeer = false;
                 }
                 renderRoom(roomData);
@@ -702,7 +848,14 @@
                 if (!roomData) return;
                 const now = getServerTime();
                 const rem = Math.max(0, Math.ceil((roomData.phaseEndTime - now) / 1000));
-                document.getElementById('timerValue').textContent = (roomData.phase === 'LOBBY' || roomData.phase === 'GAME_OVER') ? '--' : rem;
+                if (roomData.phase === 'LOBBY' || roomData.phase === 'GAME_OVER') {
+                    document.getElementById('timerValue').textContent = '--';
+                    document.getElementById('timerUnitLabel').textContent = 'ثانية';
+                } else {
+                    const formatted = formatCountdownClock(rem);
+                    document.getElementById('timerValue').textContent = formatted.text;
+                    document.getElementById('timerUnitLabel').textContent = formatted.unit;
+                }
 
                 if (roomData.phase !== 'LOBBY' && roomData.phase !== 'GAME_OVER' && !isTransitioning) {
                     const isHost = (roomData.hostId === myId);
@@ -740,20 +893,6 @@
                                     } else {
                                         allNightDoneTimestamp = 0;
                                     }
-                                } else if (roomData.phase === 'VOTING') {
-                                    const votesMap = roomData.dayVotes || {};
-                                    if (alivePlayers.length > 0 && alivePlayers.every(p => votesMap[p.id])) {
-                                        const currentSig = alivePlayers.map(p => `${p.id}:${votesMap[p.id]}:${getPlayerVoteWeight(p)}`).sort().join('|');
-                                        if (!allVotesDoneTimestamp || currentSig !== lastVotesSignature) {
-                                            allVotesDoneTimestamp = now;
-                                            lastVotesSignature = currentSig;
-                                        } else if (now - allVotesDoneTimestamp >= 5000) {
-                                            shouldAdvance = true;
-                                        }
-                                    } else {
-                                        allVotesDoneTimestamp = 0;
-                                        lastVotesSignature = '';
-                                    }
                                 }
                             }
                         }
@@ -761,8 +900,6 @@
                         if (shouldAdvance) {
                             isTransitioning = true;
                             allNightDoneTimestamp = 0;
-                            allVotesDoneTimestamp = 0;
-                            lastVotesSignature = '';
                             try {
                                 if (isBackupFailover) {
                                     await db.ref(`rooms/${currentRoomCode}/hostId`).set(myId);
@@ -795,7 +932,10 @@
                     isRevealedSeer: false
                 };
             });
-            lastAnnouncedId = null;
+            lastAnnouncedId = 0;
+            lastVotingAlertId = 0;
+            sessionStorage.removeItem('village_last_announced_id');
+            sessionStorage.removeItem('village_last_voting_alert_id');
             isRevealingSeer = false;
             await db.ref('rooms/' + currentRoomCode).update({
                 phase: 'LOBBY',
@@ -806,6 +946,9 @@
                 nightActions: null,
                 dayVotes: null,
                 skipDiscussVotes: null,
+                voteChangeExtended: null,
+                hostVotingBonusMins: null,
+                votingAlert: null,
                 announcement: null
             });
         }
@@ -816,7 +959,7 @@
             const totalPlayers = pList.length;
 
             if (totalPlayers < 4) {
-                return showToast('يجب وجود 4 لاعبين على الأقل في الغرفة لبدء اللعبة!');
+                return showToast('يجب وجود 4 لاعبين على الأقل في الغرفة لبدء اللعبة!', true);
             }
 
             const cfg = roomData.roleConfig || { isCustom: false };
@@ -889,9 +1032,10 @@
             const roomTimers = getRoomTimers();
             const now = getServerTime();
             allNightDoneTimestamp = 0;
-            allVotesDoneTimestamp = 0;
-            lastVotesSignature = '';
-            lastAnnouncedId = null;
+            lastAnnouncedId = 0;
+            lastVotingAlertId = 0;
+            sessionStorage.removeItem('village_last_announced_id');
+            sessionStorage.removeItem('village_last_voting_alert_id');
             isRevealingSeer = false;
 
             await db.ref('rooms/' + currentRoomCode).update({
@@ -905,6 +1049,9 @@
                 nightActions: null,
                 dayVotes: null,
                 skipDiscussVotes: null,
+                voteChangeExtended: null,
+                hostVotingBonusMins: null,
+                votingAlert: null,
                 chats: null,
                 logs: null,
                 announcement: null
@@ -937,7 +1084,10 @@
                     phaseStartTime: now,
                     phaseEndTime: now + roomTimers.voting,
                     dayVotes: null,
-                    skipDiscussVotes: null
+                    skipDiscussVotes: null,
+                    voteChangeExtended: false,
+                    hostVotingBonusMins: 0,
+                    votingAlert: null
                 });
                 pushLog(skippedByMajority
                     ? '⏩ اتفق أغلبية الأحياء على إنهاء النقاش والانتقال للتصويت فوراً!'
@@ -1161,6 +1311,9 @@
                     lastResolvedVote: currentDay,
                     phase: 'GAME_OVER',
                     phaseEndTime: 0,
+                    voteChangeExtended: null,
+                    hostVotingBonusMins: null,
+                    votingAlert: null,
                     announcement: { id: now, text: fullMsg }
                 });
                 pushLog(reportLines.join(' | '));
@@ -1175,6 +1328,9 @@
                     phaseEndTime: now + roomTimers.night,
                     nightActions: null,
                     dayVotes: null,
+                    voteChangeExtended: null,
+                    hostVotingBonusMins: null,
+                    votingAlert: null,
                     announcement: { id: now, text: fullMsg }
                 });
                 pushLog(reportLines.join(' | '));
@@ -1191,7 +1347,7 @@
                 const silencerActsAsKiller = (me.role === 'silencer' && !hasAliveKillingMafia(roomData.players));
 
                 if (targetId !== 'skip' && me.role === 'silencer' && !silencerActsAsKiller && targetId === me.lastMutedId) {
-                    return showToast('لا يمكنك إسكات نفس الشخص ليلتين متتاليتين!');
+                    return showToast('لا يمكنك إسكات نفس الشخص ليلتين متتاليتين!', true);
                 }
 
                 if (me.role === 'boss') {
@@ -1220,16 +1376,19 @@
             db.ref('rooms/' + currentRoomCode).update(updates);
         }
 
-        // كشف شيخ القرية لنفسه مع إعادة المؤقت من البداية بالكامل، وحذف الأصوات السابقة إذا كان الكشف في مرحلة التصويت
+        // كشف شيخ القرية لنفسه مع تشغيل هزاز الموبايل (أندرويد وآيفون) وإعادة المؤقت من البداية بالكامل وحذف الأصوات السابقة
         async function revealSeerRole() {
             if (!roomData || isRevealingSeer) return;
             const isDayPhase = (roomData.phase === 'DISCUSSION' || roomData.phase === 'VOTING');
-            if (!isDayPhase) return showToast('يمكنك كشف نفسك في جولة النهار فقط!');
+            if (!isDayPhase) return showToast('يمكنك كشف نفسك في جولة النهار فقط!', true);
 
             const me = roomData.players ? roomData.players[myId] : null;
             if (!me || !me.isAlive || me.role !== 'seer' || me.isRevealedSeer) return;
 
             isRevealingSeer = true;
+            // تشغيل هزاز الموبايل فوراً عند الضغط على زر كشف شيخ القرية
+            triggerMobileVibration([400, 150, 400], true);
+
             try {
                 const now = getServerTime();
                 const roomTimers = getRoomTimers();
@@ -1246,11 +1405,10 @@
                 };
 
                 if (isVotingPhase) {
-                    // إعادة مؤقت التصويت من البداية بالكامل وحذف جميع الأصوات السابقة
-                    allVotesDoneTimestamp = 0;
-                    lastVotesSignature = '';
+                    // إعادة مؤقت التصويت من البداية بالكامل وحذف جميع الأصوات السابقة وتصفير استهلاك الدقيقة الإضافية
                     updates['phaseEndTime'] = now + roomTimers.voting;
                     updates['dayVotes'] = null;
+                    updates['voteChangeExtended'] = false;
                     revealLines.push('🔄 تم حذف جميع الأصوات السابقة وإعادة ضبط مؤقت التصويت من البداية.. صوّتوا من جديد!');
                 } else {
                     // إعادة مؤقت النقاش من البداية بالكامل وتصفير طلبات التخطي
@@ -1260,7 +1418,7 @@
                 }
 
                 const revealMsg = revealLines.join('\n');
-                updates['announcement'] = { id: now, text: revealMsg };
+                updates['announcement'] = { id: now, text: revealMsg, vibrate: true, icon: '📢', title: 'كشف شيخ القرية!' };
 
                 await db.ref('rooms/' + currentRoomCode).update(updates);
 
@@ -1283,10 +1441,61 @@
             db.ref(`rooms/${currentRoomCode}/skipDiscussVotes/${myId}`).set(true);
         }
 
-        function submitDayVote(targetId) {
+        // التصويت النهاري: إذا كان الجميع قد صوّت وغيّر لاعب صوته في آخر دقيقة، تُضاف دقيقة إضافية لمرة واحدة في الجولة مع إشعار وهزاز للجميع
+        async function submitDayVote(targetId) {
             const me = roomData && roomData.players ? roomData.players[myId] : null;
             if (!me || !me.isAlive || roomData.phase !== 'VOTING') return;
-            db.ref(`rooms/${currentRoomCode}/dayVotes/${myId}`).set(targetId);
+
+            const votesMap = roomData.dayVotes || {};
+            const myPrevVote = votesMap[myId];
+            if (myPrevVote === targetId) return;
+
+            const alivePlayers = Object.values(roomData.players || {}).filter(p => p.isAlive);
+            const allHadVoted = alivePlayers.length > 0 && alivePlayers.every(p => Boolean(votesMap[p.id]));
+            const isChangingVote = Boolean(myPrevVote) && (myPrevVote !== targetId);
+
+            const now = getServerTime();
+            const remMs = Number(roomData.phaseEndTime || 0) - now;
+            const isLastMinute = (remMs > 0 && remMs <= 60000);
+            const alreadyExtended = Boolean(roomData.voteChangeExtended);
+
+            const updates = {
+                [`dayVotes/${myId}`]: targetId
+            };
+
+            if (allHadVoted && isChangingVote && isLastMinute && !alreadyExtended) {
+                const newEndTime = Number(roomData.phaseEndTime || now) + 60000;
+                const alertMsg = `⏳ غيّر (${me.name}) صوته في الدقيقة الأخيرة بعد اكتمال التصويت! تمت إضافة دقيقة إضافية (+1 د) لوقت التصويت.`;
+                updates['phaseEndTime'] = newEndTime;
+                updates['voteChangeExtended'] = true;
+                updates['votingAlert'] = { id: now, text: alertMsg };
+                pushLog(alertMsg);
+            }
+
+            await db.ref('rooms/' + currentRoomCode).update(updates);
+        }
+
+        // خاصية مدير الغرفة لزيادة وقت التصويت بمقدار 1 دقيقة في كل ضغطة (بحد أقصى 5 دقائق في الجولة الواحدة)
+        async function hostAddVotingMinute() {
+            if (!roomData || roomData.hostId !== myId || roomData.phase !== 'VOTING') return;
+
+            const usedMins = Number(roomData.hostVotingBonusMins || 0);
+            if (usedMins >= 5) {
+                return showToast('لقد وصلت للحد الأقصى للزيادة (5 دقائق) في جولة التصويت هذه!', true);
+            }
+
+            const now = getServerTime();
+            const newBonusMins = usedMins + 1;
+            const currentEnd = Math.max(now, Number(roomData.phaseEndTime || now));
+            const alertMsg = `⏱️ أضاف مدير الغرفة دقيقة إضافية (+1 د) لوقت التصويت الحالي! (${newBonusMins}/5)`;
+
+            await db.ref('rooms/' + currentRoomCode).update({
+                phaseEndTime: currentEnd + 60000,
+                hostVotingBonusMins: newBonusMins,
+                votingAlert: { id: now, text: alertMsg }
+            });
+
+            pushLog(alertMsg);
         }
 
         function sendMutedGesture(gestureText) {
@@ -1365,15 +1574,36 @@
                     document.getElementById('lobbyConfigSummary').innerHTML = `⚙️ <strong class="text-emerald-400">نظام التوزيع:</strong> تلقائي متوازن`;
                 }
 
-                const t = data.timers || { night: 45, discussion: 80, voting: 35 };
-                document.getElementById('lobbyTimersSummary').textContent = `⏱️ الليل: ${t.night}ث | النقاش: ${t.discussion}ث | التصويت: ${t.voting}ث`;
+                const t = data.timers || { night: 45, discussion: 120, voting: 300 };
+                document.getElementById('lobbyTimersSummary').textContent = `⏱️ الليل: ${formatDurationSetting(t.night)} | النقاش: ${formatDurationSetting(t.discussion)} | التصويت: ${formatDurationSetting(t.voting)}`;
             } else {
                 lobbyBanner.classList.add('hidden');
             }
 
-            if (data.announcement && data.announcement.id !== lastAnnouncedId) {
-                lastAnnouncedId = data.announcement.id;
-                showModal('إعلان القرية', data.announcement.text);
+            // منع تكرار الإعلان أو الاهتزاز عند تحديث الصفحة عبر حفظ المعرف في sessionStorage وفحص حداثة الإعلان
+            if (data.announcement && Number(data.announcement.id) !== lastAnnouncedId) {
+                lastAnnouncedId = Number(data.announcement.id);
+                sessionStorage.setItem('village_last_announced_id', String(lastAnnouncedId));
+
+                const isRecentAnnouncement = Math.abs(getServerTime() - lastAnnouncedId) < 12000;
+                if (data.announcement.vibrate && isRecentAnnouncement) {
+                    triggerMobileVibration([400, 150, 400], true);
+                }
+                showModal(
+                    data.announcement.title || 'إعلان القرية',
+                    data.announcement.text,
+                    data.announcement.icon || '🌅'
+                );
+            }
+
+            // عرض إشعار تمديد وقت التصويت (لمدة 3 ثوانٍ أو يغلق بـ X مع هزاز الموبايل) لجميع اللاعبين دون تكرار عند التحديث
+            if (data.votingAlert && Number(data.votingAlert.id) !== lastVotingAlertId) {
+                lastVotingAlertId = Number(data.votingAlert.id);
+                sessionStorage.setItem('village_last_voting_alert_id', String(lastVotingAlertId));
+
+                if (Math.abs(getServerTime() - lastVotingAlertId) < 10000) {
+                    showToast(data.votingAlert.text, true, 3000);
+                }
             }
 
             const silencerActsAsKiller = (me.role === 'silencer' && !hasAliveKillingMafia(data.players));
@@ -1436,6 +1666,13 @@
             document.getElementById('startGameBtn').classList.toggle('hidden', !(data.phase === 'LOBBY' && data.hostId === myId));
             document.getElementById('backToLobbyBtn').classList.toggle('hidden', !(data.phase === 'GAME_OVER' && data.hostId === myId));
             document.getElementById('skipNightBtn').classList.toggle('hidden', !(data.phase === 'NIGHT' && me.isAlive && hasActiveNightPower && !hasSubmittedNight));
+
+            // زر مدير الغرفة لزيادة وقت التصويت (+1 دقيقة حتى 5 دقائق في الجولة)
+            const hostExtendBtn = document.getElementById('hostExtendVoteBtn');
+            const usedBonusMins = Number(data.hostVotingBonusMins || 0);
+            hostExtendBtn.classList.toggle('hidden', !(data.phase === 'VOTING' && data.hostId === myId));
+            hostExtendBtn.disabled = (usedBonusMins >= 5);
+            document.getElementById('hostExtendVoteCounter').textContent = `${usedBonusMins}/5`;
 
             const rawSkipDiscuss = data.skipDiscussVotes || {};
             const validSkipDiscussCount = alivePlayers.filter(p => rawSkipDiscuss[p.id]).length;
@@ -1501,7 +1738,9 @@
                     : '🗣️ وقت النقاش النهاري مفتوح.. اكشفوا الخونة!';
             } else if (data.phase === 'VOTING') {
                 instruction.textContent = allAliveVoted
-                    ? '⏳ صوّت الجميع! يُغلق التصويت خلال 5 ثوانٍ (يمكنك تعديل صوتك أو الكشف الآن)...'
+                    ? (data.voteChangeExtended
+                        ? '✅ صوّت الجميع! يستمر التصويت حتى انتهاء المؤقت (تم استنفاد الدقيقة الإضافية لتغيير الصوت).'
+                        : '✅ صوّت الجميع! يستمر التصويت حتى انتهاء المؤقت (تغيير الصوت في آخر دقيقة يضيف +1 د لمرة واحدة).')
                     : '⚖️ صوّت على المشتبه به لإعدامه!';
             }
 
