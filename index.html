@@ -492,7 +492,7 @@
 
         function triggerScreenShake() {
             document.body.classList.remove('shake-effect');
-            void document.body.offsetWidth; // إعادة تفعيل الأنيميشن
+            void document.body.offsetWidth;
             document.body.classList.add('shake-effect');
             setTimeout(() => {
                 document.body.classList.remove('shake-effect');
@@ -643,15 +643,19 @@
                 if (roomData.phase === 'LOBBY') {
                     await db.ref(`rooms/${currentRoomCode}/players/${myId}`).remove();
                 } else if (roomData.phase !== 'GAME_OVER' && me && me.isAlive) {
+                    const exitReasonText = 'غادر القرية 🚪';
                     playersCopy[myId].isAlive = false;
                     playersCopy[myId].isMuted = false;
-                    const leaveMsg = `🚪 غادر (${me.name}) القرية أثناء الجولة وتم اعتباره ميتاً!`;
+                    playersCopy[myId].deathReason = exitReasonText;
+                    const roleLabel = ROLES_INFO[me.role] ? ROLES_INFO[me.role].name : '';
+                    const leaveMsg = `🚪 غادر (${me.name}) القرية أثناء الجولة وتم اعتباره ميتاً! وكان دوره: [ ${roleLabel} ]`;
                     pushLog(leaveMsg);
                     const ended = await checkAndApplyMidGameWin(playersCopy, leaveMsg);
                     if (!ended) {
                         await db.ref(`rooms/${currentRoomCode}/players/${myId}`).update({
                             isAlive: false,
-                            isMuted: false
+                            isMuted: false,
+                            deathReason: exitReasonText
                         });
                     }
                 }
@@ -681,15 +685,19 @@
                 await db.ref(`rooms/${currentRoomCode}/players/${targetId}`).remove();
                 pushLog(`🚫 قام مدير الغرفة بطرد (${target.name}) من الغرفة.`);
             } else if (target.isAlive) {
+                const kickReasonText = 'طُرد بواسطة المدير 🚫';
                 playersCopy[targetId].isAlive = false;
                 playersCopy[targetId].isMuted = false;
-                const kickMsg = `🚫 قام مدير الغرفة باستبعاد (${target.name}) لعدم التفاعل وتم اعتباره ميتاً!`;
+                playersCopy[targetId].deathReason = kickReasonText;
+                const roleLabel = ROLES_INFO[target.role] ? ROLES_INFO[target.role].name : '';
+                const kickMsg = `🚫 قام مدير الغرفة بطرد/استبعاد (${target.name})! وكان دوره: [ ${roleLabel} ]`;
                 pushLog(kickMsg);
                 const ended = await checkAndApplyMidGameWin(playersCopy, kickMsg);
                 if (!ended) {
                     await db.ref(`rooms/${currentRoomCode}/players/${targetId}`).update({
                         isAlive: false,
-                        isMuted: false
+                        isMuted: false,
+                        deathReason: kickReasonText
                     });
                 }
             }
@@ -782,7 +790,7 @@
                     counts: { ...roleCounts }
                 },
                 players: {
-                    [myId]: { id: myId, name, isAlive: true, isMuted: false, usedGesture: false, role: '', team: '', ammo: 0, lastMutedId: '', isRevealedSeer: false }
+                    [myId]: { id: myId, name, isAlive: true, isMuted: false, usedGesture: false, role: '', team: '', ammo: 0, lastMutedId: '', isRevealedSeer: false, deathReason: '' }
                 }
             };
 
@@ -811,7 +819,7 @@
 
             if (!data.players || !data.players[myId]) {
                 await db.ref(`rooms/${code}/players/${myId}`).set({
-                    id: myId, name, isAlive: true, isMuted: false, usedGesture: false, role: '', team: '', ammo: 0, lastMutedId: '', isRevealedSeer: false
+                    id: myId, name, isAlive: true, isMuted: false, usedGesture: false, role: '', team: '', ammo: 0, lastMutedId: '', isRevealedSeer: false, deathReason: ''
                 });
             } else {
                 await db.ref(`rooms/${code}/players/${myId}/name`).set(name);
@@ -914,6 +922,7 @@
             }, 1000);
         }
 
+        // مسح طريقة الخروج والأدوار عند العودة للردهة لبداية دور جديد
         async function hostBackToLobby() {
             if (!roomData || roomData.hostId !== myId) return;
             const pList = Object.values(roomData.players || {});
@@ -929,7 +938,8 @@
                     usedGesture: false,
                     ammo: 0,
                     lastMutedId: '',
-                    isRevealedSeer: false
+                    isRevealedSeer: false,
+                    deathReason: ''
                 };
             });
             lastAnnouncedId = 0;
@@ -953,6 +963,7 @@
             });
         }
 
+        // مسح طريقة الخروج السابقة وتوزيع أدوار جديدة عند بداية دور جديد في اللعبة
         async function hostStartGame() {
             const snap = await db.ref(`rooms/${currentRoomCode}/players`).once('value');
             const pList = Object.values(snap.val() || {});
@@ -1025,7 +1036,8 @@
                     usedGesture: false,
                     ammo: r === 'sniper' ? 1 : 0,
                     lastMutedId: '',
-                    isRevealedSeer: false
+                    isRevealedSeer: false,
+                    deathReason: ''
                 };
             });
 
@@ -1167,7 +1179,9 @@
             killedIds.forEach(id => {
                 if (players[id] && players[id].isAlive) {
                     players[id].isAlive = false;
-                    deadNames.push(players[id].name);
+                    players[id].deathReason = 'قُتل في الليل 🔪';
+                    const roleTitle = ROLES_INFO[players[id].role] ? ROLES_INFO[players[id].role].shortName : '';
+                    deadNames.push(`${players[id].name} [${roleTitle}]`);
                 }
             });
 
@@ -1215,7 +1229,7 @@
             if (deadNames.length === 0) {
                 reportLines.push('🌅 أشرقت الشمس.. ولم يمت أحد في القرية الليلة!');
             } else {
-                reportLines.push(`🌅 أشرقت الشمس على فاجعة.. تم اغتيال: ( ${deadNames.join(' ، ')} )!`);
+                reportLines.push(`🌅 أشرقت الشمس على فاجعة.. قُتل في الليل: ( ${deadNames.join(' ، ')} )!`);
             }
 
             if (sniperStatusMsg) reportLines.push(sniperStatusMsg);
@@ -1294,6 +1308,7 @@
                 reportLines.push('⚖️ انتهى التصويت بالتعادل أو التخطي.. لم يُعدم أحد اليوم!');
             } else if (players[topId]) {
                 players[topId].isAlive = false;
+                players[topId].deathReason = 'أُعدم بالتصويت ⚖️';
                 reportLines.push(`⚖️ قرر أهل القرية إعدام ( ${players[topId].name} )! وكان دوره: [ ${ROLES_INFO[players[topId].role].name} ]`);
             }
 
@@ -1386,7 +1401,6 @@
             if (!me || !me.isAlive || me.role !== 'seer' || me.isRevealedSeer) return;
 
             isRevealingSeer = true;
-            // تشغيل هزاز الموبايل فوراً عند الضغط على زر كشف شيخ القرية
             triggerMobileVibration([400, 150, 400], true);
 
             try {
@@ -1405,13 +1419,11 @@
                 };
 
                 if (isVotingPhase) {
-                    // إعادة مؤقت التصويت من البداية بالكامل وحذف جميع الأصوات السابقة وتصفير استهلاك الدقيقة الإضافية
                     updates['phaseEndTime'] = now + roomTimers.voting;
                     updates['dayVotes'] = null;
                     updates['voteChangeExtended'] = false;
                     revealLines.push('🔄 تم حذف جميع الأصوات السابقة وإعادة ضبط مؤقت التصويت من البداية.. صوّتوا من جديد!');
                 } else {
-                    // إعادة مؤقت النقاش من البداية بالكامل وتصفير طلبات التخطي
                     updates['phaseEndTime'] = now + roomTimers.discussion;
                     updates['skipDiscussVotes'] = null;
                     revealLines.push('⏱️ تم إعادة ضبط مؤقت النقاش ليبدأ من البداية بالكامل!');
@@ -1580,7 +1592,6 @@
                 lobbyBanner.classList.add('hidden');
             }
 
-            // منع تكرار الإعلان أو الاهتزاز عند تحديث الصفحة عبر حفظ المعرف في sessionStorage وفحص حداثة الإعلان
             if (data.announcement && Number(data.announcement.id) !== lastAnnouncedId) {
                 lastAnnouncedId = Number(data.announcement.id);
                 sessionStorage.setItem('village_last_announced_id', String(lastAnnouncedId));
@@ -1596,7 +1607,6 @@
                 );
             }
 
-            // عرض إشعار تمديد وقت التصويت (لمدة 3 ثوانٍ أو يغلق بـ X مع هزاز الموبايل) لجميع اللاعبين دون تكرار عند التحديث
             if (data.votingAlert && Number(data.votingAlert.id) !== lastVotingAlertId) {
                 lastVotingAlertId = Number(data.votingAlert.id);
                 sessionStorage.setItem('village_last_voting_alert_id', String(lastVotingAlertId));
@@ -1667,7 +1677,6 @@
             document.getElementById('backToLobbyBtn').classList.toggle('hidden', !(data.phase === 'GAME_OVER' && data.hostId === myId));
             document.getElementById('skipNightBtn').classList.toggle('hidden', !(data.phase === 'NIGHT' && me.isAlive && hasActiveNightPower && !hasSubmittedNight));
 
-            // زر مدير الغرفة لزيادة وقت التصويت (+1 دقيقة حتى 5 دقائق في الجولة)
             const hostExtendBtn = document.getElementById('hostExtendVoteBtn');
             const usedBonusMins = Number(data.hostVotingBonusMins || 0);
             hostExtendBtn.classList.toggle('hidden', !(data.phase === 'VOTING' && data.hostId === myId));
@@ -1721,7 +1730,7 @@
             } else if (data.phase === 'GAME_OVER') {
                 instruction.textContent = data.hostId === myId ? 'انتهت الجولة! اضغط "تجهيز جولة جديدة" للعودة للردهة.' : 'انتهت الجولة! بانتظار مدير الغرفة لبدء جولة جديدة.';
             } else if (!me.isAlive) {
-                instruction.textContent = '💀 لقد قُتلت.. تتابع اللعبة الآن كمشاهد.';
+                instruction.textContent = '💀 لقد خرجت من الجولة.. تتابع اللعبة الآن كمشاهد.';
             } else if (data.phase === 'NIGHT') {
                 if (hasSubmittedNight) {
                     instruction.textContent = '✅ تم تسجيل قرارك الليلي.. بانتظار البقية.';
@@ -1756,7 +1765,23 @@
                 });
 
                 const isTeammateMafia = (me.team === 'mafia' && p.team === 'mafia' && data.phase !== 'LOBBY');
-                const showTrueRoleOnEnd = (data.phase === 'GAME_OVER' && p.role && ROLES_INFO[p.role]);
+                const isEliminatedInGame = (!p.isAlive && data.phase !== 'LOBBY');
+                const showTrueRoleOnEnd = (data.phase === 'GAME_OVER' && p.isAlive && p.role && ROLES_INFO[p.role]);
+
+                // عرض طريقة الخروج وكشف اسم الشخصية مباشرة بجانب اسم اللاعب عند خروجه وحتى نهاية اللعبة
+                let exitAndRoleInline = '';
+                if (isEliminatedInGame) {
+                    const exitReasonLabel = p.deathReason || 'خرج من الجولة 💀';
+                    const roleNameLabel = (p.role && ROLES_INFO[p.role]) ? ROLES_INFO[p.role].shortName : 'غير معروف';
+                    const roleColorStyle = p.team === 'mafia'
+                        ? 'bg-rose-600/30 border-rose-500 text-rose-200'
+                        : 'bg-emerald-600/30 border-emerald-500 text-emerald-200';
+
+                    exitAndRoleInline = `
+                        <span class="text-[11px] bg-rose-950/90 border border-rose-600/70 text-rose-300 px-2 py-0.5 rounded-md font-bold">${exitReasonLabel}</span>
+                        <span class="text-[11px] ${roleColorStyle} border px-2 py-0.5 rounded-md font-bold">الشخصية: ${roleNameLabel}</span>
+                    `;
+                }
 
                 let badges = '';
                 if (p.id === data.hostId) badges += `<span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-md">المدير 👑</span>`;
@@ -1768,11 +1793,11 @@
 
                 if (showTrueRoleOnEnd) {
                     const roleBadgeStyle = p.team === 'mafia' ? 'bg-rose-600/30 border-rose-500 text-rose-200' : 'bg-emerald-600/30 border-emerald-500 text-emerald-200';
-                    badges += `<span class="text-[11px] ${roleBadgeStyle} border px-2 py-0.5 rounded-md font-bold">${ROLES_INFO[p.role].shortName}</span>`;
-                } else if (isTeammateMafia) {
+                    badges += `<span class="text-[11px] ${roleBadgeStyle} border px-2 py-0.5 rounded-md font-bold">الشخصية: ${ROLES_INFO[p.role].shortName}</span>`;
+                } else if (isTeammateMafia && p.isAlive) {
                     badges += `<span class="text-[11px] bg-rose-600/30 border border-rose-500 text-rose-200 px-2 py-0.5 rounded-md font-bold">🔪 ${ROLES_INFO[p.role] ? ROLES_INFO[p.role].shortName : 'عصابة'}</span>`;
                 }
-                if (!p.isAlive) badges += `<span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-md">ميت 💀</span>`;
+
                 if (p.isAlive && p.isMuted) badges += `<span class="text-[10px] bg-rose-500/30 text-rose-300 px-2 py-0.5 rounded-md">مُسكت 🤐</span>`;
 
                 let btn = '';
@@ -1815,9 +1840,12 @@
                 }
 
                 grid.innerHTML += `
-                    <div class="p-3.5 rounded-2xl border flex items-center justify-between ${!p.isAlive ? 'bg-slate-950/40 border-slate-800 opacity-50' : (isTeammateMafia ? 'bg-rose-950/30 border-rose-700/60' : 'bg-slate-800/90 border-slate-700')}">
-                        <div class="flex flex-col gap-1">
-                            <span class="font-bold text-sm text-white">${p.name}</span>
+                    <div class="p-3.5 rounded-2xl border flex items-center justify-between ${!p.isAlive ? 'bg-slate-950/60 border-slate-800 opacity-80' : (isTeammateMafia ? 'bg-rose-950/30 border-rose-700/60' : 'bg-slate-800/90 border-slate-700')}">
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="font-bold text-sm ${!p.isAlive ? 'text-slate-300 line-through' : 'text-white'}">${p.name}</span>
+                                ${exitAndRoleInline}
+                            </div>
                             <div class="flex flex-wrap gap-1">${badges}</div>
                         </div>
                         <div class="flex flex-wrap items-center justify-end gap-1.5">${seerSelfRevealBtn}${btn}${hostKickBtn}</div>
