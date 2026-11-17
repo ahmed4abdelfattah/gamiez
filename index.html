@@ -76,30 +76,45 @@
                     <div class="text-xs font-bold text-indigo-300 mb-2.5 flex items-center gap-1">
                         ⏱️ إعدادات مؤقتات اللعب
                     </div>
-                    <div class="grid grid-cols-3 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div class="bg-slate-900 border border-indigo-900/50 rounded-xl p-2 text-center">
                             <span class="text-[11px] text-slate-300 block mb-1">وقت الليل 🌙</span>
                             <div class="flex items-center justify-center gap-1.5">
                                 <button type="button" onclick="adjustTimer('night', -5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
-                                <span id="timer_night" class="font-black text-xs sm:text-sm text-indigo-400">45 ث</span>
+                                <div class="flex items-center gap-0.5" dir="ltr">
+                                    <input id="timer_night_min" type="number" min="0" max="3" step="1" value="0" onchange="setTimerFromInputs('night')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-indigo-400 focus:outline-none focus:border-indigo-400" title="الدقائق">
+                                    <span class="font-black text-indigo-400">:</span>
+                                    <input id="timer_night_sec" type="number" min="0" max="59" step="1" value="45" onchange="setTimerFromInputs('night')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-indigo-400 focus:outline-none focus:border-indigo-400" title="الثواني">
+                                </div>
                                 <button type="button" onclick="adjustTimer('night', 5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
                             </div>
+                            <span class="text-[9px] text-slate-500 block mt-1">دقيقة : ثانية — اكتب الوقت بنفسك</span>
                         </div>
                         <div class="bg-slate-900 border border-amber-900/50 rounded-xl p-2 text-center">
-                            <span class="text-[11px] text-slate-300 block mb-1">النقاش (دقائق) ☀️</span>
+                            <span class="text-[11px] text-slate-300 block mb-1">وقت النقاش ☀️</span>
                             <div class="flex items-center justify-center gap-1.5">
                                 <button type="button" onclick="adjustTimer('discussion', -60)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
-                                <span id="timer_discussion" class="font-black text-xs sm:text-sm text-amber-400">2 د</span>
+                                <div class="flex items-center gap-0.5" dir="ltr">
+                                    <input id="timer_discussion_min" type="number" min="0" max="60" step="1" value="2" onchange="setTimerFromInputs('discussion')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-amber-400 focus:outline-none focus:border-amber-400" title="الدقائق">
+                                    <span class="font-black text-amber-400">:</span>
+                                    <input id="timer_discussion_sec" type="number" min="0" max="59" step="1" value="0" onchange="setTimerFromInputs('discussion')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-amber-400 focus:outline-none focus:border-amber-400" title="الثواني">
+                                </div>
                                 <button type="button" onclick="adjustTimer('discussion', 60)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
                             </div>
+                            <span class="text-[9px] text-slate-500 block mt-1">دقيقة : ثانية — اكتب الوقت بنفسك</span>
                         </div>
                         <div class="bg-slate-900 border border-rose-900/50 rounded-xl p-2 text-center">
                             <span class="text-[11px] text-slate-300 block mb-1">وقت التصويت ⚖️</span>
                             <div class="flex items-center justify-center gap-1.5">
                                 <button type="button" onclick="adjustTimer('voting', -30)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
-                                <span id="timer_voting" class="font-black text-xs sm:text-sm text-rose-400">5 د</span>
+                                <div class="flex items-center gap-0.5" dir="ltr">
+                                    <input id="timer_voting_min" type="number" min="0" max="10" step="1" value="5" onchange="setTimerFromInputs('voting')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-rose-400 focus:outline-none focus:border-rose-400" title="الدقائق">
+                                    <span class="font-black text-rose-400">:</span>
+                                    <input id="timer_voting_sec" type="number" min="0" max="59" step="1" value="0" onchange="setTimerFromInputs('voting')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-rose-400 focus:outline-none focus:border-rose-400" title="الثواني">
+                                </div>
                                 <button type="button" onclick="adjustTimer('voting', 30)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
                             </div>
+                            <span class="text-[9px] text-slate-500 block mt-1">دقيقة : ثانية — اكتب الوقت بنفسك</span>
                         </div>
                     </div>
                 </div>
@@ -403,15 +418,41 @@
             return { text: `${mm}:${ss}`, unit: 'دقيقة:ثانية' };
         }
 
+        const TIMER_LIMITS = {
+            night: { min: 15, max: 180 },       // من 15 ثانية إلى 180 ثانية
+            discussion: { min: 60, max: 3600 }, // من 1 دقيقة (60ث) إلى 60 دقيقة / ساعة (3600ث)
+            voting: { min: 30, max: 600 }       // من 30 ثانية إلى 10 دقائق (600ث)
+        };
+
+        function clampTimerValue(type, totalSeconds) {
+            const lim = TIMER_LIMITS[type];
+            if (!lim) return totalSeconds;
+            const s = Number.isFinite(totalSeconds) ? Math.round(totalSeconds) : lim.min;
+            return Math.max(lim.min, Math.min(lim.max, s));
+        }
+
+        function syncTimerInputs(type) {
+            const total = timerSettings[type];
+            const minEl = document.getElementById('timer_' + type + '_min');
+            const secEl = document.getElementById('timer_' + type + '_sec');
+            if (minEl) minEl.value = Math.floor(total / 60);
+            if (secEl) secEl.value = total % 60;
+        }
+
+        // إدخال وقت المرحلة يدوياً من خانتي الدقائق والثواني
+        function setTimerFromInputs(type) {
+            const minEl = document.getElementById('timer_' + type + '_min');
+            const secEl = document.getElementById('timer_' + type + '_sec');
+            if (!minEl || !secEl) return;
+            const mins = Math.max(0, parseInt(minEl.value, 10) || 0);
+            const secs = Math.max(0, parseInt(secEl.value, 10) || 0);
+            timerSettings[type] = clampTimerValue(type, (mins * 60) + secs);
+            syncTimerInputs(type);
+        }
+
         function adjustTimer(type, delta) {
-            const limits = {
-                night: { min: 15, max: 180 },       // من 15 ثانية إلى 180 ثانية
-                discussion: { min: 60, max: 3600 }, // من 1 دقيقة (60ث) إلى 60 دقيقة / ساعة (3600ث)
-                voting: { min: 30, max: 600 }       // من 30 ثانية إلى 10 دقائق (600ث)
-            };
-            const lim = limits[type];
-            timerSettings[type] = Math.max(lim.min, Math.min(lim.max, timerSettings[type] + delta));
-            document.getElementById('timer_' + type).textContent = formatDurationSetting(timerSettings[type]);
+            timerSettings[type] = clampTimerValue(type, timerSettings[type] + delta);
+            syncTimerInputs(type);
         }
 
         const roleCounts = {
