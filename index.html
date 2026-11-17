@@ -10,11 +10,108 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Cairo', sans-serif; transition: background 0.5s ease; overflow-x: hidden; }
-        .theme-night { background: radial-gradient(circle at top, #0f172a 0%, #020617 100%); }
-        .theme-day { background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%); }
+
+        /* ===== الثيم الليلي الفخم: سماء مرصعة بالنجوم ولمسات ذهبية ===== */
+        .theme-night {
+            background-color: #04060f;
+            background-image:
+                radial-gradient(circle at 15% -5%, rgba(231, 198, 106, 0.10), transparent 42%),
+                radial-gradient(1.5px 1.5px at 25px 35px, rgba(255, 255, 255, 0.9) 50%, transparent 52%),
+                radial-gradient(1px 1px at 75px 90px, rgba(255, 255, 255, 0.55) 50%, transparent 52%),
+                radial-gradient(1.5px 1.5px at 130px 55px, rgba(255, 244, 214, 0.8) 50%, transparent 52%),
+                radial-gradient(1px 1px at 165px 145px, rgba(255, 255, 255, 0.45) 50%, transparent 52%),
+                radial-gradient(ellipse at top, #111c3d 0%, #04060f 72%);
+            background-size: auto, 190px 190px, 190px 190px, 190px 190px, 190px 190px, auto;
+        }
+        .theme-day {
+            background-color: #0a0f22;
+            background-image:
+                radial-gradient(circle at 50% -10%, rgba(245, 178, 66, 0.20), transparent 46%),
+                radial-gradient(1.5px 1.5px at 25px 35px, rgba(255, 255, 255, 0.35) 50%, transparent 52%),
+                radial-gradient(1px 1px at 75px 90px, rgba(255, 255, 255, 0.25) 50%, transparent 52%),
+                radial-gradient(1.5px 1.5px at 130px 55px, rgba(255, 244, 214, 0.35) 50%, transparent 52%),
+                radial-gradient(1px 1px at 165px 145px, rgba(255, 255, 255, 0.2) 50%, transparent 52%),
+                radial-gradient(ellipse at top, #1b2a52 0%, #0a0f22 72%);
+            background-size: auto, 190px 190px, 190px 190px, 190px 190px, 190px 190px, auto;
+        }
+
+        /* كروت زجاجية بإطار ذهبي رقيق */
+        .glass-panel {
+            background: linear-gradient(155deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.02) 55%, rgba(231, 198, 106, 0.05)) !important;
+            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(231, 198, 106, 0.30) !important;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.09) !important;
+        }
+        .glass-soft {
+            background: rgba(255, 255, 255, 0.04) !important;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(231, 198, 106, 0.20) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        }
+
+        /* عنوان ذهبي متدرج */
+        .gold-grad-text {
+            background: linear-gradient(180deg, #f9e58d 0%, #e7c66a 45%, #c99634 80%, #a87424 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent !important;
+            filter: drop-shadow(0 2px 12px rgba(217, 164, 65, 0.30));
+        }
+        .hero-emblem { filter: drop-shadow(0 0 20px rgba(231, 198, 106, 0.5)); }
+
+        /* الأزرار الذهبية الرئيسية */
+        button[class*="bg-amber-500"], button[class*="bg-amber-400"] {
+            background-image: linear-gradient(180deg, #f2cd6b 0%, #d9a441 55%, #bd8a2c 100%) !important;
+            border: 1px solid rgba(255, 236, 180, 0.55) !important;
+            box-shadow: 0 6px 18px rgba(217, 164, 65, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+        }
+        button[class*="bg-indigo-600"] {
+            background-image: linear-gradient(180deg, #6d70f2 0%, #4338ca 100%) !important;
+            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+        }
+        button[class*="bg-emerald-500"] {
+            background-image: linear-gradient(180deg, #34d399 0%, #059669 100%) !important;
+            box-shadow: 0 6px 18px rgba(5, 150, 105, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+        }
+
+        /* خانات الإدخال الزجاجية */
+        input[type="text"], input[type="number"] {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-color: rgba(231, 198, 106, 0.28) !important;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: rgba(231, 198, 106, 0.8) !important;
+            box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.18), inset 0 1px 3px rgba(0, 0, 0, 0.4);
+            outline: none;
+        }
+
+        /* الكروت الصغيرة الداخلية (المؤقتات والأدوار) */
+        div[class*="bg-slate-900"][class*="text-center"] {
+            background: rgba(255, 255, 255, 0.04) !important;
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+        }
+
+        /* كروت اللاعبين ولمسات عامة */
+        #playersGrid > div {
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        }
+        #roleRevealCard {
+            border-color: rgba(231, 198, 106, 0.45) !important;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 26px rgba(99, 102, 241, 0.16) !important;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        #toast { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: #0b1120; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #8a6a25, #57431a); border-radius: 3px; }
 
         @keyframes screenShake {
             0%, 100% { transform: translateX(0); }
@@ -40,7 +137,7 @@
 
     <!-- نافذة الإعلانات -->
     <div id="modalOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden items-center justify-center p-4">
-        <div id="modalBox" class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl">
+        <div id="modalBox" class="glass-panel bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl">
             <div id="modalIcon" class="text-5xl mb-3">🌅</div>
             <h3 id="modalTitle" class="text-xl font-bold text-amber-400 mb-2">تقرير القرية</h3>
             <p id="modalBody" class="text-slate-200 leading-relaxed mb-6 whitespace-pre-line text-sm"></p>
@@ -50,10 +147,10 @@
 
     <!-- شاشة البداية -->
     <div id="homeScreen" class="flex-1 flex items-center justify-center p-4">
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl my-4">
+        <div class="glass-panel bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl my-4">
             <div class="text-center mb-6">
-                <div class="text-6xl mb-2">🐺🏮</div>
-                <h1 class="text-3xl font-black text-amber-400">أهل القرية</h1>
+                <div class="hero-emblem text-6xl mb-2">🐺🏮</div>
+                <h1 class="gold-grad-text text-3xl font-black text-amber-400">أهل القرية</h1>
                 <p class="text-slate-400 text-xs mt-1">لعبة الخداع والاستنتاج الاجتماعي أونلاين</p>
             </div>
 
@@ -72,7 +169,7 @@
                 </div>
 
                 <!-- قسم التحكم في مؤقتات المراحل -->
-                <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
+                <div class="glass-soft bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
                     <div class="text-xs font-bold text-indigo-300 mb-2.5 flex items-center gap-1">
                         ⏱️ إعدادات مؤقتات اللعب
                     </div>
@@ -120,7 +217,7 @@
                 </div>
 
                 <!-- قسم إعدادات توزيع الأدوار والشخصيات -->
-                <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
+                <div class="glass-soft bg-slate-950/70 border border-slate-800 rounded-2xl p-4">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs font-bold text-amber-400 flex items-center gap-1">⚙️ إعدادات توزيع الشخصيات (عند إنشاء غرفة)</span>
                         <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
@@ -237,7 +334,7 @@
 
     <!-- شاشة اللعب -->
     <div id="gameScreen" class="hidden flex-1 flex flex-col max-w-7xl w-full mx-auto p-3 md:p-6 gap-4">
-        <header class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+        <header class="glass-panel bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-4">
                 <div class="bg-slate-800 px-4 py-2 rounded-xl border border-slate-700">
                     <span class="text-xs text-slate-400 block">كود الغرفة</span>
@@ -283,13 +380,13 @@
                 </div>
 
                 <!-- شريط معلومات التوزيعة والمؤقتات في الـ Lobby -->
-                <div id="lobbySettingsBanner" class="bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-slate-300 flex flex-wrap items-center justify-between gap-2">
+                <div id="lobbySettingsBanner" class="glass-panel bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-slate-300 flex flex-wrap items-center justify-between gap-2">
                     <span id="lobbyConfigSummary">نظام التوزيع: تلقائي متوازن</span>
                     <span id="lobbyTimersSummary" class="text-indigo-300 font-semibold"></span>
                 </div>
 
                 <!-- شريط الأزرار التفاعلية وأسماء المصوتين بجوار كل زر -->
-                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
+                <div class="glass-panel bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <span id="actionInstruction" class="text-sm font-semibold text-amber-300">بانتظار مدير الغرفة...</span>
                         <div class="flex flex-wrap items-center gap-2">
@@ -337,7 +434,7 @@
                     </div>
                 </div>
 
-                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex-1">
+                <div class="glass-panel bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex-1">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="font-bold text-slate-300 text-sm">قائمة اللاعبين في القرية</h3>
                         <span id="aliveCounter" class="text-xs text-slate-400">الأحياء: 0</span>
@@ -347,7 +444,7 @@
             </div>
 
             <div class="lg:col-span-5 flex flex-col gap-4 h-[560px] lg:h-auto">
-                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col min-h-[280px]">
+                <div class="glass-panel bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col min-h-[280px]">
                     <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
                         <h3 id="chatHeaderTitle" class="font-bold text-sm text-white">💬 نقاش القرية</h3>
                         <span id="chatStatusBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400">مغلق</span>
@@ -370,7 +467,7 @@
                     </form>
                 </div>
 
-                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 h-52 flex flex-col">
+                <div class="glass-panel bg-slate-900/90 border border-slate-800 rounded-2xl p-4 h-52 flex flex-col">
                     <h3 class="font-bold text-xs text-amber-400 mb-2">📜 سجل أحداث اللعبة والجولات</h3>
                     <div id="gameLogs" class="flex-1 overflow-y-auto space-y-1.5 text-xs text-slate-300 pr-1"></div>
                 </div>
