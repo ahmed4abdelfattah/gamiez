@@ -371,7 +371,6 @@
                         <span id="sniperAmmoBadge" class="hidden text-xs bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full font-bold">الذخيرة: 1 طلقة 🎯</span>
                     </div>
                     <h3 id="revealRoleTitle" class="text-2xl font-black text-white mb-1">---</h3>
-                    <p id="revealRoleDesc" class="text-sm text-slate-300 leading-relaxed"></p>
 
                     <div id="mafiaTeammatesBox" class="hidden mt-4 pt-3 border-t border-rose-500/40 bg-rose-950/40 rounded-xl p-3">
                         <div class="text-xs font-bold text-rose-300 mb-2">🔪 أعضاء فريق العصابة وأدوارهم:</div>
@@ -479,13 +478,13 @@
         const FIREBASE_DB_URL = "https://village-gamez-default-rtdb.firebaseio.com";
 
         const ROLES_INFO = {
-            boss: { name: 'الريس (زعيم العصابة)', shortName: 'الريس', team: 'mafia', desc: 'تختار ضحية الليل وقرارك يطغى على تصويت بقية أفراد العصابة.' },
-            mafia: { name: 'فرد عصابة', shortName: 'فرد عصابة', team: 'mafia', desc: 'تصوت ليلاً مع العصابة لاغتيال أحد أهل القرية وتنسق معهم في الشات السري.' },
-            silencer: { name: 'الساكت', shortName: 'الساكت', team: 'mafia', desc: 'عضو في العصابة. تختار أي لاعب ليلاً لمنعه من الكلام طوال النهار التالي (وإذا مات باقي العصابة تتولى أنت القتل الليلي).' },
-            seer: { name: 'شيخ القرية', shortName: 'شيخ القرية', team: 'village', desc: 'صوتك يحسب بصوت واحد طالما لم تكشف عن نفسك. يوجد زر بجوار اسمك في النهار (نقاش أو تصويت) لكشف نفسك كشيخ للقرية، وعندها يحسب صوتك بـ 3 أصوات ويعاد المؤقت والتصويت من البداية!' },
-            doctor: { name: 'الطبيب', shortName: 'الطبيب', team: 'village', desc: 'تحمي لاعباً كل ليلة من القتل (يمكنك حماية أي شخص أو حماية نفسك في أي ليلة).' },
-            sniper: { name: 'القناص', shortName: 'القناص', team: 'village', desc: 'تمتلك طلقة واحدة طوال اللعبة لاغتيال من تشك فيه ليلاً.' },
-            villager: { name: 'مواطن (أهل القرية)', shortName: 'مواطن', team: 'village', desc: 'لا تملك قدرة هجومية، ويظهر لك ليلاً زر "تمويه ليلي" بجوار اسمك للتمويه على باقي اللاعبين والعبور إلى النهار. سلاحك النقاش والتصويت نهاراً لكشف العصابة.' }
+            boss: { name: 'الريس (زعيم العصابة)', shortName: 'الريس', team: 'mafia', emoji: '🎩' },
+            mafia: { name: 'فرد عصابة', shortName: 'فرد عصابة', team: 'mafia', emoji: '🔪' },
+            silencer: { name: 'الساكت', shortName: 'الساكت', team: 'mafia', emoji: '🤐' },
+            seer: { name: 'شيخ القرية', shortName: 'شيخ القرية', team: 'village', emoji: '📢' },
+            doctor: { name: 'الطبيب', shortName: 'الطبيب', team: 'village', emoji: '💉' },
+            sniper: { name: 'القناص', shortName: 'القناص', team: 'village', emoji: '🎯' },
+            villager: { name: 'مواطن (أهل القرية)', shortName: 'مواطن', team: 'village', emoji: '🧑‍🌾' }
         };
 
         // تخزين المؤقتات بالثواني داخلياً:
@@ -1876,15 +1875,10 @@
                 document.getElementById('roleRevealCard').classList.remove('hidden');
                 document.getElementById('myRoleName').textContent = silencerActsAsKiller
                     ? 'الساكت (قاتل العصابة 🔪)'
-                    : (me.role === 'seer' && me.isRevealedSeer ? 'شيخ القرية (صوتك بـ 3 أصوات 📢)' : ROLES_INFO[me.role].name);
+                    : (me.role === 'seer' && me.isRevealedSeer ? 'شيخ القرية (صوتك بـ 3 أصوات 📢)' : ROLES_INFO[me.role].emoji + ' ' + ROLES_INFO[me.role].name);
                 document.getElementById('revealRoleTitle').textContent = silencerActsAsKiller
                     ? 'الساكت (تمت ترقيتك لقاتل العصابة 🔪)'
-                    : (me.role === 'seer' && me.isRevealedSeer ? 'شيخ القرية (مكشوف - صوتك بـ 3 أصوات 📢)' : ROLES_INFO[me.role].name);
-                document.getElementById('revealRoleDesc').textContent = silencerActsAsKiller
-                    ? '🔥 بعد سقوط الريس وأفراد العصابة، أصبحت أنت المسؤول الوحيد عن تنفيذ الاغتيال الليلي للعصابة!'
-                    : (me.role === 'seer' && me.isRevealedSeer
-                        ? '📢 لقد كشفت عن نفسك كشيخ للقرية! صوتك الآن يُحسب بـ 3 أصوات في جميع جولات التصويت حتى نهاية دور اللعبة الحالي.'
-                        : ROLES_INFO[me.role].desc);
+                    : (me.role === 'seer' && me.isRevealedSeer ? 'شيخ القرية (مكشوف - صوتك بـ 3 أصوات 📢)' : ROLES_INFO[me.role].emoji + ' ' + ROLES_INFO[me.role].name);
 
                 const teamBadge = document.getElementById('revealTeamBadge');
                 if (me.team === 'mafia') {
