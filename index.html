@@ -994,6 +994,7 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             initFirebase();
+            cleanupAbandonedRooms();
             const savedRoom = sessionStorage.getItem('village_room_code');
             const savedName = sessionStorage.getItem('village_player_name');
             if (savedName) document.getElementById('playerNameInput').value = savedName;
@@ -1008,6 +1009,44 @@
                 }
             }
         });
+
+        // تنظيف تلقائي للغرف المهجورة: أي غرفة فاضية من اللاعبين، أو ردهة/جولة منتهية لم تُلمس منذ يوم كامل، تُحذف نهائياً من قاعدة البيانات
+        async function cleanupAbandonedRooms() {
+            try {
+                const DAY_MS = 24 * 60 * 60 * 1000;
+                const THROTTLE_MS = 60 * 60 * 1000;
+                const lastRun = Number(localStorage.getItem('village_last_cleanup') || 0);
+                if (Date.now() - lastRun < THROTTLE_MS) return;
+                localStorage.setItem('village_last_cleanup', String(Date.now()));
+
+                const snap = await db.ref('rooms').once('value');
+                const rooms = snap.val() || {};
+                const now = getServerTime();
+                const mySavedRoom = sessionStorage.getItem('village_room_code');
+                const deletions = {};
+
+                Object.entries(rooms).forEach(([code, room]) => {
+                    if (!room) return;
+                    const playersCount = room.players ? Object.keys(room.players).length : 0;
+                    const lastTouch = Number(room.phaseStartTime || 0);
+                    const stale = lastTouch > 0 && (now - lastTouch) > DAY_MS;
+                    if (!stale) return;
+
+                    const isEmpty = playersCount === 0;
+                    const isWaitingOrDone = (room.phase === 'LOBBY' || room.phase === 'GAME_OVER');
+                    if (!isEmpty && !isWaitingOrDone) return;
+
+                    // لا تحذف غرفة هذا اللاعب إن كان ما زال مسجلاً فيها وقد يعود إليها
+                    if (code === mySavedRoom && room.players && room.players[myId]) return;
+
+                    deletions[code] = null;
+                });
+
+                if (Object.keys(deletions).length > 0) {
+                    await db.ref('rooms').update(deletions);
+                }
+            } catch (e) {}
+        }
 
         function rejoinRoom() {
             const savedRoom = sessionStorage.getItem('village_room_code');
