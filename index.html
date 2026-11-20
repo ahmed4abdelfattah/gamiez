@@ -392,6 +392,107 @@
                     <span id="lobbyTimersSummary" class="text-indigo-300 font-semibold"></span>
                 </div>
 
+                <!-- لوحة تعديل عدد العصابة وأفرادها وشخصيات القرية (تظهر لمدير الغرفة فقط في الردهة قبل البدء ومع تجهيز جولة جديدة) -->
+                <div id="hostLobbyRoleEditor" class="hidden glass-panel bg-slate-900/95 border border-amber-500/40 rounded-2xl p-4 shadow-lg">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">👑 تحكم المدير في عدد العصابة وشخصيات القرية</span>
+                        <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-200 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700">
+                            <input type="checkbox" id="lobbyCustomRolesToggle" onchange="hostToggleLobbyCustomRoles()" class="accent-amber-500 w-4 h-4 rounded cursor-pointer">
+                            <span class="font-bold">تخصيص يدوي</span>
+                        </label>
+                    </div>
+
+                    <div id="lobbyAutoRolesHint" class="text-[11px] text-slate-400 leading-relaxed bg-slate-950/60 border border-slate-800 rounded-xl p-3">
+                        الوضع الحالي: <strong class="text-emerald-400">توزيع تلقائي متوازن</strong> حسب عدد اللاعبين المتصلين. فعّل خيار <strong class="text-amber-300">"تخصيص يدوي"</strong> لتعديل عدد أفراد العصابة وشخصيات أهل القرية قبل بدء الجولة.
+                    </div>
+
+                    <div id="lobbyCustomRolesPanel" class="hidden space-y-3 pt-2 border-t border-slate-800/80 mt-2">
+                        <div>
+                            <div class="text-[11px] font-bold text-rose-400 mb-1.5">🔪 تعديل فريق العصابة:</div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="bg-slate-950/80 border border-rose-900/50 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">الريس</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('boss', -1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="lobby_count_boss" class="font-black text-sm text-amber-400">1</span>
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('boss', 1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-950/80 border border-rose-900/50 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">فرد عصابة</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('mafia', -1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="lobby_count_mafia" class="font-black text-sm text-amber-400">1</span>
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('mafia', 1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-950/80 border border-rose-900/50 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">الساكت 🤐</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('silencer', -1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="lobby_count_silencer" class="font-black text-sm text-amber-400">0</span>
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('silencer', 1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="text-[11px] font-bold text-emerald-400 mb-1.5">🛡️ تعديل شخصيات أهل القرية:</div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <div class="bg-slate-950/80 border border-emerald-900/50 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">شيخ القرية 📢</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('seer', -1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="lobby_count_seer" class="font-black text-sm text-emerald-400">1</span>
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('seer', 1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-950/80 border border-emerald-900/50 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">الطبيب 💉</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('doctor', -1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="lobby_count_doctor" class="font-black text-sm text-emerald-400">1</span>
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('doctor', 1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-950/80 border border-emerald-900/50 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">القناص 🎯</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('sniper', -1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="lobby_count_sniper" class="font-black text-sm text-emerald-400">1</span>
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('sniper', 1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-950/80 border border-slate-700 rounded-xl p-2 text-center">
+                                    <span class="text-[11px] text-slate-300 block mb-1">مواطن عادي</span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('villager', -1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                        <span id="lobby_count_villager" class="font-black text-sm text-slate-200">2</span>
+                                        <button type="button" onclick="hostAdjustLobbyRoleCount('villager', 1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="text-slate-400">إجمالي الشخصيات: <strong id="lobbyTotalCustomCount" class="text-amber-400">7</strong></span>
+                                <span class="text-slate-600">|</span>
+                                <span class="text-slate-400">المتصلون الآن: <strong id="lobbyConnectedPlayersCount" class="text-indigo-300">1</strong></span>
+                            </div>
+                            <span id="lobbyCustomBalanceHint" class="text-emerald-400 font-bold">عصابة (2) ضد قرية (5) ✔️</span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span id="lobbyMatchPlayersHint" class="text-[11px] text-slate-400"></span>
+                            <button type="button" onclick="hostSyncVillagersToPlayers()" class="bg-indigo-600/80 hover:bg-indigo-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">
+                                ضبط المواطنين لعدد المتصلين ⚖️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- شريط الأزرار التفاعلية وأسماء المصوتين بجوار كل زر -->
                 <div class="glass-panel bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
                     <div class="flex flex-wrap items-center justify-between gap-3">
@@ -559,7 +660,7 @@
             syncTimerInputs(type);
         }
 
-        const roleCounts = {
+        const DEFAULT_ROLE_COUNTS = {
             boss: 1,
             mafia: 1,
             silencer: 0,
@@ -568,6 +669,8 @@
             sniper: 1,
             villager: 2
         };
+
+        const roleCounts = { ...DEFAULT_ROLE_COUNTS };
 
         function toggleCustomRolesUI() {
             const isCustom = document.getElementById('customRolesToggle').checked;
@@ -625,6 +728,65 @@
         let sharedAudioCtx = null;
 
         // فتح قناة الصوت في متصفح Safari/Chrome عند أول لمسة للمستخدم لتعمل التنبيهات الصوتية لاحقاً
+        // دوال تحكم مدير الغرفة في عدد العصابة وأفرادها وشخصيات القرية من داخل الردهة قبل البدء أو مع تجهيز جولة جديدة
+        function getNormalizedRoomRoleConfig(dataObj) {
+            const rawCfg = (dataObj && dataObj.roleConfig) ? dataObj.roleConfig : {};
+            const rawCounts = rawCfg.counts || {};
+            return {
+                isCustom: Boolean(rawCfg.isCustom),
+                counts: {
+                    boss: Number(rawCounts.boss ?? DEFAULT_ROLE_COUNTS.boss),
+                    mafia: Number(rawCounts.mafia ?? DEFAULT_ROLE_COUNTS.mafia),
+                    silencer: Number(rawCounts.silencer ?? DEFAULT_ROLE_COUNTS.silencer),
+                    seer: Number(rawCounts.seer ?? DEFAULT_ROLE_COUNTS.seer),
+                    doctor: Number(rawCounts.doctor ?? DEFAULT_ROLE_COUNTS.doctor),
+                    sniper: Number(rawCounts.sniper ?? DEFAULT_ROLE_COUNTS.sniper),
+                    villager: Number(rawCounts.villager ?? DEFAULT_ROLE_COUNTS.villager)
+                }
+            };
+        }
+
+        async function hostToggleLobbyCustomRoles() {
+            if (!roomData || roomData.hostId !== myId || roomData.phase !== 'LOBBY') return;
+            const isCustom = document.getElementById('lobbyCustomRolesToggle').checked;
+            const cfg = getNormalizedRoomRoleConfig(roomData);
+            await db.ref(`rooms/${currentRoomCode}/roleConfig`).set({
+                isCustom: isCustom,
+                counts: cfg.counts
+            });
+        }
+
+        async function hostAdjustLobbyRoleCount(roleKey, delta) {
+            if (!roomData || roomData.hostId !== myId || roomData.phase !== 'LOBBY') return;
+            const cfg = getNormalizedRoomRoleConfig(roomData);
+            const minVal = 0;
+            const maxVal = (roleKey === 'villager' || roleKey === 'mafia') ? 12 : 3;
+            const currentVal = Number(cfg.counts[roleKey] || 0);
+            const nextVal = Math.max(minVal, Math.min(maxVal, currentVal + delta));
+            if (nextVal === currentVal) return;
+
+            cfg.counts[roleKey] = nextVal;
+            await db.ref(`rooms/${currentRoomCode}/roleConfig`).set({
+                isCustom: true,
+                counts: cfg.counts
+            });
+        }
+
+        async function hostSyncVillagersToPlayers() {
+            if (!roomData || roomData.hostId !== myId || roomData.phase !== 'LOBBY') return;
+            const cfg = getNormalizedRoomRoleConfig(roomData);
+            const connectedCount = Object.keys(roomData.players || {}).length;
+            const nonVillagers = cfg.counts.boss + cfg.counts.mafia + cfg.counts.silencer + cfg.counts.seer + cfg.counts.doctor + cfg.counts.sniper;
+            const neededVillagers = Math.max(0, Math.min(12, connectedCount - nonVillagers));
+
+            cfg.counts.villager = neededVillagers;
+            await db.ref(`rooms/${currentRoomCode}/roleConfig`).set({
+                isCustom: true,
+                counts: cfg.counts
+            });
+            showToast(`تم ضبط عدد المواطنين العاديين إلى (${neededVillagers}) ليتناسب مع المتصلين!`, false, 2200);
+        }
+
         function unlockAudioContext() {
             try {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -1152,38 +1314,53 @@
             });
         }
 
-        // مسح طريقة الخروج السابقة وتوزيع أدوار جديدة عند بداية دور جديد في اللعبة
+        // مسح طريقة الخروج السابقة وتوزيع أدوار جديدة حسب آخر تعديل للمدير عند بداية دور جديد
         async function hostStartGame() {
-            const snap = await db.ref(`rooms/${currentRoomCode}/players`).once('value');
-            const pList = Object.values(snap.val() || {});
+            if (!roomData || roomData.hostId !== myId) return;
+            const snap = await db.ref('rooms/' + currentRoomCode).once('value');
+            const latestRoom = snap.val();
+            if (!latestRoom) return;
+
+            const pList = Object.values(latestRoom.players || {});
             const totalPlayers = pList.length;
 
             if (totalPlayers < 4) {
                 return showToast('يجب وجود 4 لاعبين على الأقل في الغرفة لبدء اللعبة!', true);
             }
 
-            const cfg = roomData.roleConfig || { isCustom: false };
+            const cfg = getNormalizedRoomRoleConfig(latestRoom);
             let pool = [];
 
             if (cfg.isCustom && cfg.counts) {
                 const c = cfg.counts;
+                const mTotal = c.boss + c.mafia + c.silencer;
+                const vTotal = c.seer + c.doctor + c.sniper + c.villager;
+
+                if (mTotal === 0) {
+                    return showToast('يجب اختيار فرد عصابة أو ريس واحد على الأقل في التخصيص اليدوي!', true);
+                }
+                if (mTotal >= vTotal) {
+                    return showToast(`يجب أن يكون عدد فريق القرية (${vTotal}) أكبر من عدد العصابة (${mTotal})!`, true);
+                }
+
                 const mafiaPool = [];
                 const villagePool = [];
 
-                for (let i = 0; i < Number(c.boss || 0); i++) mafiaPool.push('boss');
-                for (let i = 0; i < Number(c.mafia || 0); i++) mafiaPool.push('mafia');
-                for (let i = 0; i < Number(c.silencer || 0); i++) mafiaPool.push('silencer');
+                for (let i = 0; i < c.boss; i++) mafiaPool.push('boss');
+                for (let i = 0; i < c.mafia; i++) mafiaPool.push('mafia');
+                for (let i = 0; i < c.silencer; i++) mafiaPool.push('silencer');
 
-                for (let i = 0; i < Number(c.doctor || 0); i++) villagePool.push('doctor');
-                for (let i = 0; i < Number(c.seer || 0); i++) villagePool.push('seer');
-                for (let i = 0; i < Number(c.sniper || 0); i++) villagePool.push('sniper');
-                for (let i = 0; i < Number(c.villager || 0); i++) villagePool.push('villager');
+                for (let i = 0; i < c.doctor; i++) villagePool.push('doctor');
+                for (let i = 0; i < c.seer; i++) villagePool.push('seer');
+                for (let i = 0; i < c.sniper; i++) villagePool.push('sniper');
+                for (let i = 0; i < c.villager; i++) villagePool.push('villager');
 
                 if (mafiaPool.length > 0 && !mafiaPool.includes('boss') && !mafiaPool.includes('mafia')) {
                     mafiaPool[0] = 'boss';
                 }
 
-                const maxAllowedMafia = Math.max(1, Math.floor((totalPlayers - 2) / 2));
+                // ضمان بقاء عدد العصابة أقل من نصف عدد اللاعبين الفعليين في الغرفة
+                const maxAllowedMafia = Math.max(1, Math.floor((totalPlayers - 1) / 2));
                 const actualMafiaCount = Math.min(mafiaPool.length, maxAllowedMafia);
 
                 const selectedMafia = mafiaPool.slice(0, actualMafiaCount);
@@ -1545,6 +1722,12 @@
                 });
                 pushLog(reportLines.join(' | '));
             } else {
+                // فك الإسكات بانتهاء النهار حتى يتمكن الساكت (أو أي فرد عصابة مُسكت للتمويه) من الكتابة في شات العصابة السري ليلاً
+                Object.values(players).forEach(p => {
+                    p.isMuted = false;
+                    p.usedGesture = false;
+                });
+
                 const fullMsg = reportLines.join('\n');
                 await db.ref('rooms/' + currentRoomCode).update({
                     players: players,
@@ -1592,9 +1775,10 @@
 
                 if (targetId !== 'skip' && me.team === 'mafia' && roomData.players[targetId]) {
                     const actionLabel = (me.role === 'silencer' && !silencerActsAsKiller) ? 'إسكات 🤐' : 'اغتيال 🔪';
+                    const targetDisplay = (targetId === myId) ? 'نفسه (للتمويه)' : roomData.players[targetId].name;
                     db.ref(`rooms/${currentRoomCode}/chats`).push({
                         sender: `تنبيه العصابة`,
-                        text: `اختار (${me.name} - ${ROLES_INFO[me.role].shortName}) هدفاً لـ ${actionLabel}: [ ${roomData.players[targetId].name} ]`,
+                        text: `اختار (${me.name} - ${ROLES_INFO[me.role].shortName}) هدفاً لـ ${actionLabel}: [ ${targetDisplay} ]`,
                         channel: 'mafia'
                     });
                 }
@@ -1828,10 +2012,13 @@
             document.getElementById('phaseSubtitle').textContent = pSub;
 
             const lobbyBanner = document.getElementById('lobbySettingsBanner');
+            const hostEditor = document.getElementById('hostLobbyRoleEditor');
+            const normalizedCfg = getNormalizedRoomRoleConfig(data);
+
             if (data.phase === 'LOBBY') {
                 lobbyBanner.classList.remove('hidden');
-                if (data.roleConfig && data.roleConfig.isCustom && data.roleConfig.counts) {
-                    const c = data.roleConfig.counts;
+                if (normalizedCfg.isCustom) {
+                    const c = normalizedCfg.counts;
                     const summaryParts = [];
                     if (c.boss) summaryParts.push(`ريس (${c.boss})`);
                     if (c.mafia) summaryParts.push(`عصابة (${c.mafia})`);
@@ -1840,15 +2027,66 @@
                     if (c.doctor) summaryParts.push(`طبيب (${c.doctor})`);
                     if (c.sniper) summaryParts.push(`قناص (${c.sniper})`);
                     if (c.villager) summaryParts.push(`مواطن (${c.villager})`);
-                    document.getElementById('lobbyConfigSummary').innerHTML = `⚙️ <strong class="text-amber-400">توزيع مخصص:</strong> ${summaryParts.join(' ، ')}`;
+                    document.getElementById('lobbyConfigSummary').innerHTML = `⚙️ <strong class="text-amber-400">توزيع مخصص:</strong> ${summaryParts.length ? summaryParts.join(' ، ') : 'لم يتم اختيار شخصيات'}`;
                 } else {
                     document.getElementById('lobbyConfigSummary').innerHTML = `⚙️ <strong class="text-emerald-400">نظام التوزيع:</strong> تلقائي متوازن`;
                 }
 
                 const t = data.timers || { night: 45, discussion: 120, voting: 300 };
                 document.getElementById('lobbyTimersSummary').textContent = `⏱️ الليل: ${formatDurationSetting(t.night)} | النقاش: ${formatDurationSetting(t.discussion)} | التصويت: ${formatDurationSetting(t.voting)}`;
+
+                // إظهار وتحديث لوحة تعديل الشخصيات لمدير الغرفة فقط في الردهة
+                if (data.hostId === myId) {
+                    hostEditor.classList.remove('hidden');
+                    const c = normalizedCfg.counts;
+                    document.getElementById('lobbyCustomRolesToggle').checked = normalizedCfg.isCustom;
+                    document.getElementById('lobbyCustomRolesPanel').classList.toggle('hidden', !normalizedCfg.isCustom);
+                    document.getElementById('lobbyAutoRolesHint').classList.toggle('hidden', normalizedCfg.isCustom);
+
+                    document.getElementById('lobby_count_boss').textContent = c.boss;
+                    document.getElementById('lobby_count_mafia').textContent = c.mafia;
+                    document.getElementById('lobby_count_silencer').textContent = c.silencer;
+                    document.getElementById('lobby_count_seer').textContent = c.seer;
+                    document.getElementById('lobby_count_doctor').textContent = c.doctor;
+                    document.getElementById('lobby_count_sniper').textContent = c.sniper;
+                    document.getElementById('lobby_count_villager').textContent = c.villager;
+
+                    const mTotal = c.boss + c.mafia + c.silencer;
+                    const vTotal = c.seer + c.doctor + c.sniper + c.villager;
+                    const totalConfigured = mTotal + vTotal;
+
+                    document.getElementById('lobbyTotalCustomCount').textContent = totalConfigured;
+                    document.getElementById('lobbyConnectedPlayersCount').textContent = pList.length;
+
+                    const balanceHint = document.getElementById('lobbyCustomBalanceHint');
+                    if (mTotal === 0) {
+                        balanceHint.textContent = '⚠️ يجب وجود فرد عصابة أو ريس واحد على الأقل!';
+                        balanceHint.className = 'text-rose-400 font-bold';
+                    } else if (mTotal >= vTotal) {
+                        balanceHint.textContent = `⚠️ العصابة (${mTotal}) يجب أن تكون أقل من القرية (${vTotal})!`;
+                        balanceHint.className = 'text-amber-400 font-bold';
+                    } else {
+                        balanceHint.textContent = `عصابة (${mTotal}) ضد قرية (${vTotal}) ✔️`;
+                        balanceHint.className = 'text-emerald-400 font-bold';
+                    }
+
+                    const matchHint = document.getElementById('lobbyMatchPlayersHint');
+                    if (totalConfigured === pList.length) {
+                        matchHint.textContent = '✅ عدد الشخصيات مطابق تماماً لعدد اللاعبين المتصلين.';
+                        matchHint.className = 'text-[11px] text-emerald-400 font-semibold';
+                    } else if (totalConfigured < pList.length) {
+                        matchHint.textContent = `ℹ️ المتصلون أكثر بـ (${pList.length - totalConfigured})؛ سيتم إكمال الباقي كمواطنين عاديين عند البدء.`;
+                        matchHint.className = 'text-[11px] text-indigo-300';
+                    } else {
+                        matchHint.textContent = `⚠️ الشخصيات المحددة أكثر من المتصلين بـ (${totalConfigured - pList.length})؛ سيتم التوزيع على المتصلين فقط.`;
+                        matchHint.className = 'text-[11px] text-amber-300';
+                    }
+                } else {
+                    hostEditor.classList.add('hidden');
+                }
             } else {
                 lobbyBanner.classList.add('hidden');
+                hostEditor.classList.add('hidden');
             }
 
             if (data.announcement && Number(data.announcement.id) !== lastAnnouncedId) {
