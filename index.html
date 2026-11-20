@@ -491,6 +491,52 @@
                             </button>
                         </div>
                     </div>
+
+                    <div class="pt-3 mt-3 border-t border-slate-800/80">
+                        <div class="text-[11px] font-bold text-indigo-300 mb-2 flex items-center gap-1">⏱️ تعديل مؤقتات المراحل (للمدير)</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div class="bg-slate-950/80 border border-indigo-900/50 rounded-xl p-2 text-center">
+                                <span class="text-[11px] text-slate-300 block mb-1">وقت الليل 🌙</span>
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <button type="button" onclick="lobbyAdjustTimer('night', -5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                    <div class="flex items-center gap-0.5" dir="ltr">
+                                        <input id="lobby_timer_night_min" type="number" min="0" max="3" step="1" value="0" onchange="lobbySetTimerFromInputs('night')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-indigo-400 focus:outline-none focus:border-indigo-400" title="الدقائق">
+                                        <span class="font-black text-indigo-400">:</span>
+                                        <input id="lobby_timer_night_sec" type="number" min="0" max="59" step="1" value="45" onchange="lobbySetTimerFromInputs('night')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-indigo-400 focus:outline-none focus:border-indigo-400" title="الثواني">
+                                    </div>
+                                    <button type="button" onclick="lobbyAdjustTimer('night', 5)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                </div>
+                                <span class="text-[9px] text-slate-500 block mt-1">دقيقة : ثانية — اكتب الوقت بنفسك</span>
+                            </div>
+                            <div class="bg-slate-950/80 border border-amber-900/50 rounded-xl p-2 text-center">
+                                <span class="text-[11px] text-slate-300 block mb-1">وقت النقاش ☀️</span>
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <button type="button" onclick="lobbyAdjustTimer('discussion', -60)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                    <div class="flex items-center gap-0.5" dir="ltr">
+                                        <input id="lobby_timer_discussion_min" type="number" min="0" max="60" step="1" value="2" onchange="lobbySetTimerFromInputs('discussion')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-amber-400 focus:outline-none focus:border-amber-400" title="الدقائق">
+                                        <span class="font-black text-amber-400">:</span>
+                                        <input id="lobby_timer_discussion_sec" type="number" min="0" max="59" step="1" value="0" onchange="lobbySetTimerFromInputs('discussion')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-amber-400 focus:outline-none focus:border-amber-400" title="الثواني">
+                                    </div>
+                                    <button type="button" onclick="lobbyAdjustTimer('discussion', 60)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                </div>
+                                <span class="text-[9px] text-slate-500 block mt-1">دقيقة : ثانية — اكتب الوقت بنفسك</span>
+                            </div>
+                            <div class="bg-slate-950/80 border border-rose-900/50 rounded-xl p-2 text-center">
+                                <span class="text-[11px] text-slate-300 block mb-1">وقت التصويت ⚖️</span>
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <button type="button" onclick="lobbyAdjustTimer('voting', -30)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">-</button>
+                                    <div class="flex items-center gap-0.5" dir="ltr">
+                                        <input id="lobby_timer_voting_min" type="number" min="0" max="10" step="1" value="5" onchange="lobbySetTimerFromInputs('voting')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-rose-400 focus:outline-none focus:border-rose-400" title="الدقائق">
+                                        <span class="font-black text-rose-400">:</span>
+                                        <input id="lobby_timer_voting_sec" type="number" min="0" max="59" step="1" value="0" onchange="lobbySetTimerFromInputs('voting')" class="w-11 bg-slate-800 border border-slate-700 rounded-lg px-1 py-0.5 text-center font-black text-xs sm:text-sm text-rose-400 focus:outline-none focus:border-rose-400" title="الثواني">
+                                    </div>
+                                    <button type="button" onclick="lobbyAdjustTimer('voting', 30)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold">+</button>
+                                </div>
+                                <span class="text-[9px] text-slate-500 block mt-1">دقيقة : ثانية — اكتب الوقت بنفسك</span>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-1.5">التعديل بيتطبق على الجولة الجاية فوراً، وكل اللعيبة شايفين القيم الجديدة في شريط الردهة فوق.</p>
+                    </div>
                 </div>
 
                 <!-- شريط الأزرار التفاعلية وأسماء المصوتين بجوار كل زر -->
@@ -785,6 +831,43 @@
                 counts: cfg.counts
             });
             showToast(`تم ضبط عدد المواطنين العاديين إلى (${neededVillagers}) ليتناسب مع المتصلين!`, false, 2200);
+        }
+
+        // دوال تعديل مدير الغرفة لمؤقتات المراحل من داخل الردهة (تُحفظ في بيانات الغرفة وتسري على الجولة التالية)
+        function getRoomTimerSeconds(type) {
+            const t = (roomData && roomData.timers) ? roomData.timers : timerSettings;
+            return Number(t[type] || timerSettings[type]);
+        }
+
+        function syncLobbyTimerInputs(type) {
+            const total = clampTimerValue(type, getRoomTimerSeconds(type));
+            const minEl = document.getElementById('lobby_timer_' + type + '_min');
+            const secEl = document.getElementById('lobby_timer_' + type + '_sec');
+            if (minEl && document.activeElement !== minEl) minEl.value = Math.floor(total / 60);
+            if (secEl && document.activeElement !== secEl) secEl.value = total % 60;
+        }
+
+        function syncAllLobbyTimerInputs() {
+            ['night', 'discussion', 'voting'].forEach(syncLobbyTimerInputs);
+        }
+
+        async function hostWriteRoomTimer(type, totalSeconds) {
+            if (!roomData || roomData.hostId !== myId || roomData.phase !== 'LOBBY') return;
+            const clamped = clampTimerValue(type, totalSeconds);
+            await db.ref(`rooms/${currentRoomCode}/timers/${type}`).set(clamped);
+            syncLobbyTimerInputs(type);
+        }
+
+        function lobbyAdjustTimer(type, delta) {
+            hostWriteRoomTimer(type, getRoomTimerSeconds(type) + delta);
+        }
+
+        function lobbySetTimerFromInputs(type) {
+            const minEl = document.getElementById('lobby_timer_' + type + '_min');
+            const secEl = document.getElementById('lobby_timer_' + type + '_sec');
+            if (!minEl || !secEl) return;
+            const total = ((parseInt(minEl.value, 10) || 0) * 60) + (parseInt(secEl.value, 10) || 0);
+            hostWriteRoomTimer(type, total);
         }
 
         function unlockAudioContext() {
@@ -2081,6 +2164,8 @@
                         matchHint.textContent = `⚠️ الشخصيات المحددة أكثر من المتصلين بـ (${totalConfigured - pList.length})؛ سيتم التوزيع على المتصلين فقط.`;
                         matchHint.className = 'text-[11px] text-amber-300';
                     }
+
+                    syncAllLobbyTimerInputs();
                 } else {
                     hostEditor.classList.add('hidden');
                 }
