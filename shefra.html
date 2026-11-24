@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>الشيفرة 🔐 — لعبة التلميحات والتخمين</title>
+<meta name="theme-color" content="#0b1020">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: 'Cairo', system-ui, sans-serif; color: #e2e8f0;
+    background:
+      radial-gradient(600px 400px at 85% -5%, rgba(244,63,94,.16), transparent 60%),
+      radial-gradient(700px 500px at 10% 110%, rgba(59,130,246,.18), transparent 60%),
+      radial-gradient(500px 300px at 50% 45%, rgba(139,92,246,.10), transparent 65%),
+      linear-gradient(180deg, #0b1020, #0d1526 60%, #0a0f1e);
+    background-attachment: fixed; min-height: 100dvh;
+    padding: max(16px, env(safe-area-inset-top)) 14px max(22px, env(safe-area-inset-bottom));
+  }
+  .wrap { max-width: 560px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  .glass {
+    background: rgba(148,163,184,.07); border: 1px solid rgba(148,163,184,.16);
+    border-radius: 24px; padding: 20px 16px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 18px 40px rgba(0,0,0,.35);
+  }
+  .logo { font-size: 62px; text-align: center; line-height: 1.2; animation: bob 3s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-7px); } }
+  h1.title {
+    text-align: center; margin: 2px 0 4px; font-size: 44px; font-weight: 900;
+    background: linear-gradient(90deg, #22d3ee, #a78bfa, #fb7185);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .tag { text-align: center; color: #94a3b8; font-weight: 700; font-size: 14.5px; margin: 0 0 20px; line-height: 1.9; }
+  .btn {
+    display: block; width: 100%; border: none; cursor: pointer; font-family: inherit;
+    font-size: 19px; font-weight: 900; border-radius: 16px; padding: 14px; margin-top: 12px;
+    color: #0b1020; background: linear-gradient(90deg, #22d3ee, #818cf8);
+    box-shadow: 0 6px 0 #3730a3; transition: transform .1s, box-shadow .1s;
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #3730a3; }
+  .btn.ghost { background: rgba(148,163,184,.12); color: #e2e8f0; box-shadow: none; border: 1px solid rgba(148,163,184,.25); }
+  .btn.red { background: linear-gradient(90deg, #fb7185, #ef4444); color: #fff; box-shadow: 0 6px 0 #7f1d1d; }
+  .btn.red:active { box-shadow: 0 3px 0 #7f1d1d; }
+  .btn.blue { background: linear-gradient(90deg, #38bdf8, #2563eb); color: #fff; box-shadow: 0 6px 0 #1e3a8a; }
+  .btn.blue:active { box-shadow: 0 3px 0 #1e3a8a; }
+  .btn:disabled { opacity: .45; pointer-events: none; }
+  .home-btn {
+    position: fixed; top: max(12px, env(safe-area-inset-top)); inset-inline-start: 12px; z-index: 40;
+    background: rgba(15,23,42,.8); border: 1px solid rgba(148,163,184,.35); color: #e2e8f0;
+    font-family: inherit; font-weight: 800; font-size: 13px; border-radius: 999px; padding: 7px 14px; cursor: pointer;
+    text-decoration: none; backdrop-filter: blur(8px);
+  }
+  h2.sec { font-size: 22px; font-weight: 900; margin: 0 0 6px; text-align: center; }
+  .how p, .how li { font-size: 15px; font-weight: 600; line-height: 2; color: #cbd5e1; }
+  .how ul { margin: 6px 0; padding-inline-start: 20px; }
+  .lbl { font-size: 14px; font-weight: 800; color: #a5b4fc; margin: 16px 0 8px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    flex: 1; min-width: 70px; text-align: center; padding: 10px 6px; border-radius: 14px; cursor: pointer;
+    background: rgba(148,163,184,.1); border: 2px solid rgba(148,163,184,.2); font-weight: 800; font-size: 15px; color: #cbd5e1;
+    font-family: inherit;
+  }
+  .chip.on { border-color: #22d3ee; background: rgba(34,211,238,.15); color: #fff; }
+  .chip.on.red { border-color: #fb7185; background: rgba(244,63,94,.18); }
+  .chip.on.blue { border-color: #38bdf8; background: rgba(59,130,246,.18); }
+  input[type=text] {
+    width: 100%; font-family: inherit; font-size: 16px; font-weight: 700; color: #fff;
+    background: rgba(2,6,23,.55); border: 2px solid rgba(148,163,184,.25); border-radius: 14px; padding: 11px 13px; outline: none;
+  }
+  input[type=text]:focus { border-color: #22d3ee; }
+  /* pass screen */
+  .pass-emoji { font-size: 74px; text-align: center; line-height: 1.3; }
+  .pass-txt { text-align: center; font-size: 21px; font-weight: 900; line-height: 1.9; }
+  .pass-sub { text-align: center; color: #94a3b8; font-weight: 700; font-size: 14px; line-height: 1.9; }
+  /* key grid */
+  .keygrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 12px 0; }
+  .kcell {
+    border-radius: 10px; padding: 7px 2px; text-align: center; font-size: 12.5px; font-weight: 800; color: #fff;
+    min-height: 40px; display: flex; align-items: center; justify-content: center; line-height: 1.3; word-break: break-word;
+  }
+  .kcell.R { background: linear-gradient(160deg, #f43f5e, #b91c1c); }
+  .kcell.B { background: linear-gradient(160deg, #3b82f6, #1d4ed8); }
+  .kcell.N { background: linear-gradient(160deg, #a8a29e, #78716c); }
+  .kcell.A { background: linear-gradient(160deg, #27272a, #000); border: 1px solid #52525b; }
+  .kcell.done { opacity: .35; text-decoration: line-through; }
+  .numchips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .nchip {
+    width: 44px; height: 44px; border-radius: 12px; border: 2px solid rgba(148,163,184,.25); cursor: pointer;
+    background: rgba(148,163,184,.1); color: #e2e8f0; font-family: inherit; font-size: 17px; font-weight: 900;
+  }
+  .nchip.on { border-color: #22d3ee; background: rgba(34,211,238,.2); color: #fff; }
+  .err { color: #fda4af; font-size: 13.5px; font-weight: 800; text-align: center; min-height: 20px; margin-top: 8px; }
+  /* board */
+  .scorebar { display: flex; gap: 10px; align-items: stretch; margin-bottom: 12px; }
+  .score {
+    flex: 1; border-radius: 18px; padding: 10px; text-align: center; color: #fff; position: relative;
+    border: 2px solid transparent;
+  }
+  .score.R { background: linear-gradient(160deg, rgba(244,63,94,.85), rgba(185,28,28,.85)); }
+  .score.B { background: linear-gradient(160deg, rgba(59,130,246,.85), rgba(29,78,216,.85)); }
+  .score.turn { border-color: #fde68a; box-shadow: 0 0 0 3px rgba(253,224,71,.25), 0 10px 24px rgba(0,0,0,.35); }
+  .score .n { font-size: 30px; font-weight: 900; line-height: 1.1; }
+  .score .t { font-size: 13px; font-weight: 800; opacity: .92; }
+  .midbox { display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 86px; }
+  .timer { font-size: 24px; font-weight: 900; color: #fde68a; }
+  .timer.low { color: #fda4af; animation: pulse .5s infinite alternate; }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
+  .cluebar {
+    border-radius: 16px; padding: 10px 14px; margin-bottom: 12px; text-align: center;
+    background: rgba(253,224,71,.1); border: 1px solid rgba(253,224,71,.35);
+    font-size: 16px; font-weight: 800; line-height: 1.8;
+  }
+  .cluebar b { color: #fde68a; font-size: 19px; }
+  .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .card {
+    border: none; cursor: pointer; font-family: inherit; border-radius: 14px; min-height: 64px;
+    background: linear-gradient(180deg, #f8fafc, #e2e8f0); color: #0f172a;
+    font-size: 15.5px; font-weight: 900; padding: 6px 2px; line-height: 1.35; word-break: break-word;
+    box-shadow: 0 4px 0 #94a3b8; transition: transform .12s; position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  }
+  .card:active { transform: scale(.96); }
+  .card.sel { outline: 3px solid #facc15; outline-offset: 2px; transform: scale(1.04); }
+  .card .ic { font-size: 19px; line-height: 1; }
+  .card.rev { cursor: default; color: #fff; box-shadow: none; animation: flip .45s ease; }
+  @keyframes flip { from { transform: rotateX(90deg); } to { transform: rotateX(0); } }
+  .card.rev.R { background: linear-gradient(160deg, #f43f5e, #b91c1c); }
+  .card.rev.B { background: linear-gradient(160deg, #3b82f6, #1d4ed8); }
+  .card.rev.N { background: linear-gradient(160deg, #a8a29e, #78716c); }
+  .card.rev.A { background: linear-gradient(160deg, #27272a, #000); border: 1px solid #52525b; }
+  .confirmbar {
+    margin-top: 12px; border-radius: 16px; padding: 12px; text-align: center;
+    background: rgba(250,204,21,.12); border: 1px solid rgba(250,204,21,.4); font-weight: 800; font-size: 15.5px;
+  }
+  .confirmbar .row { display: flex; gap: 8px; margin-top: 10px; }
+  .confirmbar .btn { margin-top: 0; font-size: 16px; padding: 11px; }
+  .logbox { margin-top: 14px; font-size: 13px; font-weight: 700; color: #94a3b8; line-height: 2; max-height: 150px; overflow-y: auto; }
+  .logbox div { border-bottom: 1px dashed rgba(148,163,184,.15); padding: 2px 0; }
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); z-index: 60;
+    background: #f8fafc; color: #0f172a; font-weight: 900; font-size: 15px; border-radius: 999px; padding: 10px 22px;
+    opacity: 0; pointer-events: none; transition: all .25s; box-shadow: 0 12px 30px rgba(0,0,0,.5); max-width: 92vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .win-emoji { font-size: 80px; text-align: center; line-height: 1.3; }
+  .win-txt { text-align: center; font-size: 28px; font-weight: 900; line-height: 1.7; }
+  .win-sub { text-align: center; color: #94a3b8; font-weight: 700; line-height: 1.9; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 كل الألعاب</a>
+<div class="wrap">
+
+  <!-- HOME -->
+  <section id="scrHome">
+    <div class="logo">🔐</div>
+    <h1 class="title">الشيفرة</h1>
+    <p class="tag">لعبة التلميحات والتخمين بين فريقين 🕵️<br>القائد يلمّح بكلمة واحدة… وفريقه يخمّن كلماته على الشبكة قبل ما يغلطوا — أو يقابلوا القاتل 💀</p>
+    <div class="glass">
+      <button class="btn" onclick="goSetup()">▶️ ابدأ لعبة</button>
+      <button class="btn ghost" onclick="show('scrHow')">📖 طريقة اللعب</button>
+    </div>
+    <p class="tag" style="margin-top:14px">👥 4 لاعبين أو أكتر • 📱 جهاز واحد — تمرير الجهاز</p>
+  </section>
+
+  <!-- HOW TO -->
+  <section id="scrHow" class="hidden">
+    <div class="glass how">
+      <h2 class="sec">📖 طريقة اللعب</h2>
+      <p>شبكة من <b>25 كلمة</b>. كل فريق (🔴 أحمر / 🔵 أزرق) له كلمات سرية وكلماته بس: الفريق اللي بيبدأ عنده <b>9</b> والتاني <b>8</b>، وفيه 7 كلمات محايدة وكلمة واحدة <b>قاتلة 💀</b>.</p>
+      <ul>
+        <li>كل فريق له <b>قائد</b> بيشوف «المفتاح» السري (ألوان كل الكلمات) — والباقي (العملاء) مش شايفين غير الكلمات.</li>
+        <li>في دور فريقه، الجهاز بيروح للقائد: يشوف المفتاح ويدّي <b>تلميح من كلمة واحدة + رقم</b> (الرقم = كام كلمة التلميح بيربطها).</li>
+        <li>العملاء يدوسوا الكلمات اللي شاكين فيها، واحدة واحدة وبعد التأكيد. عدد محاولاتهم = <b>الرقم + 1</b>.</li>
+        <li>كلمة صح؟ كمّلوا. كلمة محايدة أو بتاعة الخصم؟ الدور يخلص. كلمة الخصم بتساعده كمان!</li>
+        <li>لمستوا <b>القاتل 💀</b>؟ خسرتوا فوراً. أول فريق يكشف كل كلماته يكسب 🏆</li>
+        <li>التلميح ممنوع يكون كلمة موجودة على الشبكة. والرقم <b>0</b> معناه «ولا كلمة من بتوعنا مرتبطة» والمحاولات مفتوحة، و<b>∞</b> محاولات مفتوحة.</li>
+      </ul>
+      <button class="btn" onclick="goSetup()">▶️ يلا نلعب</button>
+      <button class="btn ghost" onclick="show('scrHome')">↩️ رجوع</button>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="scrSetup" class="hidden">
+    <div class="glass">
+      <h2 class="sec">⚙️ إعداد اللعبة</h2>
+      <div class="lbl">🚩 الفريق اللي يبدأ (عنده 9 كلمات)</div>
+      <div class="chips" id="startChips">
+        <button class="chip on" data-v="rand">🎲 عشوائي</button>
+        <button class="chip red" data-v="R">🔴 الأحمر</button>
+        <button class="chip blue" data-v="B">🔵 الأزرق</button>
+      </div>
+      <div class="lbl">⏱️ مؤقت دور التخمين</div>
+      <div class="chips" id="timerChips">
+        <button class="chip on" data-v="0">بدون</button>
+        <button class="chip" data-v="60">60 ث</button>
+        <button class="chip" data-v="120">120 ث</button>
+        <button class="chip" data-v="180">180 ث</button>
+      </div>
+      <div class="lbl">🕵️ اسم قائد الأحمر (اختياري)</div>
+      <input type="text" id="nameR" maxlength="16" placeholder="قائد الفريق الأحمر">
+      <div class="lbl">🕵️ اسم قائد الأزرق (اختياري)</div>
+      <input type="text" id="nameB" maxlength="16" placeholder="قائد الفريق الأزرق">
+      <button class="btn" onclick="startGame()">🚀 ابدأ اللعبة</button>
+      <button class="btn ghost" onclick="show('scrHome')">↩️ رجوع</button>
+    </div>
+  </section>
+
+  <!-- PASS TO SPYMASTER -->
+  <section id="scrPass" class="hidden">
+    <div class="glass">
+      <div class="pass-emoji">🤫📱</div>
+      <div class="pass-txt" id="passTxt"></div>
+      <p class="pass-sub">المفتاح سري! محدش غير القائد يبص على الشاشة الجاية 👀</p>
+      <button class="btn" id="passBtn" onclick="openKey()">🙋 أنا القائد — أريني المفتاح</button>
+      <button class="btn ghost" onclick="quitToHome()">🚪 خروج</button>
+    </div>
+  </section>
+
+  <!-- KEY + CLUE -->
+  <section id="scrKey" class="hidden">
+    <div class="glass">
+      <h2 class="sec" id="keyTitle">🗝️ المفتاح السري</h2>
+      <div class="keygrid" id="keyGrid"></div>
+      <div id="clueForm">
+        <div class="lbl">💡 تلميحك: كلمة واحدة</div>
+        <input type="text" id="clueWord" maxlength="24" placeholder="اكتب التلميح هنا">
+        <div class="lbl">🔢 بيربط كام كلمة؟</div>
+        <div class="numchips" id="numChips"></div>
+        <div class="err" id="clueErr"></div>
+        <button class="btn" onclick="submitClue()">✅ اعتماد التلميح — دور العملاء</button>
+      </div>
+      <button class="btn ghost hidden" id="keyBackBtn" onclick="backToBoard()">↩️ رجوع للشبكة</button>
+    </div>
+  </section>
+
+  <!-- BOARD -->
+  <section id="scrBoard" class="hidden">
+    <div class="scorebar">
+      <div class="score R" id="scoreR"><div class="n" id="remR">9</div><div class="t">🔴 الأحمر</div></div>
+      <div class="midbox"><div class="timer hidden" id="timerBox">0:00</div><div style="font-size:12px;color:#94a3b8;font-weight:800" id="turnLbl"></div></div>
+      <div class="score B" id="scoreB"><div class="n" id="remB">8</div><div class="t">🔵 الأزرق</div></div>
+    </div>
+    <div class="cluebar" id="clueBar"></div>
+    <div class="board" id="board"></div>
+    <div class="confirmbar hidden" id="confirmBar">
+      <span id="confirmTxt"></span>
+      <div class="row">
+        <button class="btn" style="flex:1" onclick="confirmGuess()">✅ تأكيد</button>
+        <button class="btn ghost" style="flex:1" onclick="cancelSelect()">✖️ إلغاء</button>
+      </div>
+    </div>
+    <button class="btn ghost" id="endTurnBtn" onclick="endTurn()" disabled>⏭️ إنهاء التخمين وتسليم الدور</button>
+    <button class="btn ghost" onclick="peekKey()">👁️ مفتاح القائد (سري)</button>
+    <div class="logbox" id="logBox"></div>
+    <button class="btn ghost" onclick="quitToHome()">🚪 خروج من اللعبة</button>
+  </section>
+
+  <!-- GAME OVER -->
+  <section id="scrOver" class="hidden">
+    <div class="glass">
+      <div class="win-emoji" id="winEmoji">🏆</div>
+      <div class="win-txt" id="winTxt"></div>
+      <p class="win-sub" id="winSub"></p>
+      <div class="lbl" style="text-align:center">الشبكة كاملة:</div>
+      <div class="keygrid" id="finalGrid"></div>
+      <button class="btn" onclick="startGame()">🔄 لعبة جديدة</button>
+      <button class="btn ghost" onclick="show('scrHome')">🏠 الرئيسية</button>
+    </div>
+  </section>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+"use strict";
+const WORDS = ['مدرسة','مستشفى','سوق','شاطئ','جبل','نهر','صحراء','قرية','مدينة','مطار','ميناء','حديقة','متحف','مكتبة','سينما','مسرح','قلعة','برج','جسر','ميدان','جزيرة','غابة','واحة','قصر','كوخ','خيمة','محطة','فندق','شارع','خبز','جبن','عسل','سكر','قهوة','شاي','عصير','لحم','دجاج','سمك','أرز','مكرونة','بيتزا','كشري','فول','طعمية','بطاطس','طماطم','خيار','بصل','ثوم','ليمون','برتقال','تفاح','موز','عنب','بطيخ','مانجو','فراولة','تمر','زيتون','بيض','لبن','زبدة','ملح','فلفل','شوكولاتة','أسد','نمر','فيل','حصان','جمل','كلب','قطة','أرنب','ثعلب','ذئب','غزال','قرد','حمامة','بطة','خروف','بقرة','قرش','حوت','فراشة','نحلة','نملة','عنكبوت','تمساح','سلحفاة','بومة','صقر','نسر','حمار','كتاب','قلم','كرسي','طاولة','باب','شباك','مفتاح','ساعة','هاتف','كمبيوتر','تلفزيون','كاميرا','نظارة','قبعة','حذاء','قميص','بنطلون','فستان','شنطة','محفظة','مظلة','مرآة','مصباح','شمعة','سكين','شوكة','ملعقة','طبق','سرير','مخدة','بطانية','صابون','فرشاة','مشط','مقص','إبرة','خيط','شمس','قمر','نجمة','سحابة','مطر','ثلج','ريح','برق','رعد','بحر','موجة','رمل','حجر','شجرة','وردة','نار','ماء','ذهب','فضة','حديد','نحاس','خشب','زجاج','طبيب','مهندس','معلم','طباخ','سائق','شرطي','جندي','مزارع','صياد','نجار','حداد','خياط','رسام','مغني','ممثل','كاتب','شاعر','قاضي','محامي','تاجر','حلاق','خباز','طيار','كرة','ملعب','هدف','حكم','فريق','بطولة','كأس','ميدالية','سباحة','ملاكمة','شطرنج','دومينو','سيارة','أتوبيس','قطار','طيارة','مركب','سفينة','دراجة','تاكسي','شاحنة','رأس','عين','أنف','فم','أذن','يد','قلب','شعر','لسان','رقبة','كتف','إصبع','ملك','أمير','كنز','سيف','درع','تاج','علم','خريطة','بوصلة','صاروخ','بطارية','جرس','جيتار','بيانو','كمان','عود','حلم','سفر','زواج','عيد','حفلة','هدية','رسالة','صورة','أغنية','فيلم','قصة','سلام','حرب'];
+const $ = id => document.getElementById(id);
+const SCREENS = ['scrHome','scrHow','scrSetup','scrPass','scrKey','scrBoard','scrOver'];
+function show(id){ SCREENS.forEach(s => $(s).classList.toggle('hidden', s !== id)); window.scrollTo(0,0); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+let toastT = null;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
+
+let startSel = 'rand', timerSel = 0;
+function chipGroup(id, cb){
+  const el = $(id);
+  el.querySelectorAll('.chip').forEach(c => c.onclick = () => {
+    el.querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
+    c.classList.add('on'); cb(c.dataset.v);
+  });
+}
+chipGroup('startChips', v => startSel = v);
+chipGroup('timerChips', v => timerSel = parseInt(v, 10));
+function goSetup(){ show('scrSetup'); }
+
+const TEAM = { R: { name: 'الأحمر', em: '🔴' }, B: { name: 'الأزرق', em: '🔵' } };
+const other = t => t === 'R' ? 'B' : 'R';
+let G = null;
+
+function startGame(){
+  const startTeam = startSel === 'rand' ? (Math.random() < 0.5 ? 'R' : 'B') : startSel;
+  const words = shuffle(WORDS).slice(0, 25);
+  const key = shuffle([].concat(
+    Array(9).fill(startTeam), Array(8).fill(other(startTeam)),
+    Array(7).fill('N'), ['A']));
+  G = {
+    words, key, revealed: Array(25).fill(false),
+    turn: startTeam, remain: { R: startTeam === 'R' ? 9 : 8, B: startTeam === 'B' ? 9 : 8 },
+    clue: null, guessesUsed: 0, guessesMax: Infinity, selected: null,
+    log: [], over: false, busy: false, keyMode: 'clue',
+    spymaster: { R: $('nameR').value.trim(), B: $('nameB').value.trim() },
+    timerInt: null, timeLeft: 0
+  };
+  addLog('🚀 بدأت اللعبة — الفريق ' + TEAM[startTeam].em + ' ' + TEAM[startTeam].name + ' بيبدأ وعنده 9 كلمات');
+  goPass();
+}
+function spyLabel(t){ const n = G.spymaster[t]; return n ? 'القائد ' + n : 'قائد الفريق ' + TEAM[t].name; }
+function goPass(){
+  stopTimer();
+  $('passTxt').innerHTML = 'دور الفريق ' + TEAM[G.turn].em + ' ' + esc(TEAM[G.turn].name) + '<br>سلّم الجهاز لـ' + esc(spyLabel(G.turn));
+  $('passBtn').textContent = G.keyMode === 'clue' ? '🙋 أنا القائد — أريني المفتاح' : '🙋 أنا القائد — أريني المفتاح';
+  show('scrPass');
+}
+function openKey(){
+  $('keyTitle').textContent = '🗝️ مفتاح الفريق ' + TEAM[G.turn].name + ' ' + TEAM[G.turn].em;
+  $('keyGrid').innerHTML = G.key.map((k, i) =>
+    '<div class="kcell ' + k + (G.revealed[i] ? ' done' : '') + '">' + esc(G.words[i]) + (k === 'A' ? ' 💀' : '') + '</div>').join('');
+  const clueMode = G.keyMode === 'clue';
+  $('clueForm').classList.toggle('hidden', !clueMode);
+  $('keyBackBtn').classList.toggle('hidden', clueMode);
+  if (clueMode){
+    $('clueWord').value = ''; $('clueErr').textContent = ''; G.clueNum = null;
+    $('numChips').innerHTML = [0,1,2,3,4,5,6,7,8,9,'inf'].map(n =>
+      '<button class="nchip" data-n="' + n + '">' + (n === 'inf' ? '∞' : n) + '</button>').join('');
+    $('numChips').querySelectorAll('.nchip').forEach(b => b.onclick = () => {
+      $('numChips').querySelectorAll('.nchip').forEach(x => x.classList.remove('on'));
+      b.classList.add('on'); G.clueNum = b.dataset.n === 'inf' ? 'inf' : parseInt(b.dataset.n, 10);
+    });
+  }
+  show('scrKey');
+}
+function backToBoard(){ renderBoard(); show('scrBoard'); if (timerSel > 0 && !G.over) startTimer(); }
+function submitClue(){
+  const w = $('clueWord').value.trim();
+  const err = $('clueErr');
+  if (!w){ err.textContent = '⚠️ اكتب التلميح الأول'; return; }
+  if (/\s/.test(w)){ err.textContent = '⚠️ التلميح لازم يكون كلمة واحدة بس'; return; }
+  if (G.words.some(x => x === w)){ err.textContent = '⚠️ التلميح ممنوع يكون كلمة موجودة على الشبكة'; return; }
+  if (G.clueNum === null || G.clueNum === undefined){ err.textContent = '⚠️ اختار الرقم (كام كلمة التلميح بيربطها)'; return; }
+  G.clue = { word: w, num: G.clueNum };
+  G.guessesUsed = 0;
+  G.guessesMax = (G.clueNum === 'inf' || G.clueNum === 0) ? Infinity : G.clueNum + 1;
+  G.selected = null;
+  addLog('💡 تلميح ' + TEAM[G.turn].em + ' ' + TEAM[G.turn].name + ': «' + w + '» — ' + (G.clueNum === 'inf' ? '∞' : G.clueNum));
+  renderBoard(); show('scrBoard');
+  if (timerSel > 0) startTimer();
+}
+function renderBoard(){
+  $('remR').textContent = G.remain.R; $('remB').textContent = G.remain.B;
+  $('scoreR').classList.toggle('turn', G.turn === 'R');
+  $('scoreB').classList.toggle('turn', G.turn === 'B');
+  $('turnLbl').textContent = 'دور ' + TEAM[G.turn].name;
+  const left = G.guessesMax === Infinity ? '∞' : (G.guessesMax - G.guessesUsed);
+  $('clueBar').innerHTML = '💡 تلميح ' + esc(TEAM[G.turn].name) + ': <b>«' + esc(G.clue.word) + '»</b> — الرقم ' +
+    (G.clue.num === 'inf' ? '∞' : G.clue.num) + ' • المحاولات المتبقية: <b>' + left + '</b>';
+  $('board').innerHTML = G.words.map((w, i) => {
+    if (G.revealed[i]){
+      const k = G.key[i];
+      const ic = k === 'A' ? '💀' : k === 'N' ? '😶' : '🕵️';
+      return '<button class="card rev ' + k + '" disabled><span class="ic">' + ic + '</span>' + esc(w) + '</button>';
+    }
+    return '<button class="card' + (G.selected === i ? ' sel' : '') + '" onclick="selectCard(' + i + ')">' + esc(w) + '</button>';
+  }).join('');
+  $('confirmBar').classList.toggle('hidden', G.selected === null);
+  if (G.selected !== null) $('confirmTxt').textContent = 'تأكيد تخمين «' + G.words[G.selected] + '»؟';
+  $('endTurnBtn').disabled = G.guessesUsed === 0;
+  $('logBox').innerHTML = G.log.map(l => '<div>' + esc(l) + '</div>').join('');
+  $('logBox').scrollTop = $('logBox').scrollHeight;
+  $('timerBox').classList.toggle('hidden', timerSel === 0);
+}
+function selectCard(i){
+  if (!G || G.over || G.busy || G.revealed[i]) return;
+  G.selected = G.selected === i ? null : i;
+  renderBoard();
+}
+function cancelSelect(){ G.selected = null; renderBoard(); }
+function confirmGuess(){
+  if (G.selected === null || G.busy) return;
+  const i = G.selected; G.selected = null; G.busy = true;
+  G.revealed[i] = true; G.guessesUsed++;
+  const k = G.key[i], w = G.words[i], me = G.turn, op = other(me);
+  if (k === 'A'){
+    addLog('💀 ' + TEAM[me].em + ' ' + TEAM[me].name + ' لمس القاتل عند «' + w + '»!');
+    renderBoard();
+    setTimeout(() => gameOver(op, 'assassin'), 1000);
+    return;
+  }
+  if (k === me){
+    G.remain[me]--;
+    addLog('✅ ' + TEAM[me].em + ' خمّن «' + w + '» صح');
+    renderBoard();
+    if (G.remain[me] === 0){ setTimeout(() => gameOver(me, 'complete'), 900); return; }
+    toast('✅ صح! كمّلوا');
+    if (G.guessesUsed >= G.guessesMax){ setTimeout(() => { G.busy = false; endTurn(); }, 900); }
+    else G.busy = false;
+    return;
+  }
+  if (k === op){
+    G.remain[op]--;
+    addLog('😬 ' + TEAM[me].em + ' خمّن «' + w + '» وطلعت بتاعة الخصم!');
+    renderBoard();
+    if (G.remain[op] === 0){ setTimeout(() => gameOver(op, 'complete'), 900); return; }
+    toast('😬 دي بتاعة الخصم! الدور بيتحرك');
+    setTimeout(() => { G.busy = false; endTurn(); }, 1000);
+    return;
+  }
+  addLog('😐 ' + TEAM[me].em + ' خمّن «' + w + '» وطلعت محايدة');
+  renderBoard();
+  toast('😐 كلمة محايدة — الدور بيتحرك');
+  setTimeout(() => { G.busy = false; endTurn(); }, 1000);
+}
+function endTurn(){
+  if (!G || G.over) return;
+  stopTimer();
+  G.turn = other(G.turn); G.selected = null; G.keyMode = 'clue';
+  addLog('⏭️ الدور بقى عند ' + TEAM[G.turn].em + ' ' + TEAM[G.turn].name);
+  goPass();
+}
+function peekKey(){ if (!G || G.over) return; stopTimer(); G.keyMode = 'view'; goPass(); }
+function gameOver(winner, reason){
+  G.over = true; stopTimer();
+  $('winEmoji').textContent = reason === 'assassin' ? '💀' : '🏆';
+  $('winTxt').innerHTML = 'الفريق ' + TEAM[winner].em + ' ' + esc(TEAM[winner].name) + ' كسب!';
+  $('winSub').textContent = reason === 'assassin'
+    ? 'الفريق التاني لمس الكلمة القاتلة 💀 فخسر فوراً. النتيجة: الأحمر باقي له ' + G.remain.R + ' — الأزرق باقي له ' + G.remain.B
+    : 'كشف كل كلماته على الشبكة 🕵️ النتيجة: الأحمر باقي له ' + G.remain.R + ' — الأزرق باقي له ' + G.remain.B;
+  addLog('🏁 اللعبة خلصت — الفائز: ' + TEAM[winner].em + ' ' + TEAM[winner].name);
+  $('finalGrid').innerHTML = G.key.map((k, i) =>
+    '<div class="kcell ' + k + '">' + esc(G.words[i]) + (k === 'A' ? ' 💀' : '') + '</div>').join('');
+  show('scrOver');
+}
+function addLog(s){ G.log.push(s); }
+function startTimer(){
+  stopTimer();
+  G.timeLeft = timerSel;
+  const box = $('timerBox');
+  const draw = () => {
+    box.textContent = Math.floor(G.timeLeft / 60) + ':' + String(G.timeLeft % 60).padStart(2, '0');
+    box.classList.toggle('low', G.timeLeft <= 15);
+  };
+  draw();
+  G.timerInt = setInterval(() => {
+    G.timeLeft--;
+    if (G.timeLeft <= 0){ stopTimer(); draw(); toast('⏰ انتهى وقت الدور!'); if (!G.busy) endTurn(); return; }
+    draw();
+  }, 1000);
+}
+function stopTimer(){ if (G && G.timerInt){ clearInterval(G.timerInt); G.timerInt = null; } }
+function quitToHome(){ stopTimer(); show('scrHome'); }
+show('scrHome');
+</script>
+</body>
+</html>
