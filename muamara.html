@@ -736,7 +736,19 @@ function checkSavedGame() {
 function resumeVoting() {
   if (SETTINGS.votingMode === 'public') {
     showPublicVoteScreen();
-    Object.keys(G.votes || {}).forEach(pid => setPublicVote(parseInt(pid), G.votes[pid]));
+    Object.keys(G.votes || {}).forEach(pid => {
+      const yesBtn = document.getElementById(`pv-yes-${pid}`);
+      const noBtn = document.getElementById(`pv-no-${pid}`);
+      if (yesBtn && noBtn) {
+        const approve = G.votes[pid];
+        yesBtn.style.border = approve ? '2px solid #fff' : 'none';
+        noBtn.style.border = approve ? 'none' : '2px solid #fff';
+        yesBtn.style.opacity = approve ? '1' : '0.4';
+        noBtn.style.opacity = approve ? '0.4' : '1';
+      }
+    });
+    const btn = document.getElementById('btn-submit-public-vote');
+    if (btn && Object.keys(G.votes || {}).length >= (G.voteOrder || []).length) btn.disabled = false;
   } else {
     showVotePassDevice();
   }
@@ -785,7 +797,6 @@ function showCardPlayedScreen() {
 }
 
 function resumeSavedGame() {
-  if (checkInputLock()) return;
   const saved = localStorage.getItem('al_muamara_save');
   if (saved) {
     try {
