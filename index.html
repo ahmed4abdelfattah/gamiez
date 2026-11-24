@@ -1,4 +1,4 @@
-
+```html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -29,6 +29,9 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    screens: {
+                        xs: '380px',
+                    },
                     fontFamily: {
                         cairo: ['Cairo', 'system-ui', 'sans-serif'],
                     },
@@ -66,7 +69,7 @@
         .platform-bg {
             position: fixed;
             inset: 0;
-            z-index: -1;
+            z-index: -2;
             background:
                 radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.16), transparent 40%),
                 radial-gradient(circle at 85% 20%, rgba(245, 158, 11, 0.12), transparent 38%),
@@ -94,10 +97,10 @@
 
         /* Glassmorphism panels */
         .glass-bar {
-            background: rgba(9, 15, 36, 0.72);
+            background: rgba(9, 15, 36, 0.78);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
-            border: 1px solid rgba(148, 163, 184, 0.14);
+            border: 1px solid rgba(148, 163, 184, 0.15);
         }
 
         /* Game Card Hover & Focus Effects */
@@ -301,6 +304,36 @@
         }
     </style>
 </head>
+<body>
+    <!-- Ambient Platform Layers -->
+    <div class="platform-bg" aria-hidden="true"></div>
+    <div class="platform-grid" aria-hidden="true"></div>
+
+    <!-- Main Application Shell -->
+    <div class="safe-shell max-w-5xl mx-auto px-4 sm:px-6 min-h-dvh flex flex-col">
+
+        <!-- Sticky Top Platform Navigation Bar -->
+        <nav class="glass-bar sticky top-3 z-30 rounded-2xl px-3.5 sm:px-4 py-2.5 sm:py-3 mb-6 flex items-center justify-between gap-2.5 shadow-lg">
+            <!-- Brand Identity -->
+            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xl sm:text-2xl shadow-md shadow-amber-500/25 shrink-0">
+                    🎮
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg sm:text-xl font-black bg-gradient-to-l from-amber-200 via-amber-400 to-orange-400 bg-clip-text text-transparent truncate">
+                            ألعابنا
+                        </span>
+                        <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
+                            4 ألعاب جاهزة
+                        </span>
+                    </div>
+                    <p class="text-[11px] sm:text-xs font-bold text-slate-400 truncate">
+                        منصة ألعاب الجلسات واللمة
+                    </p>
+                </div>
+            </div>
+
             <!-- Action Buttons: Music Controls + Random Game Picker -->
             <div class="flex items-center gap-2 shrink-0 relative">
                 <!-- Gaming Music Toggle Pill -->
@@ -324,7 +357,7 @@
                 <button id="randomPickerBtn" type="button"
                     class="shrink-0 inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2.5 sm:px-4 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 border border-white/15 hover:border-amber-400/50 text-xs sm:text-sm font-extrabold text-amber-200 transition cursor-pointer">
                     <span class="text-base leading-none">🎲</span>
-                    <span class="hidden xs:inline sm:inline">اقترح لي لعبة</span>
+                    <span class="hidden xs:inline">اقترح لي لعبة</span>
                 </button>
 
                 <!-- Floating Music Control Popover -->
@@ -347,19 +380,19 @@
                     <!-- Track Selector -->
                     <div class="text-[11px] font-extrabold text-slate-400 mb-2">اختار أجواء اللعب:</div>
                     <div class="grid grid-cols-1 gap-1.5 mb-4" id="trackList">
-                        <button type="button" data-track="arcade"
+                        <button type="button" data-track="speed"
                             class="track-opt flex items-center justify-between px-3 py-2 rounded-xl border border-amber-400/50 bg-amber-400/15 text-amber-200 text-xs font-extrabold transition cursor-pointer">
-                            <span>🕹️ أركيد نيون (حماسي)</span>
+                            <span>⚡ تحدي سريع (8-Bit)</span>
                             <span class="track-dot text-[10px]">●</span>
+                        </button>
+                        <button type="button" data-track="arcade"
+                            class="track-opt flex items-center justify-between px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 text-xs font-bold transition cursor-pointer">
+                            <span>🕹️ أركيد نيون (حماسي)</span>
+                            <span class="track-dot text-[10px] opacity-0">●</span>
                         </button>
                         <button type="button" data-track="mystery"
                             class="track-opt flex items-center justify-between px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 text-xs font-bold transition cursor-pointer">
                             <span>🌙 ليل القرية (غامض وهادي)</span>
-                            <span class="track-dot text-[10px] opacity-0">●</span>
-                        </button>
-                        <button type="button" data-track="speed"
-                            class="track-opt flex items-center justify-between px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 text-xs font-bold transition cursor-pointer">
-                            <span>⚡ تحدي سريع (8-Bit)</span>
                             <span class="track-dot text-[10px] opacity-0">●</span>
                         </button>
                     </div>
@@ -887,7 +920,7 @@
 
             /**
              * Procedural Gaming Music & SFX Engine (Powered by Tone.js)
-             * Generates 3 original looping game lobby soundtracks without external audio files
+             * Defaults to 8-Bit chiptune mode and generates 3 looping soundtracks without external files
              */
             const GamingAudio = (function () {
                 let initialized = false;
@@ -895,10 +928,178 @@
                 let isStarting = false;
                 let autoPlayEnabled = true;
                 let awaitingGesture = false;
-                let currentTrack = 'arcade';
+                let pausedByVisibility = false;
+                let currentTrack = 'speed'; // Default to 8-Bit chiptune
                 let volumePercent = 55;
                 let sfxEnabled = true;
-// ... existing code ... -->
+
+                let leadSynth = null;
+                let bassSynth = null;
+                let sfxSynth = null;
+                let activeSequences = [];
+
+                const TRACKS = {
+                    speed: {
+                        name: 'تحدي سريع (8-Bit)',
+                        bpm: 138,
+                        leadOsc: 'square',
+                        bassOsc: 'triangle',
+                        leadNotes: [
+                            'E5', 'B4', 'C5', 'D5', 'C5', 'B4', 'A4', 'A4',
+                            'C5', 'E5', 'D5', 'C5', 'B4', null, 'C5', 'D5',
+                            'E5', 'C5', 'A4', 'A4', null, 'D5', 'F5', 'A5',
+                            'G5', 'F5', 'E5', null, 'C5', 'E5', 'D5', 'C5'
+                        ],
+                        bassNotes: [
+                            'E2', 'E3', 'E2', 'E3', 'A2', 'A3', 'A2', 'A3',
+                            'G2', 'G3', 'G2', 'G3', 'E2', 'E3', 'B2', 'G#2',
+                            'A2', 'A3', 'A2', 'A3', 'D2', 'D3', 'D2', 'D3',
+                            'C2', 'C3', 'G2', 'G3', 'A2', 'E2', 'A2', null
+                        ]
+                    },
+                    arcade: {
+                        name: 'أركيد نيون',
+                        bpm: 118,
+                        leadOsc: 'sawtooth',
+                        bassOsc: 'triangle',
+                        leadNotes: [
+                            'C4', 'E4', 'G4', 'B4', 'C5', 'B4', 'G4', 'E4',
+                            'A3', 'C4', 'E4', 'G4', 'A4', 'G4', 'E4', 'C4',
+                            'F3', 'A3', 'C4', 'E4', 'F4', 'E4', 'C4', 'A3',
+                            'G3', 'B3', 'D4', 'F4', 'G4', 'F4', 'D4', 'B3'
+                        ],
+                        bassNotes: [
+                            'C2', null, 'C2', 'G2', 'A1', null, 'A1', 'E2',
+                            'F1', null, 'F1', 'C2', 'G1', null, 'G1', 'D2'
+                        ]
+                    },
+                    mystery: {
+                        name: 'ليل القرية',
+                        bpm: 84,
+                        leadOsc: 'sine',
+                        bassOsc: 'sine',
+                        leadNotes: [
+                            'D4', null, 'F4', 'A4', 'Bb4', null, 'A4', 'F4',
+                            'E4', null, 'G4', 'Bb4', 'A4', null, 'F4', 'E4',
+                            'D4', null, 'A4', 'D5', 'C#5', null, 'A4', 'G4',
+                            'F4', null, 'E4', 'D4', 'D4', null, null, null
+                        ],
+                        bassNotes: [
+                            'D2', null, null, null, 'Bb1', null, null, null,
+                            'G1', null, null, null, 'A1', null, null, null
+                        ]
+                    }
+                };
+
+                function applyMasterVolume() {
+                    if (typeof Tone === 'undefined' || !Tone.Destination) return;
+                    if (volumePercent <= 0) {
+                        Tone.Destination.mute = true;
+                    } else {
+                        Tone.Destination.mute = false;
+                        // Keep comfortable headroom so 100% never clips
+                        const gain = (volumePercent / 100) * 0.42;
+                        Tone.Destination.volume.value = Tone.gainToDb(gain);
+                    }
+                }
+
+                function initSynths() {
+                    if (initialized || typeof Tone === 'undefined') return;
+                    try {
+                        leadSynth = new Tone.Synth({
+                            oscillator: { type: 'square' },
+                            envelope: {
+                                attack: 0.01,
+                                decay: 0.14,
+                                sustain: 0.18,
+                                release: 0.15
+                            }
+                        }).toDestination();
+                        leadSynth.volume.value = -6;
+
+                        bassSynth = new Tone.Synth({
+                            oscillator: { type: 'triangle' },
+                            envelope: {
+                                attack: 0.015,
+                                decay: 0.2,
+                                sustain: 0.25,
+                                release: 0.2
+                            }
+                        }).toDestination();
+                        bassSynth.volume.value = -4;
+
+                        sfxSynth = new Tone.PolySynth(Tone.Synth, {
+                            oscillator: { type: 'square' },
+                            envelope: {
+                                attack: 0.005,
+                                decay: 0.09,
+                                sustain: 0.05,
+                                release: 0.1
+                            }
+                        }).toDestination();
+                        sfxSynth.volume.value = -5;
+
+                        applyMasterVolume();
+                        initialized = true;
+                    } catch (e) {
+                        initialized = false;
+                    }
+                }
+
+                function clearLoops() {
+                    activeSequences.forEach((seq) => {
+                        try {
+                            seq.stop();
+                            seq.dispose();
+                        } catch (e) {}
+                    });
+                    activeSequences = [];
+                    if (typeof Tone !== 'undefined' && Tone.Transport) {
+                        try {
+                            Tone.Transport.cancel(0);
+                        } catch (e) {}
+                    }
+                }
+
+                function buildTrackLoops(trackKey) {
+                    if (!initialized) return;
+                    clearLoops();
+
+                    const cfg = TRACKS[trackKey] || TRACKS.speed;
+                    Tone.Transport.bpm.value = cfg.bpm;
+
+                    if (leadSynth) {
+                        leadSynth.oscillator.type = cfg.leadOsc;
+                    }
+                    if (bassSynth) {
+                        bassSynth.oscillator.type = cfg.bassOsc;
+                    }
+
+                    const leadSeq = new Tone.Sequence(
+                        (time, note) => {
+                            if (note && leadSynth) {
+                                leadSynth.triggerAttackRelease(note, '16n', time);
+                            }
+                        },
+                        cfg.leadNotes,
+                        '8n'
+                    );
+
+                    const bassSeq = new Tone.Sequence(
+                        (time, note) => {
+                            if (note && bassSynth) {
+                                bassSynth.triggerAttackRelease(note, '8n', time);
+                            }
+                        },
+                        cfg.bassNotes,
+                        '8n'
+                    );
+
+                    leadSeq.start(0);
+                    bassSeq.start(0);
+                    activeSequences.push(leadSeq, bassSeq);
+                }
+
                 async function start(isAutoAttempt = false) {
                     if (typeof Tone === 'undefined' || isStarting) return false;
                     isStarting = true;
@@ -939,6 +1140,7 @@
                 function stop() {
                     awaitingGesture = false;
                     autoPlayEnabled = false;
+                    pausedByVisibility = false;
                     removeGestureListeners();
                     if (typeof Tone !== 'undefined') {
                         try {
@@ -958,6 +1160,75 @@
                         removeGestureListeners();
                         await start(false);
                     }
+                }
+
+                function setTrack(trackKey) {
+                    if (!TRACKS[trackKey]) return;
+                    currentTrack = trackKey;
+                    if (isPlaying && initialized) {
+                        buildTrackLoops(currentTrack);
+                        if (Tone.Transport.state !== 'started') {
+                            Tone.Transport.start();
+                        }
+                    }
+                    updateUI();
+                    savePrefs();
+                    playClick();
+                }
+
+                function setVolume(percent) {
+                    const clamped = Math.max(0, Math.min(100, Number(percent) || 0));
+                    volumePercent = clamped;
+                    applyMasterVolume();
+                    updateUI();
+                    savePrefs();
+                }
+
+                function setSfxEnabled(enabled) {
+                    sfxEnabled = Boolean(enabled);
+                    updateUI();
+                    savePrefs();
+                    if (sfxEnabled) playClick();
+                }
+
+                async function ensureSfxReady() {
+                    if (!sfxEnabled || typeof Tone === 'undefined') return false;
+                    try {
+                        if (Tone.context.state !== 'running') {
+                            await Tone.start();
+                        }
+                        initSynths();
+                        return initialized && Tone.context.state === 'running';
+                    } catch (e) {
+                        return false;
+                    }
+                }
+
+                async function playClick() {
+                    if (!(await ensureSfxReady()) || !sfxSynth) return;
+                    try {
+                        sfxSynth.triggerAttackRelease('C6', '32n');
+                    } catch (e) {}
+                }
+
+                async function playRouletteTick(stepIndex = 0) {
+                    if (!(await ensureSfxReady()) || !sfxSynth) return;
+                    const scale = ['C5', 'D5', 'E5', 'G5', 'A5'];
+                    const note = scale[stepIndex % scale.length];
+                    try {
+                        sfxSynth.triggerAttackRelease(note, '32n');
+                    } catch (e) {}
+                }
+
+                async function playWinFanfare() {
+                    if (!(await ensureSfxReady()) || !sfxSynth) return;
+                    try {
+                        const now = Tone.now();
+                        sfxSynth.triggerAttackRelease('C5', '16n', now);
+                        sfxSynth.triggerAttackRelease('E5', '16n', now + 0.08);
+                        sfxSynth.triggerAttackRelease('G5', '16n', now + 0.16);
+                        sfxSynth.triggerAttackRelease(['C6', 'E6'], '8n', now + 0.25);
+                    } catch (e) {}
                 }
 
                 const GESTURE_EVENTS = ['pointerdown', 'touchstart', 'click', 'keydown'];
@@ -995,7 +1266,23 @@
                         }
                     });
                 }
-// ... existing code ... -->
+
+                // Pause cleanly when browser tab is hidden to avoid audio stutter
+                document.addEventListener('visibilitychange', () => {
+                    if (typeof Tone === 'undefined' || !initialized) return;
+                    if (document.hidden && isPlaying) {
+                        try {
+                            Tone.Transport.pause();
+                            pausedByVisibility = true;
+                        } catch (e) {}
+                    } else if (!document.hidden && pausedByVisibility && isPlaying) {
+                        try {
+                            Tone.Transport.start();
+                            pausedByVisibility = false;
+                        } catch (e) {}
+                    }
+                });
+
                 function savePrefs() {
                     try {
                         localStorage.setItem(AUDIO_PREFS_KEY, JSON.stringify({
@@ -1020,7 +1307,7 @@
                 }
 
                 function updateUI() {
-                    const trackName = (TRACKS[currentTrack] && TRACKS[currentTrack].name) || 'أركيد نيون';
+                    const trackName = (TRACKS[currentTrack] && TRACKS[currentTrack].name) || 'تحدي سريع (8-Bit)';
 
                     musicToggleBtn.setAttribute('aria-pressed', String(isPlaying));
                     if (isPlaying) {
@@ -1041,13 +1328,245 @@
                         musicStatusText.textContent = 'متوقفة حالياً — اضغط للتشغيل';
                         musicStatusText.className = 'text-[11px] font-bold text-slate-400';
                     }
-// ... existing code ... -->
+
+                    // Sync active track highlight in popover
+                    trackButtons.forEach((btn) => {
+                        const isSelected = btn.dataset.track === currentTrack;
+                        const dot = btn.querySelector('.track-dot');
+                        if (isSelected) {
+                            btn.className = 'track-opt flex items-center justify-between px-3 py-2 rounded-xl border border-amber-400/50 bg-amber-400/15 text-amber-200 text-xs font-extrabold transition cursor-pointer';
+                            if (dot) dot.classList.remove('opacity-0');
+                        } else {
+                            btn.className = 'track-opt flex items-center justify-between px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 text-xs font-bold transition cursor-pointer';
+                            if (dot) dot.classList.add('opacity-0');
+                        }
+                    });
+
+                    // Sync volume slider and SFX checkbox
+                    if (volumeSlider) volumeSlider.value = String(volumePercent);
+                    if (volumeLabel) volumeLabel.textContent = volumePercent + '%';
+                    if (sfxToggle) sfxToggle.checked = sfxEnabled;
+                }
+
                 loadPrefs();
                 updateUI();
 
-                return { initAutoplay, toggle, setTrack, setVolume, setSfxEnabled, playClick, playRouletteTick, playWinFanfare };
+                return {
+                    initAutoplay,
+                    toggle,
+                    setTrack,
+                    setVolume,
+                    setSfxEnabled,
+                    playClick,
+                    playRouletteTick,
+                    playWinFanfare
+                };
             })();
-// ... existing code ... -->
+
+            /**
+             * Last Played Game Persistence
+             */
+            function loadLastPlayed() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (!raw) return;
+                    const data = JSON.parse(raw);
+                    if (data && data.title && data.href) {
+                        lastPlayedIcon.textContent = data.icon || '🎮';
+                        lastPlayedTitle.textContent = data.title;
+                        lastPlayedLink.setAttribute('href', data.href);
+                        lastPlayedCard.classList.remove('hidden');
+                        lastPlayedCard.classList.add('flex');
+                    }
+                } catch (e) {}
+            }
+
+            function saveLastPlayed(card) {
+                try {
+                    const payload = {
+                        id: card.dataset.id,
+                        title: card.dataset.title,
+                        icon: card.dataset.icon,
+                        href: card.getAttribute('href')
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+                } catch (e) {}
+            }
+
+            // Record game launches
+            gameCards.forEach((card) => {
+                card.addEventListener('click', () => {
+                    saveLastPlayed(card);
+                });
+            });
+
+            lastPlayedLink.addEventListener('click', () => {
+                GamingAudio.playClick();
+            });
+
+            /**
+             * Category Filtering
+             */
+            function applyFilter(filter) {
+                let visibleCount = 0;
+
+                filterButtons.forEach((btn) => {
+                    const isMatch = btn.dataset.filter === filter;
+                    btn.classList.toggle('active', isMatch);
+                });
+
+                gameCards.forEach((card) => {
+                    const tags = (card.dataset.tags || '').split(' ');
+                    const shouldShow = filter === 'all' || tags.includes(filter);
+                    card.classList.toggle('hidden', !shouldShow);
+                    if (shouldShow) visibleCount++;
+                });
+
+                emptyState.classList.toggle('hidden', visibleCount > 0);
+            }
+
+            filterButtons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    GamingAudio.playClick();
+                    applyFilter(btn.dataset.filter || 'all');
+                });
+            });
+
+            /**
+             * Random Game Roulette Picker
+             */
+            function openRandomModal() {
+                randomModal.classList.remove('hidden');
+                randomModal.classList.add('flex');
+            }
+
+            function closeRandomModal() {
+                randomModal.classList.add('hidden');
+                randomModal.classList.remove('flex');
+                gameCards.forEach((c) => c.classList.remove('roulette-highlight'));
+            }
+
+            function spinRandomGame() {
+                if (isSpinning) return;
+                const pool = gameCards.filter((c) => !c.classList.contains('hidden'));
+                const candidates = pool.length > 0 ? pool : gameCards;
+                if (candidates.length === 0) return;
+
+                isSpinning = true;
+                openRandomModal();
+
+                modalGameIcon.textContent = '🎲';
+                randomModalTitle.textContent = 'جاري الاختيار...';
+                modalGameDesc.textContent = 'بنلف العجلة عشان نختار لكم أحلى لعبة!';
+                modalPlayLink.classList.add('pointer-events-none', 'opacity-60');
+
+                let step = 0;
+                const totalSteps = 12;
+                let currentIdx = Math.floor(Math.random() * candidates.length);
+
+                const interval = setInterval(() => {
+                    gameCards.forEach((c) => c.classList.remove('roulette-highlight'));
+                    currentIdx = (currentIdx + 1) % candidates.length;
+                    const activeCard = candidates[currentIdx];
+                    activeCard.classList.add('roulette-highlight');
+
+                    modalGameIcon.textContent = activeCard.dataset.icon || '🎮';
+                    randomModalTitle.textContent = activeCard.dataset.title || '';
+                    GamingAudio.playRouletteTick(step);
+
+                    step++;
+                    if (step >= totalSteps) {
+                        clearInterval(interval);
+                        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+                        gameCards.forEach((c) => c.classList.remove('roulette-highlight'));
+                        chosen.classList.add('roulette-highlight');
+
+                        const descEl = chosen.querySelector('p');
+                        modalGameIcon.textContent = chosen.dataset.icon || '🎮';
+                        randomModalTitle.textContent = chosen.dataset.title || 'لعبة مختارة';
+                        modalGameDesc.textContent = descEl ? descEl.textContent.trim() : 'استعدوا للجولة القادمة!';
+                        modalPlayLink.setAttribute('href', chosen.getAttribute('href') || '#');
+                        modalPlayLink.classList.remove('pointer-events-none', 'opacity-60');
+
+                        modalPlayLink.onclick = () => saveLastPlayed(chosen);
+                        GamingAudio.playWinFanfare();
+                        isSpinning = false;
+                    }
+                }, 95);
+            }
+
+            randomPickerBtn.addEventListener('click', spinRandomGame);
+            spinAgainBtn.addEventListener('click', spinRandomGame);
+            closeModalBtn.addEventListener('click', () => {
+                GamingAudio.playClick();
+                closeRandomModal();
+            });
+
+            randomModal.addEventListener('click', (e) => {
+                if (e.target === randomModal) {
+                    closeRandomModal();
+                }
+            });
+
+            /**
+             * Music Popover & Controls Wiring
+             */
+            function toggleMusicPanel(forceState) {
+                const isHidden = musicPanel.classList.contains('hidden');
+                const shouldOpen = typeof forceState === 'boolean' ? forceState : isHidden;
+                musicPanel.classList.toggle('hidden', !shouldOpen);
+                musicSettingsBtn.setAttribute('aria-expanded', String(shouldOpen));
+            }
+
+            musicToggleBtn.addEventListener('click', () => {
+                GamingAudio.toggle();
+            });
+
+            musicSettingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                GamingAudio.playClick();
+                toggleMusicPanel();
+            });
+
+            closeMusicPanelBtn.addEventListener('click', () => {
+                GamingAudio.playClick();
+                toggleMusicPanel(false);
+            });
+
+            trackButtons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    GamingAudio.setTrack(btn.dataset.track);
+                });
+            });
+
+            volumeSlider.addEventListener('input', (e) => {
+                GamingAudio.setVolume(e.target.value);
+            });
+
+            sfxToggle.addEventListener('change', (e) => {
+                GamingAudio.setSfxEnabled(e.target.checked);
+            });
+
+            // Close popover on outside click or Escape key
+            document.addEventListener('click', (e) => {
+                if (!musicPanel.classList.contains('hidden') &&
+                    !musicPanel.contains(e.target) &&
+                    !musicSettingsBtn.contains(e.target)) {
+                    toggleMusicPanel(false);
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (!musicPanel.classList.contains('hidden')) {
+                        toggleMusicPanel(false);
+                    }
+                    if (!randomModal.classList.contains('hidden')) {
+                        closeRandomModal();
+                    }
+                }
+            });
+
             // Initialize stored state and start lobby music on entry
             loadLastPlayed();
             GamingAudio.initAutoplay();
@@ -1055,4 +1574,3 @@
     </script>
 </body>
 </html>
-6
