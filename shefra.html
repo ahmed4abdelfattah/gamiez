@@ -484,6 +484,7 @@ function resumeGame(){
   try { d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch(e) {}
   if (!d || !d.g){ clearSave(); checkResumeBtn(); return; }
   G = d.g; G.timerInt = null; G.busy = false; G.selected = null;
+  if (G.guessesMax === null || G.guessesMax === undefined) G.guessesMax = Infinity; // JSON يحول Infinity إلى null
   timerSel = d.timerSel || 0;
   if (d.at === 'board' && G.clue){
     renderBoard(); show('scrBoard');
