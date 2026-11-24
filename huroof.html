@@ -206,6 +206,14 @@ html,body{height:100dvh;min-height:100%}
   <div class="logo"><b>حروف</b><i>⏱️</i><b>وثواني</b></div>
   <p class="sub">قول كلمة من الفئة وادوس أول حرف قبل ما الوقت يخلص!</p>
 
+  <div class="card" id="resumeCard" style="display:none;background:#fff3c4">
+    <h3>🔄 عندك لعبة شغالة</h3>
+    <p id="resumeInfo" style="margin:0 0 10px;font-weight:800"></p>
+    <div class="row">
+      <button class="btn yellow" style="font-size:18px" onclick="resumeGame()">▶️ كمّل اللعبة</button>
+      <button class="btn" style="font-size:18px" onclick="discardGame()">🗑️ امسحها</button>
+    </div>
+  </div>
   <div class="card">
     <h3>👥 اللاعبين</h3>
     <div class="plist" id="plist"></div>
@@ -485,22 +493,28 @@ function render(){
   $('bReject').disabled=!canRej;
   $('rejSub').textContent=canRej?`${players[S.last.p].n} (${disp(S.last.l)})`:'جواب الدور اللي قبله';
   $('bUndo').disabled=!hist.length;
+  saveGame();
 }
 
 /* نهاية الجولة */
 function endRound(why){
-  stopTimer(); S.over=true;
-  let msg='';
-  if(why==='win'){ const w=S.alive.findIndex(Boolean); S.pts[w]++; msg=`${players[w].f} <b>${players[w].n}</b> كسب الجولة!`; }
-  else { S.alive.forEach((a,i)=>{ if(a)S.pts[i]++; }); msg='الحروف خلصت! 🤝 كل لاعب باقي ياخد نقطة.'; }
+  stopTimer(); S.over=true; S.endWhy=why;
+  if(why==='win'){ const w=S.alive.findIndex(Boolean); S.pts[w]++; }
+  else { S.alive.forEach((a,i)=>{ if(a)S.pts[i]++; }); }
   render();
+  showRoundEnd(); vib(120);
+}
+function showRoundEnd(){
+  let msg='';
+  if(S.endWhy==='win'){ const w=S.alive.findIndex(Boolean); msg=`${players[w].f} <b>${players[w].n}</b> كسب الجولة!`; }
+  else { msg='الحروف خلصت! 🤝 كل لاعب باقي ياخد نقطة.'; }
   const last=S.round>=cfg.rounds;
   $('ovCard').innerHTML=`<h2>🏁 خلصت الجولة ${S.round}</h2><p style="font-size:18px;font-weight:800;margin:0">${msg}</p>
    <div class="score">${scoreRows()}</div>
    <button class="btn ${last?'red':'yellow'}" onclick="${last?'finish()':'newRound()'}">${last?'شوف النتيجة النهائية':'يلا الجولة الجاية'}</button>
    <div style="height:10px"></div>
    <button class="btn" style="font-size:17px" onclick="undo()">↩️ تراجع</button>`;
-  $('ov').classList.add('on'); vib(120);
+  $('ov').classList.add('on');
 }
 function scoreRows(winIdx){
   const idx=players.map((_,i)=>i).sort((a,b)=>S.pts[b]-S.pts[a]);
@@ -508,6 +522,7 @@ function scoreRows(winIdx){
   return idx.map(i=>`<div class="${winIdx&&S.pts[i]===max?'win':''}"><span style="font-size:24px">${players[i].f}</span>${players[i].n}<b>${S.pts[i]}</b></div>`).join('');
 }
 function finish(){
+  S.finished=true; saveGame();
   const max=Math.max(...S.pts), ws=players.filter((_,i)=>S.pts[i]===max);
   $('ovCard').innerHTML=`<div class="crown">👑</div><h2>${ws.length>1?'تعادل! الفايزين:':'بطل اللعبة:'}</h2>
    <p style="font-size:24px;font-weight:900;margin:0">${ws.map(w=>w.f+' '+w.n).join(' + ')}</p>
@@ -517,7 +532,7 @@ function finish(){
    <button class="btn" style="font-size:17px" onclick="quit()">الرئيسية</button>`;
   $('ov').classList.add('on'); vib([100,60,100,60,200]); confetti();
 }
-function quit(){ stopTimer(); $('ov').classList.remove('on'); show('sSetup'); renderSetup(); }
+function quit(){ stopTimer(); clearGame(); $('ov').classList.remove('on'); show('sSetup'); renderSetup(); checkResume(); }
 
 /* صوت واهتزاز */
 let ac=null;
@@ -532,7 +547,26 @@ function cycleFace(i){ const k=FACES.indexOf(players[i].f); players[i].f=FACES[(
 function shake(){ const g=$('sGame'); g.classList.remove('shake'); void g.offsetWidth; g.classList.add('shake'); }
 function confetti(){ const E=['🎉','✨','🎊','⭐','🏆','👑']; const app=$('app'); for(let i=0;i<36;i++){ const s=document.createElement('span'); s.className='cf'; s.textContent=E[i%E.length]; s.style.left=Math.random()*100+'%'; s.style.fontSize=(18+Math.random()*18)+'px'; s.style.animationDuration=(2+Math.random()*2)+'s'; s.style.animationDelay=(Math.random()*.8)+'s'; app.appendChild(s); setTimeout(()=>s.remove(),5000); } }
 (function(){ const L='جحخهعغفقثصضكمنتالبيسشورزدذطظ'; const bg=$('bg'); for(let i=0;i<14;i++){ const s=document.createElement('span'); s.textContent=L[Math.floor(Math.random()*L.length)]; s.style.left=(Math.random()*95)+'%'; s.style.fontSize=(50+Math.random()*80)+'px'; s.style.animationDuration=(18+Math.random()*22)+'s'; s.style.animationDelay=(-Math.random()*30)+'s'; bg.appendChild(s); } })();
+/* ============ حفظ واستكمال اللعبة (refresh) ============ */
+const GAME_KEY='huroof_game_v1';
+function saveGame(){ try{ if(S) localStorage.setItem(GAME_KEY,JSON.stringify({players,cfg,S,hist})); }catch(e){} }
+function clearGame(){ try{ localStorage.removeItem(GAME_KEY); }catch(e){} }
+function discardGame(){ clearGame(); $('resumeCard').style.display='none'; }
+function checkResume(){
+  let d=null; try{ d=JSON.parse(localStorage.getItem(GAME_KEY)||'null'); }catch(e){}
+  if(d&&d.S&&d.players){ $('resumeCard').style.display='block'; $('resumeInfo').textContent=`الجولة ${d.S.round} من ${d.cfg.rounds} — ${d.players.map(p=>p.n).join('، ')}`; }
+  else $('resumeCard').style.display='none';
+}
+function resumeGame(){
+  let d=null; try{ d=JSON.parse(localStorage.getItem(GAME_KEY)||'null'); }catch(e){}
+  if(!d||!d.S){ discardGame(); return; }
+  players=d.players; cfg=d.cfg; S=d.S; hist=d.hist||[];
+  buildKb(); show('sGame'); render();
+  if(S.over){ if(S.finished) finish(); else showRoundEnd(); }
+  else startTimer();
+}
 renderSetup();
+checkResume();
 </script>
 </body>
 </html>

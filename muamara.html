@@ -733,6 +733,57 @@ function checkSavedGame() {
   if (saved && btn) btn.style.display = 'block';
 }
 
+function resumeVoting() {
+  if (SETTINGS.votingMode === 'public') {
+    showPublicVoteScreen();
+    Object.keys(G.votes || {}).forEach(pid => setPublicVote(parseInt(pid), G.votes[pid]));
+  } else {
+    showVotePassDevice();
+  }
+}
+
+function showPresidentPass() {
+  const pres = G.players[G.presidentIdx];
+  const content = document.getElementById('game-content');
+  content.innerHTML = `
+    <div class="flex-col gap-2 text-center">
+      <div style="font-size:3.5rem">🃏</div>
+      <h2>مرحلة البطاقات</h2>
+      <h3>سلّم الجهاز إلى الرئيس</h3>
+      <h2 style="color:var(--gold)">${pres.name}</h2>
+      <button class="btn btn-primary btn-lg mt-2" onclick="showPresidentCards()">أنا ${pres.name} ✋</button>
+    </div>
+  `;
+}
+
+function showChancellorPass() {
+  const chan = G.players[G.chancellorIdx];
+  const content = document.getElementById('game-content');
+  content.innerHTML = `
+    <div class="flex-col gap-2 text-center">
+      <div style="font-size:3.5rem">📋</div>
+      <h2>دور المستشار</h2>
+      <h3>سلّم الجهاز إلى المستشار</h3>
+      <h2 style="color:var(--purple)">${chan.name}</h2>
+      <button class="btn btn-primary btn-lg mt-2" onclick="showChancellorCards()">أنا ${chan.name} ✋</button>
+    </div>
+  `;
+}
+
+function showCardPlayedScreen() {
+  const played = G.lastPlayedCard;
+  if (!played) { nextPresident(); return; }
+  const isGreen = played === 'green';
+  const content = document.getElementById('game-content');
+  content.innerHTML = `
+    <div class="text-center flex-col gap-2">
+      <div style="font-size:4rem">${isGreen ? '🟢' : '🔴'}</div>
+      <h2 style="color:var(--${isGreen ? 'green' : 'red'})">${isGreen ? 'بطاقة خضراء!' : 'بطاقة حمراء!'}</h2>
+      <button class="btn ${isGreen ? 'btn-green' : 'btn-red'} btn-lg mt-2" onclick="afterCardPlayed()">متابعة</button>
+    </div>
+  `;
+}
+
 function resumeSavedGame() {
   if (checkInputLock()) return;
   const saved = localStorage.getItem('al_muamara_save');
@@ -751,11 +802,16 @@ function resumeSavedGame() {
       } else if (G.phase === 'choose_chancellor') {
         showPhaseChooseChancellor();
       } else if (G.phase === 'voting') {
-        startVoting();
+        resumeVoting();
       } else if (G.phase === 'president_cards') {
-        showPresidentCards();
+        showPresidentPass();
       } else if (G.phase === 'chancellor_cards') {
-        showChancellorCards();
+        showChancellorPass();
+      } else if (G.phase === 'card_played') {
+        showCardPlayedScreen();
+      } else if (G.phase === 'power_phase') {
+        const pw = CONFIG.powers[G.redPlayed];
+        if (pw) showPowerPhase(pw); else nextPresident();
       } else if (G.phase === 'peek_deck') {
         showPeekDeckPhase();
       } else {
@@ -1176,6 +1232,7 @@ function setPublicVote(pid, approve) {
   if (checkInputLock()) return;
   Sound.play('click');
   G.votes[pid] = approve;
+  saveSession();
   const yesBtn = document.getElementById(`pv-yes-${pid}`);
   const noBtn = document.getElementById(`pv-no-${pid}`);
 
@@ -1254,6 +1311,7 @@ function castVote(voterId, approve) {
   Sound.play(approve ? 'approve' : 'reject');
   G.votes[voterId] = approve;
   G.currentVoterIdx++;
+  saveSession();
 
   const content = document.getElementById('game-content');
   content.innerHTML = `
@@ -1486,6 +1544,8 @@ function chancellorPlay(idx) {
     addLog('🔴 تم تمرير بطاقة حمراء!', 'red');
   }
 
+  G.lastPlayedCard = played;
+  saveSession();
   renderScoreTracker();
 
   const content = document.getElementById('game-content');

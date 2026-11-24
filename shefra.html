@@ -161,6 +161,7 @@
     <p class="tag">لعبة التلميحات والتخمين بين فريقين 🕵️<br>القائد يلمّح بكلمة واحدة… وفريقه يخمّن كلماته على الشبكة قبل ما يغلطوا — أو يقابلوا القاتل 💀</p>
     <div class="glass">
       <button class="btn" onclick="goSetup()">▶️ ابدأ لعبة</button>
+      <button class="btn ghost hidden" id="resumeBtn" onclick="resumeGame()">🔄 كمّل اللعبة اللي فاتت</button>
       <button class="btn ghost" onclick="show('scrHow')">📖 طريقة اللعب</button>
     </div>
     <p class="tag" style="margin-top:14px">👥 4 لاعبين أو أكتر • 📱 جهاز واحد — تمرير الجهاز</p>
@@ -321,7 +322,7 @@ function startGame(){
 }
 function spyLabel(t){ const n = G.spymaster[t]; return n ? 'القائد ' + n : 'قائد الفريق ' + TEAM[t].name; }
 function goPass(){
-  stopTimer();
+  stopTimer(); saveGame('pass');
   $('passTxt').innerHTML = 'دور الفريق ' + TEAM[G.turn].em + ' ' + esc(TEAM[G.turn].name) + '<br>سلّم الجهاز لـ' + esc(spyLabel(G.turn));
   $('passBtn').textContent = G.keyMode === 'clue' ? '🙋 أنا القائد — أريني المفتاح' : '🙋 أنا القائد — أريني المفتاح';
   show('scrPass');
@@ -382,6 +383,7 @@ function renderBoard(){
   $('logBox').innerHTML = G.log.map(l => '<div>' + esc(l) + '</div>').join('');
   $('logBox').scrollTop = $('logBox').scrollHeight;
   $('timerBox').classList.toggle('hidden', timerSel === 0);
+  saveGame('board');
 }
 function selectCard(i){
   if (!G || G.over || G.busy || G.revealed[i]) return;
@@ -433,7 +435,7 @@ function endTurn(){
 }
 function peekKey(){ if (!G || G.over) return; stopTimer(); G.keyMode = 'view'; goPass(); }
 function gameOver(winner, reason){
-  G.over = true; stopTimer();
+  G.over = true; stopTimer(); clearSave();
   $('winEmoji').textContent = reason === 'assassin' ? '💀' : '🏆';
   $('winTxt').innerHTML = 'الفريق ' + TEAM[winner].em + ' ' + esc(TEAM[winner].name) + ' كسب!';
   $('winSub').textContent = reason === 'assassin'
@@ -461,7 +463,39 @@ function startTimer(){
   }, 1000);
 }
 function stopTimer(){ if (G && G.timerInt){ clearInterval(G.timerInt); G.timerInt = null; } }
-function quitToHome(){ stopTimer(); show('scrHome'); }
+function quitToHome(){ stopTimer(); clearSave(); show('scrHome'); checkResumeBtn(); }
+/* ============ حفظ واستكمال اللعبة (refresh) ============ */
+const SAVE_KEY = 'shefra_game_v1';
+function saveGame(at){
+  try {
+    if (!G || G.over) return;
+    const copy = Object.assign({}, G, { timerInt: null, busy: false, selected: null });
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ g: copy, at, timerSel }));
+  } catch(e) {}
+}
+function clearSave(){ try { localStorage.removeItem(SAVE_KEY); } catch(e) {} }
+function checkResumeBtn(){
+  let ok = false;
+  try { const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); ok = !!(d && d.g && !d.g.over); } catch(e) {}
+  $('resumeBtn').classList.toggle('hidden', !ok);
+}
+function resumeGame(){
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch(e) {}
+  if (!d || !d.g){ clearSave(); checkResumeBtn(); return; }
+  G = d.g; G.timerInt = null; G.busy = false; G.selected = null;
+  timerSel = d.timerSel || 0;
+  if (d.at === 'board' && G.clue){
+    renderBoard(); show('scrBoard');
+    if (timerSel > 0) startTimer();
+    toast('🔄 رجعنا للعبة زي ما كانت');
+  } else {
+    G.keyMode = 'clue';
+    goPass();
+    toast('🔄 رجعنا للعبة — الدور عند ' + TEAM[G.turn].name);
+  }
+}
+checkResumeBtn();
 show('scrHome');
 </script>
 </body>
