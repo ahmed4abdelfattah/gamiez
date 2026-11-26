@@ -356,7 +356,7 @@
                             <span class="eq-bar"></span>
                             <span class="eq-bar"></span>
                         </span>
-                        <span id="musicBtnLabel" class="hidden sm:inline">موسيقى</span>
+                        <span id="musicBtnLabel" class="whitespace-nowrap">🔊 اضغط هنا عشان الصوت يشتغل</span>
                     </button>
                     <button id="musicSettingsBtn" type="button" aria-expanded="false" aria-controls="musicPanel" aria-label="إعدادات الموسيقى والألحان" title="إعدادات الموسيقى والألحان"
                         class="px-2.5 py-2.5 border-r border-white/10 hover:bg-white/10 text-slate-300 hover:text-amber-200 transition cursor-pointer text-xs">
@@ -1286,12 +1286,12 @@
                     } else if (awaitingGesture) {
                         musicToggleBtn.classList.remove('music-playing');
                         musicToggleBtn.classList.add('music-pending', 'bg-amber-400/15', 'text-amber-200');
-                        musicBtnLabel.textContent = 'موسيقى';
+                        musicBtnLabel.textContent = '🔊 اضغط هنا عشان الصوت يشتغل';
                         musicStatusText.textContent = 'المس الشاشة في أي مكان لبدء الصوت';
                         musicStatusText.className = 'text-[11px] font-bold text-amber-300';
                     } else {
                         musicToggleBtn.classList.remove('music-playing', 'music-pending', 'bg-amber-400/15', 'text-amber-200');
-                        musicBtnLabel.textContent = 'موسيقى';
+                        musicBtnLabel.textContent = '🔊 اضغط هنا عشان الصوت يشتغل';
                         musicStatusText.textContent = 'متوقفة حالياً — اضغط للتشغيل';
                         musicStatusText.className = 'text-[11px] font-bold text-slate-400';
                     }
