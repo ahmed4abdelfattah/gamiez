@@ -159,6 +159,11 @@
             box-shadow: 0 24px 50px -16px rgba(20, 184, 166, 0.28);
         }
 
+        .game-card[data-theme="red"]:hover {
+            border-color: rgba(251, 113, 133, 0.55);
+            box-shadow: 0 24px 50px -16px rgba(225, 29, 72, 0.28);
+        }
+
         /* Play CTA shine effect */
         .play-btn {
             position: relative;
@@ -336,7 +341,7 @@
                             ألعابنا
                         </span>
                         <span id="totalGamesBadge" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
-                            4 ألعاب جاهزة
+                            5 ألعاب جاهزة
                         </span>
                     </div>
                     <p class="text-[11px] sm:text-xs font-bold text-slate-400 truncate">
@@ -438,7 +443,7 @@
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="filterBar">
                 <button id="allFilterBtn" type="button" data-filter="all"
                     class="filter-pill active px-4 py-2 rounded-full text-xs sm:text-sm font-extrabold border border-white/10 bg-white/5 text-slate-200 cursor-pointer">
-                    الكل (4)
+                    الكل (5)
                 </button>
                 <button type="button" data-filter="online"
                     class="filter-pill px-4 py-2 rounded-full text-xs sm:text-sm font-extrabold border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
@@ -789,6 +794,69 @@
                     <!-- CTA Button -->
                     <div class="play-btn w-full py-3.5 px-4 rounded-2xl bg-gradient-to-l from-cyan-300 via-teal-400 to-indigo-400 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 group-hover:brightness-105">
                         <span>العب دلوقتي 🔐</span>
+                        <span class="transition-transform duration-200 group-hover:-translate-x-1" aria-hidden="true">←</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- CARD 5: دماغنا واحدة -->
+            <a href="dmaghna-wahda.html"
+               class="game-card group flex flex-col"
+               data-id="dmaghna"
+               data-title="دماغنا واحدة"
+               data-icon="☕"
+               data-theme="red"
+               data-tags="online words"
+               style="animation-delay: 0.28s">
+
+                <!-- Custom Illustrated Cover Banner -->
+                <div class="relative h-40 sm:h-44 overflow-hidden bg-gradient-to-br from-[#3a0b12] via-[#1f1020] to-[#0b1024] p-4 flex flex-col justify-between">
+                    <svg class="absolute inset-0 w-full h-full opacity-90 pointer-events-none" viewBox="0 0 420 180" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                        <!-- Half dial on the left -->
+                        <path d="M40 135A85 85 0 0 1 210 135Z" fill="#F4E6C3" opacity="0.9"/>
+                        <path d="M125 135L82 62A85 85 0 0 1 97 55Z" fill="#F2B134"/>
+                        <path d="M125 135L97 55A85 85 0 0 1 113 51Z" fill="#168F8A"/>
+                        <path d="M125 135L113 51A85 85 0 0 1 129 50Z" fill="#F2B134"/>
+                        <path d="M125 135L168 76" stroke="#C8283A" stroke-width="6" stroke-linecap="round"/>
+                        <circle cx="125" cy="135" r="13" fill="#C8283A"/>
+                        <!-- Tent-fabric triangles -->
+                        <path d="M0 0L14 16L28 0L42 16L56 0L70 16L84 0L98 16L112 0L126 16L140 0L154 16L168 0L182 16L196 0L210 16L224 0L238 16L252 0L266 16L280 0L294 16L308 0L322 16L336 0L350 16L364 0L378 16L392 0L406 16L420 0Z" fill="#F2B134" opacity="0.35"/>
+                    </svg>
+
+                    <!-- Top Badges Row -->
+                    <div class="relative z-10 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+                        <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-rose-950/80 text-rose-200 border border-rose-400/40">
+                            🌐 أونلاين مع صحابك
+                        </span>
+                        <span class="text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 sm:py-1 rounded-full bg-black/60 text-rose-100/90 border border-white/10">
+                            فريق ضد فريق
+                        </span>
+                    </div>
+
+                    <!-- Floating Game Emblem -->
+                    <div class="relative z-10 flex items-end justify-between gap-2">
+                        <div class="float-slow relative w-16 h-16 rounded-2xl bg-slate-950/80 border border-rose-300/45 flex items-center justify-center text-4xl shadow-xl shadow-black/50" style="animation-delay: 1.4s">
+                            <span aria-hidden="true">☕</span>
+                            <span class="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-lg bg-rose-500/25 border border-rose-300/50 flex items-center justify-center text-xs shadow" aria-hidden="true">🎯</span>
+                        </div>
+                        <span class="text-[11px] sm:text-xs font-extrabold text-rose-300/95 bg-black/65 px-2.5 py-1 rounded-lg border border-rose-400/25">
+                            غرف خاصة بالكود
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="p-5 flex-1 flex flex-col">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <h2 class="text-2xl font-black text-rose-300 group-hover:text-rose-200 transition">
+                            دماغنا واحدة
+                        </h2>
+                        <span class="text-xs font-bold text-slate-400">💡 تلميحة وتخمين</span>
+                    </div>
+
+                    <!-- CTA Button -->
+                    <div class="play-btn w-full py-3.5 px-4 rounded-2xl bg-gradient-to-l from-amber-300 via-rose-400 to-red-500 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-rose-500/25 group-hover:brightness-105">
+                        <span>العب دلوقتي ☕</span>
                         <span class="transition-transform duration-200 group-hover:-translate-x-1" aria-hidden="true">←</span>
                     </div>
                 </div>
@@ -1461,4 +1529,4 @@
         })();
     </script>
 </body>
-</html>
+    </html>
