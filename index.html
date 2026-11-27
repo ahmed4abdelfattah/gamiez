@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -161,6 +162,21 @@
         .game-card[data-theme="red"]:hover {
             border-color: rgba(251, 113, 133, 0.55);
             box-shadow: 0 24px 50px -16px rgba(225, 29, 72, 0.28);
+        }
+
+        .game-card[data-theme="green"]:hover {
+            border-color: rgba(52, 211, 153, 0.55);
+            box-shadow: 0 24px 50px -16px rgba(16, 185, 129, 0.28);
+        }
+
+        .game-card[data-theme="gold"]:hover {
+            border-color: rgba(250, 204, 21, 0.55);
+            box-shadow: 0 24px 50px -16px rgba(234, 179, 8, 0.28);
+        }
+
+        .game-card[data-theme="violet"]:hover {
+            border-color: rgba(167, 139, 250, 0.55);
+            box-shadow: 0 24px 50px -16px rgba(124, 58, 237, 0.28);
         }
 
         /* Play CTA shine effect */
@@ -340,7 +356,7 @@
                             ألعابنا
                         </span>
                         <span id="totalGamesBadge" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
-                            6 ألعاب جاهزة
+                            7 ألعاب جاهزة
                         </span>
                     </div>
                     <p class="text-[11px] sm:text-xs font-bold text-slate-400 truncate">
@@ -442,7 +458,7 @@
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="filterBar">
                 <button id="allFilterBtn" type="button" data-filter="all"
                     class="filter-pill active px-4 py-2 rounded-full text-xs sm:text-sm font-extrabold border border-white/10 bg-white/5 text-slate-200 cursor-pointer">
-                    الكل (6)
+                    الكل (7)
                 </button>
                 <button type="button" data-filter="online"
                     class="filter-pill px-4 py-2 rounded-full text-xs sm:text-sm font-extrabold border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
@@ -867,43 +883,38 @@
                data-id="atrash"
                data-title="الأطرش في الزفة"
                data-icon="🥁"
-               data-theme="amber"
+               data-theme="green"
                data-tags="online deception"
                style="animation-delay: 0.34s">
 
                 <!-- Custom Illustrated Cover Banner -->
-                <div class="relative h-40 sm:h-44 overflow-hidden bg-gradient-to-br from-[#14284b] via-[#1a1a3a] to-[#0b1024] p-4 flex flex-col justify-between">
+                <div class="relative h-40 sm:h-44 overflow-hidden bg-gradient-to-br from-[#062a20] via-[#0d1b30] to-[#0b1024] p-4 flex flex-col justify-between">
                     <svg class="absolute inset-0 w-full h-full opacity-90 pointer-events-none" viewBox="0 0 420 180" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-                        <!-- Wedding bunting & lights -->
-                        <path d="M0 8H420" stroke="#FFF4DC" stroke-opacity="0.6" stroke-width="1.5"/>
-                        <path d="M0 8H42L21 36ZM84 8H126L105 36ZM168 8H210L189 36ZM252 8H294L273 36ZM336 8H378L357 36Z" fill="#B3261E" opacity="0.75"/>
-                        <path d="M42 8H84L63 36ZM126 8H168L147 36ZM210 8H252L231 36ZM294 8H336L315 36ZM378 8H420L399 36Z" fill="#F2B22C" opacity="0.6"/>
-                        <g fill="#FFE27A"><circle cx="42" cy="12" r="4"/><circle cx="126" cy="12" r="4"/><circle cx="210" cy="12" r="4"/><circle cx="294" cy="12" r="4"/><circle cx="378" cy="12" r="4"/></g>
-                        <!-- Question bubbles: one is the odd one -->
-                        <g font-family="Cairo, sans-serif" font-weight="900" font-size="22" text-anchor="middle">
-                            <circle cx="55" cy="95" r="22" fill="#0F6B4F"/><text x="55" y="103" fill="#FFF4DC">؟</text>
-                            <circle cx="112" cy="80" r="22" fill="#0F6B4F"/><text x="112" y="88" fill="#FFF4DC">؟</text>
-                            <circle cx="169" cy="100" r="25" fill="#F2B22C"/><text x="169" y="108" fill="#14284B">!</text>
-                            <circle cx="226" cy="82" r="22" fill="#0F6B4F"/><text x="226" y="90" fill="#FFF4DC">؟</text>
-                        </g>
+                        <!-- Speech bubbles: one does not match -->
+                        <path d="M30 48h78a12 12 0 0 1 12 12v24a12 12 0 0 1-12 12H62l-18 16v-16H30a12 12 0 0 1-12-12V60a12 12 0 0 1 12-12Z" fill="#0F6B4F"/>
+                        <path d="M138 32h70a12 12 0 0 1 12 12v22a12 12 0 0 1-12 12h-14v15l-18-15h-38a12 12 0 0 1-12-12V44a12 12 0 0 1 12-12Z" fill="#0F6B4F"/>
+                        <path d="M132 105h74a12 12 0 0 1 12 12v22a12 12 0 0 1-12 12h-42l-18 15v-15h-14a12 12 0 0 1-12-12v-22a12 12 0 0 1 12-12Z" fill="#F2B22C"/>
+                        <g fill="#FFF4DC"><circle cx="50" cy="72" r="5"/><circle cx="70" cy="72" r="5"/><circle cx="90" cy="72" r="5"/><circle cx="155" cy="55" r="5"/><circle cx="173" cy="55" r="5"/><circle cx="191" cy="55" r="5"/></g>
+                        <text x="169" y="138" text-anchor="middle" font-size="28" font-weight="900" fill="#14284B">؟</text>
                     </svg>
 
                     <!-- Top Badges Row -->
                     <div class="relative z-10 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
-                        <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-amber-950/80 text-amber-200 border border-amber-400/40">
+                        <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-emerald-950/80 text-emerald-200 border border-emerald-400/40">
                             🌐 أونلاين مع صحابك
                         </span>
-                        <span class="text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 sm:py-1 rounded-full bg-black/60 text-amber-100/90 border border-white/10">
+                        <span class="text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 sm:py-1 rounded-full bg-black/60 text-emerald-100/90 border border-white/10">
                             خداع واستنتاج
                         </span>
                     </div>
 
                     <!-- Floating Game Emblem -->
                     <div class="relative z-10 flex items-end justify-between gap-2">
-                        <div class="float-slow relative w-16 h-16 rounded-2xl bg-slate-950/80 border border-amber-300/45 flex items-center justify-center text-4xl shadow-xl shadow-black/50" style="animation-delay: 1.7s">
+                        <div class="float-slow relative w-16 h-16 rounded-2xl bg-slate-950/80 border border-emerald-300/45 flex items-center justify-center text-4xl shadow-xl shadow-black/50" style="animation-delay: 1.4s">
                             <span aria-hidden="true">🥁</span>
+                            <span class="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-lg bg-emerald-500/25 border border-emerald-300/50 flex items-center justify-center text-xs shadow" aria-hidden="true">❓</span>
                         </div>
-                        <span class="text-[11px] sm:text-xs font-extrabold text-amber-300/95 bg-black/65 px-2.5 py-1 rounded-lg border border-amber-400/25">
+                        <span class="text-[11px] sm:text-xs font-extrabold text-emerald-300/95 bg-black/65 px-2.5 py-1 rounded-lg border border-emerald-400/25">
                             غرف خاصة بالكود
                         </span>
                     </div>
@@ -912,15 +923,68 @@
                 <!-- Card Body -->
                 <div class="p-5 flex-1 flex flex-col">
                     <div class="flex items-center justify-between gap-2 mb-2">
-                        <h2 class="text-2xl font-black text-amber-300 group-hover:text-amber-200 transition">
+                        <h2 class="text-2xl font-black text-emerald-300 group-hover:text-emerald-200 transition">
                             الأطرش في الزفة
                         </h2>
-                        <span class="text-xs font-bold text-slate-400">🗳️ مين الأطرش؟</span>
+                        <span class="text-xs font-bold text-slate-400">🗳️ سؤال وتصويت</span>
                     </div>
 
                     <!-- CTA Button -->
-                    <div class="play-btn w-full py-3.5 px-4 rounded-2xl bg-gradient-to-l from-amber-400 via-amber-500 to-orange-400 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 group-hover:brightness-105">
+                    <div class="play-btn w-full py-3.5 px-4 rounded-2xl bg-gradient-to-l from-amber-300 via-emerald-400 to-green-500 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 group-hover:brightness-105">
                         <span>العب دلوقتي 🥁</span>
+                        <span class="transition-transform duration-200 group-hover:-translate-x-1" aria-hidden="true">←</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- CARD 7: حرف بحرف -->
+            <a href="kelma.html"
+               class="game-card group flex flex-col"
+               data-id="kelma"
+               data-title="حرف بحرف"
+               data-icon="🔠"
+               data-theme="violet"
+               data-tags="online words"
+               style="animation-delay: 0.4s">
+
+                <!-- Custom Illustrated Cover Banner -->
+                <div class="relative h-40 sm:h-44 overflow-hidden bg-gradient-to-br from-[#201048] via-[#141a3a] to-[#0b1024] p-4 flex flex-col justify-between">
+                    <svg class="absolute inset-0 w-full h-full opacity-90 pointer-events-none" viewBox="0 0 420 180" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" font-family="Cairo, sans-serif" aria-hidden="true"><rect x="150" y="45" width="52" height="74" rx="9" fill="#7048c6"/><text x="176" y="93" text-anchor="middle" font-size="32" font-weight="900" fill="#fff">ق</text><rect x="90" y="45" width="52" height="74" rx="9" fill="#e83e72"/><text x="116" y="93" text-anchor="middle" font-size="32" font-weight="900" fill="#fff">ل</text><rect x="30" y="45" width="52" height="74" rx="9" fill="#e98a00"/><text x="56" y="93" text-anchor="middle" font-size="32" font-weight="900" fill="#fff">م</text></svg>
+
+                    <!-- Top Badges Row -->
+                    <div class="relative z-10 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+                        <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-violet-950/80 text-violet-200 border border-violet-400/40">
+                            🌐 أونلاين مع صحابك
+                        </span>
+                        <span class="text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 sm:py-1 rounded-full bg-black/60 text-violet-100/90 border border-white/10">
+                            سرعة وكلمات
+                        </span>
+                    </div>
+
+                    <!-- Floating Game Emblem -->
+                    <div class="relative z-10 flex items-end justify-between gap-2">
+                        <div class="float-slow relative w-16 h-16 rounded-2xl bg-slate-950/80 border border-violet-300/45 flex items-center justify-center text-4xl shadow-xl shadow-black/50" style="animation-delay: 1.4s">
+                            <span aria-hidden="true">🔠</span>
+                            <span class="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-lg bg-violet-500/25 border border-violet-300/50 flex items-center justify-center text-xs shadow" aria-hidden="true">⭐</span>
+                        </div>
+                        <span class="text-[11px] sm:text-xs font-extrabold text-violet-300/95 bg-black/65 px-2.5 py-1 rounded-lg border border-violet-400/25">
+                            غرف خاصة بالكود
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="p-5 flex-1 flex flex-col">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <h2 class="text-2xl font-black text-violet-300 group-hover:text-violet-200 transition">
+                            حرف بحرف
+                        </h2>
+                        <span class="text-xs font-bold text-slate-400">🃏 كروت وكلمات</span>
+                    </div>
+
+                    <!-- CTA Button -->
+                    <div class="play-btn w-full py-3.5 px-4 rounded-2xl bg-gradient-to-l from-amber-300 via-violet-400 to-purple-500 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-violet-500/25 group-hover:brightness-105">
+                        <span>العب دلوقتي 🔠</span>
                         <span class="transition-transform duration-200 group-hover:-translate-x-1" aria-hidden="true">←</span>
                     </div>
                 </div>
