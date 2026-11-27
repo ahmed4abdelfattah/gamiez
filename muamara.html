@@ -2,899 +2,173 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>المؤامرة - لعبة الخداع والتحليل السياساتي</title>
-<meta name="description" content="لعبة جماعية استراتيجية تعتمد على الخداع والأدوار السرية والتصويت السياساتي">
-<meta name="theme-color" content="#06060f">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg-primary:#06060f;
-  --bg-secondary:#0f1022;
-  --bg-panel:rgba(18,19,42,0.92);
-  --bg-elevated:rgba(255,255,255,0.05);
-  --green:#00e676;
-  --green-dim:#0a4d2c;
-  --green-glow:rgba(0,230,118,0.28);
-  --red:#ff1744;
-  --red-dim:#5c0a1c;
-  --red-glow:rgba(255,23,68,0.28);
-  --gold:#ffd740;
-  --gold-dim:#524200;
-  --gold-glow:rgba(255,215,64,0.28);
-  --purple:#7c4dff;
-  --purple-glow:rgba(124,77,255,0.28);
-  --text:#f2f3fa;
-  --text-muted:#9497b8;
-  --text-dim:#5c6082;
-  --border:rgba(255,255,255,0.1);
-  --border-strong:rgba(255,255,255,0.18);
-  --glass:rgba(255,255,255,0.035);
-  --radius:16px;
-  --radius-sm:11px;
-  --radius-lg:22px;
-  --shadow:0 10px 34px rgba(0,0,0,0.55);
-  --transition:all 0.25s cubic-bezier(0.4,0,0.2,1);
-  --safe-top:env(safe-area-inset-top,0px);
-  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --bg-primary:#06060f;--bg-secondary:#0d0d1a;--bg-panel:rgba(18,18,40,0.85);
+  --green:#00e676;--green-dim:#004d25;--green-glow:rgba(0,230,118,0.3);
+  --red:#ff1744;--red-dim:#4d0014;--red-glow:rgba(255,23,68,0.3);
+  --gold:#ffd740;--gold-dim:#4d3f00;--gold-glow:rgba(255,215,64,0.3);
+  --purple:#7c4dff;--purple-glow:rgba(124,77,255,0.25);
+  --text:#f0f0f8;--text-muted:#7a7a9e;--text-dim:#44446a;
+  --border:rgba(255,255,255,0.08);--glass:rgba(255,255,255,0.03);
+  --radius:16px;--radius-sm:10px;--radius-lg:24px;
+  --shadow:0 8px 32px rgba(0,0,0,0.5);
+  --transition:all 0.35s cubic-bezier(0.4,0,0.2,1);
 }
+html,body{height:100dvh;overflow:hidden;font-family:'Tajawal',sans-serif;background:var(--bg-primary);color:var(--text)}
+body{display:flex;justify-content:center;align-items:center}
+#app{width:100%;max-width:480px;height:100dvh;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity 0.35s ease,transform 0.35s ease;transform:scale(0.96)}
+.screen.active{opacity:1;pointer-events:auto;transform:scale(1)}
+.screen-wrapper{margin:auto 0;width:100%;display:flex;flex-direction:column;align-items:center}
 
-html,body{
-  height:100vh;
-  height:100dvh;
-  overflow:hidden;
-  font-family:'Tajawal',sans-serif;
-  background:var(--bg-primary);
-  color:var(--text);
-  -webkit-font-smoothing:antialiased;
-  touch-action:manipulation;
-}
+/* Background Effects */
+#bg-canvas{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.bg-glow{position:fixed;border-radius:50%;filter:blur(120px);opacity:0.15;pointer-events:none;z-index:-1}
+.bg-glow.g1{width:400px;height:400px;background:var(--purple);top:-100px;right:-100px;animation:floatGlow 12s ease-in-out infinite}
+.bg-glow.g2{width:300px;height:300px;background:var(--red);bottom:-50px;left:-80px;animation:floatGlow 15s ease-in-out infinite reverse}
+@keyframes floatGlow{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,20px)}}
 
-body{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
+h1{font-size:2.6rem;font-weight:900;background:linear-gradient(135deg,var(--gold),#fff,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2}
+h2{font-size:1.5rem;font-weight:700;color:var(--text)}
+h3{font-size:1.15rem;font-weight:600;color:var(--text-muted)}
+.subtitle{font-size:0.95rem;color:var(--text-muted);margin-top:6px;font-weight:300}
 
-#app{
-  width:100%;
-  max-width:480px;
-  height:100vh;
-  height:100dvh;
-  position:relative;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  background:radial-gradient(circle at 85% 5%,rgba(124,77,255,0.14),transparent 45%),
-             radial-gradient(circle at 15% 95%,rgba(255,23,68,0.12),transparent 45%),
-             var(--bg-primary);
-}
-
-/* Screens */
-.screen{
-  position:absolute;
-  inset:0;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding:calc(14px + var(--safe-top)) 14px calc(14px + var(--safe-bottom));
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;
-  opacity:0;
-  pointer-events:none;
-  transform:translateY(8px) scale(0.985);
-  transition:opacity 0.28s ease,transform 0.28s ease;
-}
-
-.screen.active{
-  opacity:1;
-  pointer-events:auto;
-  transform:translateY(0) scale(1);
-}
-
-.screen-fixed{
-  overflow:hidden;
-  justify-content:space-between;
-}
-
-.screen-wrapper{
-  margin:auto 0;
-  width:100%;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-/* Utility Classes (Fixed missing utilities) */
-.w-full{width:100%}
-.flex-col{display:flex;flex-direction:column;align-items:center}
-.flex-row{display:flex;align-items:center;justify-content:center}
-.gap-1{gap:8px}
-.gap-2{gap:14px}
-.gap-3{gap:20px}
-.text-center{text-align:center}
-.mt-1{margin-top:8px}
-.mt-2{margin-top:14px}
-.mt-3{margin-top:20px}
-.mb-1{margin-bottom:8px}
-.mb-2{margin-bottom:14px}
-.hidden{display:none!important}
-
-/* Typography */
-h1{
-  font-size:clamp(2.1rem,8vw,2.7rem);
-  font-weight:900;
-  background:linear-gradient(135deg,var(--gold),#ffffff 55%,var(--gold));
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  line-height:1.2;
-}
-h2{font-size:1.4rem;font-weight:800;color:var(--text);line-height:1.3}
-h3{font-size:1.08rem;font-weight:700;color:var(--text-muted);line-height:1.4}
-.subtitle{font-size:0.92rem;color:var(--text-muted);line-height:1.55;font-weight:400}
-
-/* Buttons */
-.btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  padding:12px 22px;
-  border:1px solid transparent;
-  border-radius:var(--radius);
-  font-family:'Tajawal',sans-serif;
-  font-size:1rem;
-  font-weight:700;
-  cursor:pointer;
-  transition:var(--transition);
-  position:relative;
-  overflow:hidden;
-  user-select:none;
-  -webkit-tap-highlight-color:transparent;
-  min-height:48px;
-}
-.btn:active:not(:disabled){transform:scale(0.96)}
-.btn-primary{
-  background:linear-gradient(135deg,var(--gold),#ffab00);
-  color:#0a0a12;
-  box-shadow:0 6px 22px var(--gold-glow);
-}
-.btn-green{
-  background:linear-gradient(135deg,var(--green),#00c853);
-  color:#041a0d;
-  box-shadow:0 6px 20px var(--green-glow);
-}
-.btn-red{
-  background:linear-gradient(135deg,var(--red),#d50000);
-  color:#fff;
-  box-shadow:0 6px 20px var(--red-glow);
-}
-.btn-ghost{
-  background:var(--bg-elevated);
-  border-color:var(--border);
-  color:var(--text);
-}
-.btn-ghost:hover:not(:disabled){
-  border-color:var(--border-strong);
-  background:rgba(255,255,255,0.09);
-}
-.btn-danger-ghost{
-  background:rgba(255,23,68,0.1);
-  border-color:rgba(255,23,68,0.3);
-  color:#ff6b81;
-}
-.btn-sm{padding:8px 14px;font-size:0.86rem;border-radius:var(--radius-sm);min-height:40px}
-.btn-xs{padding:6px 10px;font-size:0.8rem;border-radius:9px;min-height:36px}
-.btn-lg{padding:15px 28px;font-size:1.1rem;border-radius:var(--radius-lg);min-height:54px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;border:none;border-radius:var(--radius);font-family:'Tajawal',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:var(--transition);position:relative;overflow:hidden;user-select:none;-webkit-tap-highlight-color:transparent;min-height:48px}
+.btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.12),transparent);opacity:0;transition:opacity 0.3s}
+.btn:hover::before{opacity:1}
+.btn:active{transform:scale(0.96)}
+.btn-primary{background:linear-gradient(135deg,var(--gold),#ffab00);color:#000;box-shadow:0 4px 20px var(--gold-glow)}
+.btn-green{background:linear-gradient(135deg,var(--green),#00c853);color:#000;box-shadow:0 4px 20px var(--green-glow)}
+.btn-red{background:linear-gradient(135deg,var(--red),#d50000);color:#fff;box-shadow:0 4px 20px var(--red-glow)}
+.btn-ghost{background:var(--glass);border:1px solid var(--border);color:var(--text);backdrop-filter:blur(10px)}
+.btn-ghost:hover{border-color:rgba(255,255,255,0.18);background:rgba(255,255,255,0.06)}
+.btn-sm{padding:8px 16px;font-size:0.85rem;border-radius:var(--radius-sm);min-height:38px}
+.btn-lg{padding:16px 36px;font-size:1.15rem;border-radius:var(--radius-lg);min-height:54px}
 .btn-block{width:100%}
-.btn:disabled{opacity:0.38;cursor:not-allowed;box-shadow:none}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none!important}
 
-/* Panels & Containers */
-.panel{
-  background:var(--bg-panel);
-  border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:18px;
-  box-shadow:var(--shadow);
-  width:100%;
-  display:flex;
-  flex-direction:column;
-}
-
-.panel-full{
-  height:100%;
-  max-height:100%;
-  overflow:hidden;
-}
-
-.panel-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  padding-bottom:12px;
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;
-  width:100%;
-}
-
-.panel-body{
-  flex:1;
-  min-height:0;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;
-  width:100%;
-  padding:12px 2px;
-}
-
-.panel-footer{
-  padding-top:12px;
-  border-top:1px solid var(--border);
-  flex-shrink:0;
-  width:100%;
-  display:flex;
-  gap:10px;
-}
-
-.scroll-area{
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;
-  width:100%;
-}
-.panel-body::-webkit-scrollbar,
-.scroll-area::-webkit-scrollbar,
-#game-content::-webkit-scrollbar{width:4px}
-.panel-body::-webkit-scrollbar-thumb,
-.scroll-area::-webkit-scrollbar-thumb,
-#game-content::-webkit-scrollbar-thumb{background:var(--text-dim);border-radius:4px}
-
-/* Inputs & Selects */
-.input-field{
-  width:100%;
-  padding:12px 14px;
-  background:rgba(255,255,255,0.05);
-  border:1px solid var(--border);
-  border-radius:var(--radius-sm);
-  color:var(--text);
-  font-family:'Tajawal',sans-serif;
-  font-size:0.96rem;
-  outline:none;
-  transition:var(--transition);
-  direction:rtl;
-  min-height:46px;
-}
-.input-field:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,215,64,0.15)}
+.panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;backdrop-filter:blur(20px);box-shadow:var(--shadow);width:100%}
+.input-field{width:100%;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Tajawal',sans-serif;font-size:0.95rem;outline:none;transition:var(--transition);direction:rtl}
+.input-field:focus{border-color:var(--gold);box-shadow:0 0 15px var(--gold-glow)}
 .input-field::placeholder{color:var(--text-dim)}
 
-.select-control{
-  width:100%;
-  padding:11px 12px;
-  background:var(--bg-secondary);
-  border:1px solid var(--border-strong);
-  border-radius:var(--radius-sm);
-  color:var(--text);
-  font-family:'Tajawal',sans-serif;
-  font-size:0.92rem;
-  outline:none;
-  min-height:44px;
-  cursor:pointer;
-}
-.select-control:focus{border-color:var(--gold)}
-.select-control option{
-  background:#121329;
-  color:var(--text);
-}
+/* Modal System */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:999;opacity:0;pointer-events:none;transition:opacity 0.3s ease}
+.modal-overlay.active{opacity:1;pointer-events:auto}
+.modal-box{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;width:90%;max-width:380px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.8);transform:scale(0.9);transition:transform 0.3s ease}
+.modal-overlay.active .modal-box{transform:scale(1)}
 
-/* Title Hero & Saved Game Banner */
-.hero-badge{
-  width:88px;
-  height:88px;
-  border-radius:26px;
-  background:linear-gradient(145deg,rgba(255,215,64,0.16),rgba(124,77,255,0.14));
-  border:1px solid rgba(255,215,64,0.3);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:3.2rem;
-  box-shadow:0 12px 30px rgba(0,0,0,0.45);
-  margin-bottom:4px;
-}
+.score-tracker{display:flex;gap:12px;align-items:center;justify-content:center;width:100%;padding:6px 0}
+.score-slots{display:flex;gap:6px}
+.score-slot{width:34px;height:34px;border-radius:8px;border:2px solid;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;transition:var(--transition)}
+.score-slot.green{border-color:var(--green-dim);color:var(--green-dim);background:rgba(0,230,118,0.03)}
+.score-slot.green.filled{background:var(--green);border-color:var(--green);color:#000;box-shadow:0 0 15px var(--green-glow)}
+.score-slot.red{border-color:var(--red-dim);color:var(--red-dim);background:rgba(255,23,68,0.03)}
+.score-slot.red.filled{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 15px var(--red-glow)}
 
-.resume-card{
-  width:100%;
-  background:linear-gradient(135deg,rgba(0,230,118,0.1),rgba(124,77,255,0.1));
-  border:1px solid rgba(0,230,118,0.32);
-  border-radius:var(--radius);
-  padding:12px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.resume-meta{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-size:0.84rem;
-  color:var(--text-muted);
-}
+.player-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;width:100%}
+.player-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);padding:12px 8px;text-align:center;cursor:pointer;transition:var(--transition);position:relative}
+.player-card:hover{border-color:rgba(255,255,255,0.15);transform:translateY(-2px)}
+.player-card.selected{border-color:var(--gold);box-shadow:0 0 20px var(--gold-glow);background:rgba(255,215,64,0.05)}
+.player-card.eliminated{opacity:0.3;pointer-events:none;text-decoration:line-through}
+.player-card.is-president{border-color:var(--gold);background:rgba(255,215,64,0.05)}
+.player-card.is-president::after{content:'👑';position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:1.1rem}
+.player-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--purple),#448aff);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-size:1.1rem;font-weight:800;color:#fff}
+.player-name{font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-status{font-size:0.68rem;color:var(--text-muted);margin-top:2px}
+.player-green-counter{font-size:0.7rem;color:var(--green);font-weight:700;margin-top:2px}
 
-/* Game Top Navigation Bar */
-.game-topbar{
-  width:100%;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  padding-bottom:8px;
-  flex-shrink:0;
-}
+.role-reveal-card{width:260px;min-height:240px;border-radius:var(--radius-lg);padding:20px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:var(--transition)}
+.role-reveal-card.role-citizen{background:linear-gradient(145deg,rgba(0,77,37,0.4),rgba(0,200,83,0.1));border:2px solid var(--green);box-shadow:0 0 30px var(--green-glow)}
+.role-reveal-card.role-criminal{background:linear-gradient(145deg,rgba(77,0,20,0.4),rgba(255,23,68,0.1));border:2px solid var(--red);box-shadow:0 0 30px var(--red-glow)}
+.role-reveal-card.role-assistant{background:linear-gradient(145deg,rgba(77,0,20,0.3),rgba(255,82,82,0.1));border:2px solid #ff5252;box-shadow:0 0 30px rgba(255,82,82,0.3)}
+.role-reveal-card.role-imposter{background:linear-gradient(145deg,rgba(124,77,255,0.4),rgba(0,229,255,0.1));border:2px solid var(--purple);box-shadow:0 0 30px var(--purple-glow)}
 
-.topbar-pill{
-  flex:1;
-  text-align:center;
-  background:var(--bg-elevated);
-  border:1px solid var(--border);
-  border-radius:999px;
-  padding:7px 12px;
-  font-size:0.78rem;
-  font-weight:700;
-  color:var(--text-muted);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
+.known-allies-box{background:rgba(0,0,0,0.4);border:1px solid rgba(255,23,68,0.4);border-radius:var(--radius-sm);padding:10px 14px;width:100%;text-align:center;margin-top:6px}
+.known-allies-title{font-size:0.82rem;color:var(--text-muted);margin-bottom:4px}
+.known-allies-list{font-size:1.15rem;font-weight:900;color:var(--red)}
 
-.icon-btn{
-  width:40px;
-  height:40px;
-  border-radius:12px;
-  background:var(--bg-elevated);
-  border:1px solid var(--border);
-  color:var(--text);
-  font-size:1.1rem;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  transition:var(--transition);
-  flex-shrink:0;
-  -webkit-tap-highlight-color:transparent;
-}
-.icon-btn:active{transform:scale(0.92)}
-.icon-btn:hover{border-color:var(--border-strong);background:rgba(255,255,255,0.09)}
+.fail-counter{display:flex;gap:6px;align-items:center;justify-content:center}
+.fail-dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--text-dim);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;transition:var(--transition)}
+.fail-dot.active{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 12px var(--red-glow)}
 
-/* Compact Scoreboard HUD */
-.hud-card{
-  width:100%;
-  background:var(--bg-panel);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:10px 12px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  flex-shrink:0;
-}
-
-.track-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-}
-
-.track-label{
-  font-size:0.76rem;
-  font-weight:800;
-  min-width:60px;
-  text-align:right;
-}
-.track-label.green{color:var(--green)}
-.track-label.red{color:var(--red)}
-
-.score-slots{
-  display:flex;
-  gap:5px;
-  flex:1;
-  justify-content:flex-end;
-}
-
-.score-slot{
-  width:30px;
-  height:30px;
-  border-radius:8px;
-  border:1.5px solid;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:800;
-  font-size:0.76rem;
-  transition:var(--transition);
-}
-.score-slot.green{border-color:var(--green-dim);color:var(--text-dim);background:rgba(0,230,118,0.04)}
-.score-slot.green.filled{background:var(--green);border-color:var(--green);color:#041a0d;box-shadow:0 0 12px var(--green-glow)}
-.score-slot.red{border-color:var(--red-dim);color:var(--text-dim);background:rgba(255,23,68,0.04)}
-.score-slot.red.filled{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 12px var(--red-glow)}
-
-.hud-footer{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding-top:6px;
-  border-top:1px solid var(--border);
-  font-size:0.76rem;
-  color:var(--text-muted);
-}
-
-.fail-counter{display:flex;gap:6px;align-items:center}
-.fail-dot{
-  width:22px;
-  height:22px;
-  border-radius:50%;
-  border:1.5px solid var(--text-dim);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:0.68rem;
-  font-weight:800;
-  transition:var(--transition);
-}
-.fail-dot.active{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 10px var(--red-glow)}
-
-/* Main Game Content Area */
-#game-content{
-  flex:1;
-  min-height:0;
-  width:100%;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;
-  display:flex;
-  flex-direction:column;
-  padding:12px 2px 6px;
-}
-
-.phase-box{
-  margin:auto 0;
-  width:100%;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:12px;
-  animation:fadeInUp 0.25s ease;
-}
-
-@keyframes fadeInUp{
-  from{opacity:0;transform:translateY(8px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-/* Player Grid */
-.player-grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:8px;
-  width:100%;
-}
-@media (max-width:350px){
-  .player-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-
-.player-card{
-  background:var(--glass);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:11px 6px 9px;
-  text-align:center;
-  cursor:pointer;
-  transition:var(--transition);
-  position:relative;
-  user-select:none;
-  -webkit-tap-highlight-color:transparent;
-}
-.player-card:active:not(.disabled):not(.eliminated){transform:scale(0.96)}
-.player-card.selected{
-  border-color:var(--gold);
-  box-shadow:0 0 0 2px rgba(255,215,64,0.25),0 6px 18px rgba(0,0,0,0.4);
-  background:rgba(255,215,64,0.1);
-}
-.player-card.disabled{opacity:0.38;pointer-events:none}
-.player-card.eliminated{opacity:0.28;pointer-events:none;filter:grayscale(0.7)}
-.player-card.eliminated .player-name{text-decoration:line-through}
-.player-card.is-president{border-color:rgba(255,215,64,0.55);background:rgba(255,215,64,0.06)}
-.player-card.is-president::after{
-  content:'👑';
-  position:absolute;
-  top:-9px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:1rem;
-}
-
-.player-avatar{
-  width:38px;
-  height:38px;
-  border-radius:50%;
-  background:linear-gradient(135deg,var(--purple),#3d8bfd);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin:0 auto 6px;
-  font-size:1rem;
-  font-weight:800;
-  color:#fff;
-}
-.player-name{
-  font-size:0.84rem;
-  font-weight:700;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  padding:0 2px;
-}
-.player-status{font-size:0.7rem;color:var(--text-muted);margin-top:2px}
-.player-green-counter{font-size:0.72rem;color:var(--green);font-weight:700;margin-top:3px}
-
-/* Policy Cards (Mobile-first responsive tactile buttons) */
-.policy-cards-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(95px,1fr));
-  gap:10px;
-  width:100%;
-  margin-top:6px;
-}
-
-.policy-card-btn{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  padding:18px 10px;
-  min-height:126px;
-  border-radius:var(--radius-lg);
-  border:2px solid transparent;
-  font-family:'Tajawal',sans-serif;
-  font-size:1.02rem;
-  font-weight:800;
-  cursor:pointer;
-  transition:var(--transition);
-  user-select:none;
-  -webkit-tap-highlight-color:transparent;
-}
-.policy-card-btn:active{transform:scale(0.95)}
-.policy-card-btn .card-icon{font-size:2.2rem;line-height:1}
-.policy-card-btn.card-green{
-  background:linear-gradient(160deg,rgba(0,230,118,0.22),rgba(0,140,65,0.14));
-  border-color:var(--green);
-  color:#d9ffea;
-  box-shadow:0 8px 24px rgba(0,230,118,0.18);
-}
-.policy-card-btn.card-red{
-  background:linear-gradient(160deg,rgba(255,23,68,0.24),rgba(140,0,30,0.16));
-  border-color:var(--red);
-  color:#ffe3e8;
-  box-shadow:0 8px 24px rgba(255,23,68,0.18);
-}
-
-/* Role Reveal Card */
-.role-reveal-card{
-  width:100%;
-  max-width:300px;
-  min-height:230px;
-  border-radius:var(--radius-lg);
-  padding:22px 18px;
-  text-align:center;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  animation:fadeInUp 0.28s ease;
-}
-.role-reveal-card.role-citizen{
-  background:linear-gradient(155deg,rgba(0,77,37,0.55),rgba(0,200,83,0.12));
-  border:2px solid var(--green);
-  box-shadow:0 10px 30px var(--green-glow);
-}
-.role-reveal-card.role-criminal{
-  background:linear-gradient(155deg,rgba(90,0,24,0.6),rgba(255,23,68,0.14));
-  border:2px solid var(--red);
-  box-shadow:0 10px 30px var(--red-glow);
-}
-.role-reveal-card.role-assistant{
-  background:linear-gradient(155deg,rgba(85,12,24,0.55),rgba(255,82,82,0.14));
-  border:2px solid #ff5252;
-  box-shadow:0 10px 30px rgba(255,82,82,0.28);
-}
-.role-reveal-card.role-imposter{
-  background:linear-gradient(155deg,rgba(80,42,175,0.55),rgba(0,229,255,0.12));
-  border:2px solid var(--purple);
-  box-shadow:0 10px 30px var(--purple-glow);
-}
-
-.known-allies-box{
-  background:rgba(0,0,0,0.38);
-  border:1px solid rgba(255,255,255,0.12);
-  border-radius:var(--radius-sm);
-  padding:10px 12px;
-  width:100%;
-  text-align:center;
-  margin-top:6px;
-}
-.known-allies-title{font-size:0.8rem;color:var(--text-muted);margin-bottom:4px}
-.known-allies-list{font-size:1.05rem;font-weight:800;color:#ff8a9b;line-height:1.5}
-
-/* Pass Device Card */
-.pass-card{
-  width:100%;
-  background:var(--bg-panel);
-  border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-  padding:24px 18px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:10px;
-  text-align:center;
-}
-
-/* Public & Secret Voting */
-.vote-btn-group{display:flex;gap:10px;width:100%;margin-top:8px}
-.vote-btn{flex:1;padding:16px 12px;border-radius:var(--radius-lg);font-size:1.08rem;font-weight:800}
-
-.public-vote-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid var(--border);
-  padding:8px 10px;
-  border-radius:var(--radius-sm);
-  width:100%;
-}
-.public-vote-name{
-  font-size:0.88rem;
-  font-weight:700;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  flex:1;
-  text-align:right;
-}
-.vote-chosen{
-  outline:2px solid #fff;
-  outline-offset:1px;
-  opacity:1!important;
-}
-.vote-dimmed{
-  opacity:0.35!important;
-}
-
-.vote-results{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;width:100%}
-.vote-chip{
-  padding:6px 11px;
-  border-radius:999px;
-  font-size:0.8rem;
-  font-weight:700;
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-}
-.vote-chip.approve{background:rgba(0,230,118,0.14);color:var(--green);border:1px solid rgba(0,230,118,0.3)}
-.vote-chip.reject{background:rgba(255,23,68,0.14);color:#ff6b81;border:1px solid rgba(255,23,68,0.3)}
-
-/* Settings Toggle & Items */
-.toggle-switch{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0}
+.toggle-switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
 .toggle-switch input{opacity:0;width:0;height:0}
-.toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--text-dim);transition:.25s;border-radius:26px}
-.toggle-slider:before{position:absolute;content:"";height:20px;width:20px;left:3px;bottom:3px;background:#fff;transition:.25s;border-radius:50%}
-input:checked + .toggle-slider{background:var(--green)}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--text-dim);transition:.3s;border-radius:24px}
+.toggle-slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:white;transition:.3s;border-radius:50%}
+input:checked + .toggle-slider{background-color:var(--green)}
 input:checked + .toggle-slider:before{transform:translateX(20px)}
 
-.setting-item{display:flex;flex-direction:column;gap:7px;padding:12px 0;border-bottom:1px solid var(--border)}
-.setting-item:last-child{border-bottom:none}
-.setting-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.setting-item{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-bottom:1px solid var(--border)}
+.setting-header{display:flex;align-items:center;justify-content:space-between}
 .setting-title{font-size:0.95rem;font-weight:700;color:var(--text)}
-.setting-desc{font-size:0.8rem;color:var(--text-muted);line-height:1.45}
+.setting-desc{font-size:0.78rem;color:var(--text-muted);line-height:1.4}
 
-/* Log Bottom Sheet */
-.log-backdrop{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.65);
-  z-index:190;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity 0.25s ease;
-}
-.log-backdrop.open{opacity:1;pointer-events:auto}
+.select-control{width:100%;padding:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Tajawal',sans-serif;font-size:0.9rem;outline:none}
 
-.log-panel{
-  position:fixed;
-  bottom:0;
-  left:50%;
-  transform:translate(-50%,100%);
-  width:100%;
-  max-width:480px;
-  max-height:68dvh;
-  background:var(--bg-secondary);
-  border-top:1px solid var(--border-strong);
-  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
-  z-index:200;
-  display:flex;
-  flex-direction:column;
-  padding:14px 16px calc(16px + var(--safe-bottom));
-  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-  box-shadow:0 -10px 35px rgba(0,0,0,0.6);
-}
-.log-panel.open{transform:translate(-50%,0)}
+.vote-btn-group{display:flex;gap:12px;width:100%;margin-top:16px}
+.vote-btn{flex:1;padding:16px;border-radius:var(--radius-lg);font-size:1.15rem;font-weight:800}
+.vote-results{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.vote-chip{padding:6px 12px;border-radius:16px;font-size:0.8rem;font-weight:600;display:flex;align-items:center;gap:4px}
+.vote-chip.approve{background:rgba(0,230,118,0.15);color:var(--green);border:1px solid rgba(0,230,118,0.2)}
+.vote-chip.reject{background:rgba(255,23,68,0.15);color:var(--red);border:1px solid rgba(255,23,68,0.2)}
 
-.log-entry{
-  padding:8px 10px;
-  border-radius:var(--radius-sm);
-  margin-bottom:6px;
-  font-size:0.82rem;
-  line-height:1.5;
-  background:rgba(255,255,255,0.03);
-  border:1px solid var(--border);
-}
+.log-toggle{position:fixed;bottom:14px;left:14px;z-index:100;width:42px;height:42px;border-radius:50%;background:var(--bg-panel);border:1px solid var(--border);color:var(--text-muted);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
+.log-panel{position:fixed;bottom:0;left:0;right:0;max-height:55vh;background:var(--bg-secondary);border-top:1px solid var(--border);transform:translateY(100%);transition:transform 0.4s ease;z-index:99;overflow-y:auto;padding:16px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.log-panel.open{transform:translateY(0)}
+.log-entry{padding:6px 10px;border-radius:var(--radius-sm);margin-bottom:6px;font-size:0.8rem;background:rgba(255,255,255,0.02);border:1px solid var(--border)}
 .log-entry.log-green{border-right:3px solid var(--green)}
 .log-entry.log-red{border-right:3px solid var(--red)}
 .log-entry.log-gold{border-right:3px solid var(--gold)}
 
-/* Modal System */
-.modal-overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.8);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:999;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity 0.22s ease;
-  padding:16px;
-}
-.modal-overlay.active{opacity:1;pointer-events:auto}
-.modal-box{
-  background:var(--bg-secondary);
-  border:1px solid var(--border-strong);
-  border-radius:var(--radius-lg);
-  padding:22px 20px;
-  width:100%;
-  max-width:360px;
-  text-align:center;
-  box-shadow:0 16px 48px rgba(0,0,0,0.8);
-  transform:scale(0.92);
-  transition:transform 0.22s ease;
-}
-.modal-overlay.active .modal-box{transform:scale(1)}
+.win-overlay{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px}
+.win-overlay.citizens-win{background:linear-gradient(180deg,rgba(0,77,37,0.95),rgba(6,6,15,0.98))}
+.win-overlay.criminals-win{background:linear-gradient(180deg,rgba(77,0,20,0.95),rgba(6,6,15,0.98))}
 
-/* Win Screen */
-.win-overlay{
-  width:100%;
-  height:100%;
-  border-radius:var(--radius-lg);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding:20px 16px;
-  gap:12px;
-  overflow:hidden;
-}
-.win-overlay.citizens-win{background:linear-gradient(180deg,rgba(0,95,46,0.92),rgba(6,6,15,0.98));border:1px solid rgba(0,230,118,0.3)}
-.win-overlay.criminals-win{background:linear-gradient(180deg,rgba(105,0,28,0.92),rgba(6,6,15,0.98));border:1px solid rgba(255,23,68,0.3)}
+.divider{width:80%;height:1px;background:var(--border);margin:14px 0}
+.text-center{text-align:center}
+.mt-1{margin-top:6px}.mt-2{margin-top:12px}.mt-3{margin-top:20px}
+.mb-1{margin-bottom:6px}.mb-2{margin-bottom:12px}
+.flex-col{display:flex;flex-direction:column;align-items:center}
+.scroll-area{overflow-y:auto;max-height:50vh;width:100%;padding:2px}
+.scroll-area::-webkit-scrollbar{width:4px}
+.scroll-area::-webkit-scrollbar-thumb{background:var(--text-dim);border-radius:2px}
+.hidden{display:none!important}
 
-.divider{width:100%;height:1px;background:var(--border);margin:8px 0}
-
-/* Peek cards display */
-.peek-list{
-  display:flex;
-  gap:8px;
-  justify-content:center;
-  flex-wrap:wrap;
-  width:100%;
-}
-.peek-pill{
-  padding:12px 16px;
-  border-radius:var(--radius);
-  font-weight:800;
-  font-size:0.95rem;
-  min-width:92px;
-  text-align:center;
-}
-.peek-pill.green{background:rgba(0,230,118,0.18);border:1.5px solid var(--green);color:#d9ffea}
-.peek-pill.red{background:rgba(255,23,68,0.18);border:1.5px solid var(--red);color:#ffe3e8}
-
-/* Toast Notification */
-.toast{
-  position:fixed;
-  top:calc(14px + var(--safe-top));
-  left:50%;
-  transform:translate(-50%,-120%);
-  background:#1c1e38;
-  border:1px solid var(--gold);
-  color:var(--text);
-  padding:10px 16px;
-  border-radius:999px;
-  font-size:0.86rem;
-  font-weight:700;
-  z-index:1000;
-  box-shadow:0 8px 25px rgba(0,0,0,0.6);
-  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
-  max-width:90vw;
-  text-align:center;
-}
-.toast.show{transform:translate(-50%,0)}
+/* ── أونلاين: الصفحة بتتحرك عادي بدل الشاشات الثابتة ── */
+html,body{height:auto;min-height:100dvh;overflow:auto}
+body{display:block}
+#app{height:auto;min-height:100dvh;overflow:visible;margin:auto;padding:10px 16px 32px}
+#view,.stage{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;text-align:center}
+.center{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;text-align:center}
+.home{color:var(--gold);font-weight:800;text-decoration:none}
+#net{color:var(--gold);text-align:center;min-height:1.5em}
+.huge{font-size:3.5rem}.code{font-size:2.4rem;font-weight:900;letter-spacing:8px;direction:ltr;color:var(--gold)}
+.row{display:flex;gap:10px;width:100%;flex-wrap:wrap;justify-content:center}.row>.btn{flex:1}
+.card-btn{padding:20px 8px;font-size:1.3rem}
+button.player-card{font-family:inherit;color:var(--text)}button.player-card:disabled{cursor:default}
+.player-card.dim{opacity:.35}.off{opacity:.45}
+.vote-btn.chosen{outline:3px solid #fff}.vote-chip.wait{border:1px solid var(--border)}
+.lbl{font-size:.75rem;color:var(--text-muted)}.lbl.green{color:var(--green)}.lbl.red{color:var(--red)}
+.line{display:flex;justify-content:space-between;gap:8px;width:100%;background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:.85rem}
+details.panel{padding:12px 16px;text-align:right}summary{cursor:pointer;font-weight:700}
+.select-control option{background:#0d0d1a}
 </style>
 </head>
 <body>
+<div class="bg-glow g1"></div><div class="bg-glow g2"></div>
 <div id="app">
-  <!-- Toast -->
-  <div id="app-toast" class="toast"></div>
-
-  <!-- TITLE SCREEN -->
-  <div class="screen active" id="screen-title">
-    <div class="screen-wrapper flex-col gap-2 text-center">
-      <div class="hero-badge">🕵️</div>
-      <div>
-        <h1>المؤامرة</h1>
-        <p class="subtitle mt-1">خداع · تحليل · إدارة ثقة · مناورة سياسية</p>
-      </div>
-
-      <!-- Resume Saved Game Card -->
-      <div id="resume-card" class="resume-card hidden mt-1">
-        <div class="resume-meta">
-          <span style="color:var(--green);font-weight:800">💾 مباراة محفوظة</span>
-          <span id="resume-meta-info"></span>
-        </div>
-        <div style="display:flex;gap:8px;width:100%">
-          <button class="btn btn-green btn-sm" style="flex:1" onclick="resumeSavedGame()">
-            🔄 استكمال المباراة
-          </button>
-          <button class="btn btn-danger-ghost btn-sm" onclick="confirmDeleteSavedGame()" title="حذف الحفظ">
-            🗑️
-          </button>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="w-full flex-col gap-1">
-        <button class="btn btn-primary btn-lg btn-block" onclick="showScreen('screen-setup')">
-          ابدأ لعبة جديدة 🎮
-        </button>
-        <div style="display:flex;gap:8px;width:100%" class="mt-1">
-          <button class="btn btn-ghost btn-sm" style="flex:1" onclick="showSettingsScreen()">
-            ⚙️ الإعدادات
-          </button>
-          <button class="btn btn-ghost btn-sm" style="flex:1" onclick="showScreen('screen-rules')">
-            📖 القواعد
-          </button>
-        </div>
-        <button class="btn btn-ghost btn-sm btn-block mt-1" onclick="window.location.href='index.html'">
-          🏠 كل الألعاب
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SETTINGS SCREEN -->
-  <div class="screen screen-fixed" id="screen-settings">
-    <div class="panel panel-full">
-      <div class="panel-header">
-        <h2>⚙️ إعدادات المباراة</h2>
-        <button class="btn btn-ghost btn-xs" onclick="randomizeSettings()">🎲 عشوائي</button>
-      </div>
-
-      <div class="panel-body">
+<a class="home" href="index.html">🏠 كل الألعاب</a>
+<div id="net" role="status"></div>
+<main id="view"></main>
+</div>
+<template id="settings-tpl">
+        <!-- NEW SETTING: EVIL COUNT -->
         <div class="setting-item">
           <div class="setting-header">
             <span class="setting-title">🔪 عدد فريق المجرمين</span>
@@ -909,7 +183,7 @@ input:checked + .toggle-slider:before{transform:translateX(20px)}
             <option value="6">6 (زعيم + 5 مساعدين)</option>
             <option value="7">7 (زعيم + 6 مساعدين)</option>
           </select>
-          <p class="setting-desc">تحديد عدد أفراد فريق المجرمين الإجمالي بدلاً من التوزيع التلقائي.</p>
+          <p class="setting-desc">تحديد عدد أفراد فريق المجرمين الإجمالي بدلاً من الاعتماد على التوزيع التلقائي.</p>
         </div>
 
         <div class="setting-item">
@@ -920,7 +194,7 @@ input:checked + .toggle-slider:before{transform:translateX(20px)}
               <span class="toggle-slider"></span>
             </label>
           </div>
-          <p class="setting-desc">اختيار الرئيس القادم عشوائياً من بين الأحياء بدلاً من الدوران المتسلسل.</p>
+          <p class="setting-desc">اختر الرئيس القادم عشوائياً من بين الأحياء بدلاً من الدوران الدوري المتسلسل.</p>
         </div>
 
         <div class="setting-item">
@@ -928,10 +202,10 @@ input:checked + .toggle-slider:before{transform:translateX(20px)}
             <span class="setting-title">🗳️ طريقة التصويت</span>
           </div>
           <select class="select-control" id="opt-voting-mode">
-            <option value="secret">🔐 تصويت سري (تمرير الجهاز)</option>
+            <option value="secret">🔐 تصويت سري (مخفي حتى النتيجة)</option>
             <option value="public">📢 تصويت علني مباشر</option>
           </select>
-          <p class="setting-desc">اختر بين التصويت العلني في شاشة واحدة أو تمرير الجهاز سرًا لكل لاعب.</p>
+          <p class="setting-desc">اختر ما إذا كانت الأصوات تظهر للجميع لحظيًا أم تبقى مخفية حتى يصوت الكل.</p>
         </div>
 
         <div class="setting-item">
@@ -942,7 +216,7 @@ input:checked + .toggle-slider:before{transform:translateX(20px)}
               <span class="toggle-slider"></span>
             </label>
           </div>
-          <p class="setting-desc">اللاعب الحي الذي ساهم بـ 3 بطاقات خضراء فأكثر كمستشار يحصل صوته على قوة مضاعفة (صوتان).</p>
+          <p class="setting-desc">اللاعب الذي ساهم بـ 3 بطاقات خضراء فأكثر كمستشار يحصل صوته على قوة مضاعفة (صوتان) في التصويت.</p>
         </div>
 
         <div class="setting-item">
@@ -956,7 +230,7 @@ input:checked + .toggle-slider:before{transform:translateX(20px)}
             <option value="president">👑 حظر الرئيس السابق فقط</option>
             <option value="both">⛔ حظر الرئيس والمستشار السابقين</option>
           </select>
-          <p class="setting-desc">قيود اختيار المستشار الجديد بالنسبة لأعضاء الحكومة السابقة مباشرة.</p>
+          <p class="setting-desc">تحديد قيود اختيار المستشار الجديد بالنسبة لأعضاء الحكومة السابقة مباشرة.</p>
         </div>
 
         <div class="setting-item">
@@ -967,7 +241,7 @@ input:checked + .toggle-slider:before{transform:translateX(20px)}
               <span class="toggle-slider"></span>
             </label>
           </div>
-          <p class="setting-desc">يطلع الرئيس سرًا على البطاقات الثلاث القادمة بمجرد الوصول إلى 3 بطاقات خضراء.</p>
+          <p class="setting-desc">يستطيع الرئيس الاطلاع سرًا على ألوان البطاقات الثلاث القادمة بمجرد الوصول لـ 3 بطاقات خضراء.</p>
         </div>
 
         <div class="setting-item">
@@ -978,7 +252,7 @@ input:checked + .toggle-slider:before{transform:translateX(20px)}
               <span class="toggle-slider"></span>
             </label>
           </div>
-          <p class="setting-desc">يتم اختيار المستشار عشوائيًا من المتاحين تلقائيًا دون تدخل يدوي من الرئيس.</p>
+          <p class="setting-desc">يتم اختيار المستشار عشوائيًا من الخيارات المتاحة تلقائيًا دون اختيار يدوي من الرئيس.</p>
         </div>
 
         <div class="setting-item">
@@ -1000,1911 +274,338 @@ input:checked + .toggle-slider:before{transform:translateX(20px)}
               <span class="toggle-slider"></span>
             </label>
           </div>
-          <p class="setting-desc">شخصية مستقلة تظهر كمواطن عند التحقيق، وشرط فوزها البقاء حية حتى نهاية اللعبة.</p>
+          <p class="setting-desc">شخصية مستقلة هدفها تضليل الجميع، وشرط فوزها الوحيد هو البقاء حية حتى نهاية اللعبة.</p>
         </div>
-      </div>
-
-      <div class="panel-footer">
-        <button class="btn btn-ghost" style="flex:1" onclick="showScreen('screen-title')">إلغاء</button>
-        <button class="btn btn-primary" style="flex:2" onclick="saveSettingsUI()">حفظ الإعدادات ✓</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- RULES SCREEN -->
-  <div class="screen screen-fixed" id="screen-rules">
-    <div class="panel panel-full">
-      <div class="panel-header">
-        <h2>📖 قواعد اللعبة والأدوار</h2>
-      </div>
-      <div class="panel-body">
-        <div class="flex-col gap-2" style="align-items:stretch;font-size:0.9rem;line-height:1.85;color:var(--text-muted)">
-          <div style="padding:12px;border-radius:var(--radius-sm);background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2)">
-            <strong style="color:var(--green);font-size:1rem">المواطنون 🛡️</strong>
-            <p class="mt-1">يحاولون حماية المدينة عبر تمرير <strong>5 بطاقات خضراء</strong> أو إعدام <strong>المجرم الأساسي</strong>.</p>
-          </div>
-          <div style="padding:12px;border-radius:var(--radius-sm);background:rgba(255,23,68,0.06);border:1px solid rgba(255,23,68,0.2)">
-            <strong style="color:var(--red);font-size:1rem">المجرمون 🔪</strong>
-            <p class="mt-1">يتخفون بين المواطنين ويعملون على تمرير <strong>6 بطاقات حمراء</strong> (أو انتخاب الزعيم مستشارًا بعد 3 بطاقات حمراء إن كان الخيار مفعّلاً).</p>
-          </div>
-          <div style="padding:12px;border-radius:var(--radius-sm);background:rgba(124,77,255,0.08);border:1px solid rgba(124,77,255,0.25)">
-            <strong style="color:var(--purple);font-size:1rem">المحتال 🎭 (اختياري)</strong>
-            <p class="mt-1">شخصية مستقلة تظهر كـ «مواطن» عند التحقيق، وهدفها الوحيد هو البقاء حية حتى نهاية المباراة.</p>
-          </div>
-          <div style="padding:12px;border-radius:var(--radius-sm);background:var(--glass);border:1px solid var(--border)">
-            <strong style="color:var(--gold);font-size:1rem">القدرات الرئاسية ⚡</strong>
-            <p class="mt-1">• البطاقة الحمراء 2: <strong>🔍 التحقيق</strong> مع لاعب سرًا.<br>
-            • البطاقة الحمراء 3: <strong>🎯 اختيار الرئيس القادم</strong> مباشرة.<br>
-            • البطاقة الحمراء 4 و 5: <strong>⚔️ إعدام</strong> لاعب وإقصاؤه نهائيًا.</p>
-          </div>
-        </div>
-      </div>
-      <div class="panel-footer">
-        <button class="btn btn-ghost btn-block" onclick="showScreen('screen-title')">↩ رجوع للقائمة</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SETUP SCREEN -->
-  <div class="screen screen-fixed" id="screen-setup">
-    <div class="panel panel-full">
-      <div class="panel-header">
-        <h2>👥 إعداد اللاعبين</h2>
-        <button class="btn btn-ghost btn-xs" onclick="showSettingsScreen()">⚙️ تعديل القواعد</button>
-      </div>
-
-      <div style="padding:12px 0;border-bottom:1px solid var(--border);flex-shrink:0" class="w-full text-center">
-        <div style="display:flex;align-items:center;justify-content:center;gap:18px">
-          <button class="btn btn-ghost btn-sm" style="width:46px;font-size:1.3rem" onclick="changePlayerCount(-1)">−</button>
-          <div>
-            <span style="font-size:2rem;font-weight:900;color:var(--gold);line-height:1" id="player-count">5</span>
-            <div style="font-size:0.75rem;color:var(--text-muted)">لاعبين</div>
-          </div>
-          <button class="btn btn-ghost btn-sm" style="width:46px;font-size:1.3rem" onclick="changePlayerCount(1)">+</button>
-        </div>
-        <p style="font-size:0.84rem;color:var(--text-muted);margin-top:8px" id="role-preview"></p>
-      </div>
-
-      <div class="panel-body">
-        <div id="player-names-container" class="flex-col gap-1 w-full"></div>
-      </div>
-
-      <div class="panel-footer">
-        <button class="btn btn-ghost" style="flex:1" onclick="showScreen('screen-title')">↩ رجوع</button>
-        <button class="btn btn-primary" style="flex:2" onclick="startGame()">🚀 ابدأ اللعبة</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ROLE REVEAL SCREEN -->
-  <div class="screen screen-fixed" id="screen-roles">
-    <div class="game-topbar">
-      <button class="icon-btn" onclick="returnToMenuSafe()" title="القائمة الرئيسية">🏠</button>
-      <div class="topbar-pill" id="role-progress-pill">توزيع الأدوار السرية</div>
-      <div style="width:40px"></div>
-    </div>
-    <div class="screen-wrapper flex-col gap-2 text-center" id="role-reveal-content"></div>
-  </div>
-
-  <!-- MAIN GAME SCREEN -->
-  <div class="screen screen-fixed" id="screen-game">
-    <!-- Top Navigation Bar -->
-    <div class="game-topbar">
-      <button class="icon-btn" onclick="returnToMenuSafe()" title="القائمة الرئيسية (المباراة محفوظة)">🏠</button>
-      <div class="topbar-pill" id="round-info">الجولة 1</div>
-      <button class="icon-btn" onclick="toggleLog()" title="سجل الأحداث">📋</button>
-    </div>
-
-    <!-- Scoreboard HUD -->
-    <div class="hud-card">
-      <div class="track-row">
-        <span class="track-label green">🛡️ المواطنون</span>
-        <div class="score-slots" id="green-slots"></div>
-      </div>
-      <div class="track-row">
-        <span class="track-label red">🔪 المجرمون</span>
-        <div class="score-slots" id="red-slots"></div>
-      </div>
-      <div class="hud-footer">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span>عداد الفوضى:</span>
-          <div class="fail-counter" id="fail-counter"></div>
-        </div>
-        <span id="deck-info">🃏 الكومة: 17</span>
-      </div>
-    </div>
-
-    <!-- Dynamic Game Content -->
-    <div id="game-content"></div>
-  </div>
-
-  <!-- GAME OVER SCREEN -->
-  <div class="screen screen-fixed" id="screen-gameover">
-    <div class="win-overlay" id="win-overlay">
-      <div id="win-icon" style="font-size:3.6rem;line-height:1"></div>
-      <h1 id="win-title" style="font-size:2rem"></h1>
-      <p id="win-reason" class="subtitle" style="font-size:0.95rem;max-width:340px;text-align:center"></p>
-      <div class="divider"></div>
-      <div id="win-roles" class="flex-col gap-1 w-full panel-body" style="padding:4px 2px"></div>
-      <div class="w-full" style="flex-shrink:0;padding-top:8px">
-        <button class="btn btn-primary btn-lg btn-block" onclick="resetGame()">🔄 لعبة جديدة</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Dialog -->
-  <div class="modal-overlay" id="app-modal">
-    <div class="modal-box">
-      <h2 id="modal-title" style="color:var(--gold);margin-bottom:8px">تنبيه</h2>
-      <p id="modal-desc" style="font-size:0.92rem;color:var(--text-muted);line-height:1.65;margin-bottom:18px"></p>
-      <div id="modal-actions" style="display:flex;gap:8px;width:100%">
-        <button class="btn btn-primary btn-block" onclick="closeModal()">موافق ✓</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Log Bottom Sheet -->
-  <div class="log-backdrop" id="log-backdrop" onclick="toggleLog(false)"></div>
-  <div class="log-panel" id="log-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:10px;flex-shrink:0">
-      <h3>📋 سجل الأحداث</h3>
-      <button class="btn btn-ghost btn-xs" onclick="toggleLog(false)">✕ إغلاق</button>
-    </div>
-    <div id="log-entries" class="panel-body" style="padding:2px"></div>
-  </div>
-</div>
-
+      </template>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
 <script>
-const SAVE_KEY = 'al_muamara_save_v2';
-const SETTINGS_KEY = 'al_muamara_settings';
+const BROKER=window.TEST_BROKER||'wss://broker.emqx.io:8084/mqtt', PREFIX='muamara-t6j1/';
+const CONFIG={
+ roles:{5:[3,1],6:[4,1],7:[4,2],8:[5,2],9:[5,3],10:[6,3],11:[6,4],12:[7,4],13:[8,4],14:[8,5],15:[9,5],16:[10,5]}, /* [مواطنين، مساعدين] + مجرم */
+ cards:n=>n<=8?{red:11,green:6}:n<=10?{red:13,green:6}:n<=12?{red:15,green:6}:{red:17,green:7},
+ term:n=>n<=8?'chancellor':n<=11?'both':'two_governments',
+ powers:{2:'investigate',3:'pick_president',4:'execute',5:'execute'}};
+const DEFAULTS={votingMode:'secret',mvpVoter:false,termRestriction:'auto',peekDeckOn3Green:false,randomGovernment:false,randomPresident:false,masterElectionWin:false,imposterRole:false,customEvilCount:'auto'};
+const OPT={votingMode:'opt-voting-mode',mvpVoter:'opt-mvp-voter',termRestriction:'opt-term-restriction',peekDeckOn3Green:'opt-peek-deck',randomGovernment:'opt-random-gov',randomPresident:'opt-random-pres',masterElectionWin:'opt-master-election-win',imposterRole:'opt-imposter-role',customEvilCount:'opt-evil-count'};
+const ROLE={citizen:['مواطن 🛡️','🛡️','role-citizen'],criminal:['المجرم 🔪','🔪','role-criminal'],assistant:['مساعد المجرم 🗡️','🗡️','role-assistant'],imposter:['المحتال 🎭','🎭','role-imposter']};
+const POWER={investigate:['🔍 التحقيق','اختر لاعبًا لكشف انتمائه'],pick_president:['🎯 اختيار الرئيس القادم','اختر من يكون الرئيس التالي مباشرة'],execute:['⚔️ الإعدام','اختر لاعبًا لإقصائه نهائيًا']};
 
-// Targeted debounce only for phase transitions to prevent accidental double-tap skips
-let transitionLock = false;
-function checkTransitionLock() {
-  if (transitionLock) return true;
-  transitionLock = true;
-  setTimeout(() => { transitionLock = false; }, 220);
-  return false;
+const Sound={ctx:null,
+ init(){try{if(!this.ctx)this.ctx=new(window.AudioContext||window.webkitAudioContext)();if(this.ctx.state==='suspended')this.ctx.resume()}catch(e){}},
+ play(type){const T={click:[[800,.05]],reveal:[[400,.05],[800,.1]],vote:[[600,.08],[900,.1]],card:[[500,.06]],greenCard:[[523,.08],[784,.12]],redCard:[[200,.25]],execute:[[100,.4]],victory:[[523,.18],[659,.18],[784,.18],[1047,.18]]}[type];
+  if(!this.ctx||!T)return;try{T.forEach(([f,d],i)=>{const t=this.ctx.currentTime+i*.11,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.frequency.value=f;if(f<=200)o.type='sawtooth';g.gain.setValueAtTime(.15,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(this.ctx.destination);o.start(t);o.stop(t+d)})}catch(e){}}};
+document.addEventListener('click',()=>Sound.init(),{once:true});
+
+const $=id=>document.getElementById(id);
+function el(tag,props={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(props)){if(k.startsWith('on'))e[k]=v;else if(k==='class')e.className=v;else e.setAttribute(k,v)}e.append(...kids.flat(9).filter(x=>x!=null&&x!==false));return e}
+const B=(t,f,c='btn-primary',off=false)=>{const b=el('button',{type:'button',class:'btn '+c,onclick:()=>{Sound.play('click');f(b)}},t);b.disabled=off;return b};
+const T=(tag,t,c)=>el(tag,c?{class:c}:{},t), P=t=>T('p',t,'subtitle');
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const rid=()=>Math.random().toString(36).slice(2,10);
+let me=store.get('mu-id');if(!me){me=rid();store.set('mu-id',me)}
+let client,code='',isHost=false,S=null,V=null,last='',lastSeen=0,pickSel=null,showRole=false,logOpen=false;
+const net=t=>$('net').textContent=t;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* الاتصال */
+function connect(topic,onMsg,onReady){
+ if(typeof mqtt==='undefined')return net('تعذر تحميل مكتبة الاتصال، تأكد من الإنترنت وحدّث الصفحة');
+ net('جاري الاتصال…');
+ client=mqtt.connect(BROKER,{clientId:'mu_'+me+rid(),reconnectPeriod:2000});
+ client.on('connect',()=>{net('');client.subscribe(topic,onReady)});
+ client.on('message',(t,m)=>{try{onMsg(JSON.parse(m.toString()))}catch(e){console.error(e)}});
+ client.on('reconnect',()=>net('جاري إعادة الاتصال…'));
 }
+const pub=(t,d)=>client&&client.publish(PREFIX+code+'/'+t,JSON.stringify(d));
+const send=a=>{a.id=me;if(V&&V.g)a.step=V.g.step;isHost?handle(a):pub('up',a)};
 
-// Escape user input to prevent XSS / broken DOM attributes
-function escapeHTML(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+/* ───────── منطق اللعبة (على جهاز صاحب الغرفة) ───────── */
+const online=u=>u===me||Date.now()-S.m[u].seen<15000;
+const alive=()=>S.g.players.filter(p=>p.alive);
+const nameOf=i=>S.g.players[i].name;
+const log=(t,type='neutral')=>S.g.log.push({t,type});
+function go(phase){S.g.phase=phase;S.g.step++}
+function startGame(){
+ const ids=S.order.filter(online).slice(0,16),n=ids.length;if(n<5)return;
+ const o=S.settings;let[cit,asst]=CONFIG.roles[n];
+ if(o.customEvilCount!=='auto'){const e=Math.min(+o.customEvilCount,n-1);asst=e-1;cit=n-e}
+ const roles=['criminal',...Array(asst).fill('assistant'),...Array(cit).fill('citizen')];
+ if(o.imposterRole&&cit>1)roles[roles.indexOf('citizen')]='imposter';
+ shuffle(roles);
+ const c=CONFIG.cards(n);
+ S.g={opt:{...o},n,players:ids.map((u,i)=>({u,name:S.m[u].n,role:roles[i],alive:true,investigated:false,green:0})),
+  deck:shuffle([...Array(c.red).fill('red'),...Array(c.green).fill('green')]),discard:[],green:0,red:0,pres:-1,chan:-1,lastPres:-1,lastChan:-1,govs:[],fail:0,round:0,special:-1,
+  votes:{},drawn:[],hand:[],peeked:false,used:{},ready:{},log:[],step:S.step0=(S.step0||0)+1000,phase:'roles',result:null,info:null};
+ log('🎮 بدأت اللعبة!','gold');
 }
-
-// Toast Notification
-let toastTimer = null;
-function showToast(msg) {
-  const el = document.getElementById('app-toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add('show');
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+function nextPresident(){
+ const g=S.g;g.round++;
+ if(g.special>=0&&g.players[g.special].alive)g.pres=g.special;
+ else if(g.opt.randomPresident){const o=alive().map(p=>g.players.indexOf(p)).filter(i=>i!==g.pres);g.pres=o[Math.random()*o.length|0]}
+ else{do g.pres=(g.pres+1)%g.n;while(!g.players[g.pres].alive)}
+ g.special=-1;g.chan=-1;g.info=null;g.result=null;
+ log(`👑 ${nameOf(g.pres)} أصبح الرئيس`,'gold');
+ go('nominate');
+ if(g.opt.randomGovernment){const e=eligible();if(e.length)nominate(e[Math.random()*e.length|0])}
 }
-
-const Sound = {
-  ctx: null,
-  init() {
-    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-  },
-  play(type) {
-    this.init();
-    try {
-      switch(type) {
-        case 'click': this._tone(800, 0.045, 'sine', 0.12); break;
-        case 'vote': this._tone(600, 0.07, 'sine', 0.16); setTimeout(()=>this._tone(900, 0.09, 'sine', 0.16), 75); break;
-        case 'approve': this._tone(523, 0.07, 'sine', 0.16); setTimeout(()=>this._tone(659, 0.07, 'sine', 0.16), 75); setTimeout(()=>this._tone(784, 0.14, 'sine', 0.16), 150); break;
-        case 'reject': this._tone(400, 0.09, 'sawtooth', 0.08); setTimeout(()=>this._tone(300, 0.14, 'sawtooth', 0.08), 90); break;
-        case 'card': this._noise(0.055, 0.1); break;
-        case 'greenCard': this._tone(523, 0.08, 'sine', 0.18); setTimeout(()=>this._tone(784, 0.12, 'sine', 0.18), 95); break;
-        case 'redCard': this._tone(200, 0.24, 'sawtooth', 0.09); break;
-        case 'execute': this._tone(105, 0.36, 'sawtooth', 0.13); break;
-        case 'victory': [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this._tone(f,0.16,'sine',0.18),i*110)); break;
-        case 'defeat': this._tone(300,0.18,'sawtooth',0.09); setTimeout(()=>this._tone(190,0.38,'sawtooth',0.09),140); break;
-        case 'reveal': this._tone(420,0.05,'sine',0.16); setTimeout(()=>this._tone(820,0.09,'sine',0.16),75); break;
-      }
-    } catch(e) {}
-  },
-  _tone(freq, dur, type, vol) {
-    const o = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    o.type = type; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
-    o.connect(g).connect(this.ctx.destination);
-    o.start(); o.stop(this.ctx.currentTime + dur);
-  },
-  _noise(dur, vol) {
-    const bufferSize = Math.floor(this.ctx.sampleRate * dur);
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for(let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-    const src = this.ctx.createBufferSource();
-    const g = this.ctx.createGain();
-    src.buffer = buffer;
-    g.gain.setValueAtTime(vol, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
-    src.connect(g).connect(this.ctx.destination);
-    src.start();
+function eligible(){
+ const g=S.g,bad=new Set();
+ const term=g.opt.termRestriction==='auto'?CONFIG.term(g.n):g.opt.termRestriction;
+ if(term==='chancellor'||term==='both')bad.add(g.lastChan);
+ if(term==='president'||term==='both')bad.add(g.lastPres);
+ if(term==='two_governments')g.govs.slice(-2).forEach(x=>{bad.add(x.pres);bad.add(x.chan)});
+ const all=g.players.map((p,i)=>i).filter(i=>g.players[i].alive&&i!==g.pres);
+ const ok=all.filter(i=>!bad.has(i));return ok.length?ok:all;
+}
+function nominate(i){const g=S.g;g.chan=i;g.votes={};log(`🤝 ${nameOf(g.pres)} اختار ${nameOf(i)} مستشارًا`,'gold');go('vote')}
+function mvp(){const g=S.g;if(!g.opt.mvpVoter)return -1;let m=2,at=-1;g.players.forEach((p,i)=>{if(p.green>m){m=p.green;at=i}});return at}
+function tally(){
+ const g=S.g,m=mvp();let yes=0,no=0;const list=[];
+ g.players.forEach((p,i)=>{if(!p.alive||!(i in g.votes))return;const w=i===m?2:1;g.votes[i]?yes+=w:no+=w;list.push({i,v:g.votes[i],x2:w===2})});
+ if(!list.length)return;
+ const tie=yes===no,ok=tie?Math.random()>.5:yes>no;
+ g.result={yes,no,tie,ok,list};
+ log(`🗳️ النتيجة: ${yes} موافق / ${no} رافض ← ${ok?'تمت الموافقة':'تم الرفض'}${tie?' (حُسمت عشوائيًا بسبب التعادل)':''}`,ok?'green':'red');
+ go('voteResult');
+}
+function refill(){const g=S.g;if(g.deck.length<3){g.deck=shuffle(g.deck.concat(g.discard));g.discard=[];log('🔄 تم خلط الكومة من جديد')}}
+function afterVote(){
+ const g=S.g;
+ if(g.result.ok){
+  g.fail=0;g.lastPres=g.pres;g.lastChan=g.chan;g.govs.push({pres:g.pres,chan:g.chan});
+  if(g.opt.masterElectionWin&&g.red>=3&&g.players[g.chan].role==='criminal')return end('criminals','تم انتخاب المجرم الأساسي مستشارًا بعد إقرار 3 بطاقات حمراء! 🔴');
+  refill();g.drawn=g.deck.splice(0,3);return go('presCards');
+ }
+ g.fail++;log(`⚠️ عداد الفشل: ${g.fail}/2`,'red');
+ if(g.fail<2)return nextPresident();
+ /* فوضى: بطاقة حمراء من غير قدرات رئاسية */
+ g.fail=0;g.red++;
+ log('🔴 فشل التصويت مرتين! بطاقة حمراء تلقائية (فوضى)','red');go('chaos');
+}
+function win(){
+ const g=S.g;
+ if(g.green>=5){end('citizens','تم تمرير 5 بطاقات خضراء! 🟢');return true}
+ if(g.red>=6){end('criminals','تم تمرير 6 بطاقات حمراء! 🔴');return true}
+ return false;
+}
+function end(winner,reason){const g=S.g;g.info={winner,reason};log(`🏆 ${winner==='citizens'?'المواطنون فازوا!':'المجرمون فازوا!'} - ${reason}`,winner==='citizens'?'green':'red');go('over')}
+function targets(power){const g=S.g;return g.players.map((p,i)=>i).filter(i=>g.players[i].alive&&i!==g.pres&&(power!=='investigate'||!g.players[i].investigated))}
+function startPower(){
+ const g=S.g,p=CONFIG.powers[g.red];
+ if(!p||g.used[g.red]||!targets(p).length)return nextPresident();
+ g.used[g.red]=true;g.info={power:p};log(`⚡ قدرة خاصة: ${POWER[p][0]}`,'gold');go('power');
+}
+function afterCard(){
+ const g=S.g;if(win())return;
+ if(g.opt.peekDeckOn3Green&&g.green===3&&!g.peeked){g.peeked=true;refill();g.info={peek:g.deck.slice(0,3)};log('👁️ الرئيس تفقّد البطاقات الثلاث القادمة','gold');return go('peek')}
+ startPower();
+}
+/* "متابعة" من شاشات النتائج */
+function proceed(){
+ const g=S.g;
+ ({voteResult:afterVote,chaos:()=>{if(!win())nextPresident()},played:afterCard,peek:startPower,powerDone:nextPresident}[g.phase]||(()=>{}))();
+}
+function handle(a){
+ if(!S||typeof a.id!=='string'||!/^[a-z0-9]{4,12}$/.test(a.id))return;
+ let m=S.m[a.id];const host=a.id===me;
+ if(a.type==='hello'){
+  let name=String(a.name||'').trim().slice(0,12)||'لاعب';
+  if(!m){
+   if(S.order.length>=16){const gone=S.order.find(u=>!online(u)&&!(S.g&&S.g.players.some(p=>p.u===u)));
+    if(!gone)return pub('to/'+a.id,{full:true});S.order=S.order.filter(u=>u!==gone);delete S.m[gone]}
+   const base=name;for(let n=2;S.order.some(u=>S.m[u].n===name);n++)name=base+' '+n;
+   m=S.m[a.id]={n:name};S.order.push(a.id);
   }
-};
-
-const SETTINGS = {
-  votingMode: 'secret',
-  mvpVoter: false,
-  termRestriction: 'auto',
-  peekDeckOn3Green: false,
-  randomGovernment: false,
-  randomPresident: false,
-  masterElectionWin: false,
-  imposterRole: false,
-  customEvilCount: 'auto'
-};
-
-// Always read active match settings when a match is running
-function getSetting(key) {
-  if (G && G.settings && key in G.settings) return G.settings[key];
-  return SETTINGS[key];
-}
-
-const CONFIG = {
-  roles: {
-    5:{citizens:3,assistants:1,criminals:1},
-    6:{citizens:4,assistants:1,criminals:1},
-    7:{citizens:4,assistants:2,criminals:1},
-    8:{citizens:5,assistants:2,criminals:1},
-    9:{citizens:5,assistants:3,criminals:1},
-    10:{citizens:6,assistants:3,criminals:1},
-    11:{citizens:6,assistants:4,criminals:1},
-    12:{citizens:7,assistants:4,criminals:1},
-    13:{citizens:8,assistants:4,criminals:1},
-    14:{citizens:8,assistants:5,criminals:1},
-    15:{citizens:9,assistants:5,criminals:1},
-    16:{citizens:10,assistants:5,criminals:1}
-  },
-  cards: {
-    5:{red:11,green:6},6:{red:11,green:6},7:{red:11,green:6},8:{red:11,green:6},
-    9:{red:13,green:6},10:{red:13,green:6},
-    11:{red:15,green:6},12:{red:15,green:6},
-    13:{red:17,green:7},14:{red:17,green:7},15:{red:17,green:7},16:{red:17,green:7}
-  },
-  termLimits: {
-    5:'chancellor',6:'chancellor',7:'chancellor',8:'chancellor',
-    9:'both',10:'both',11:'both',
-    12:'two_governments',13:'two_governments',14:'two_governments',15:'two_governments',16:'two_governments'
-  },
-  powers: {2:'investigate',3:'pick_president',4:'execute',5:'execute'}
-};
-
-let G = {};
-let selectedChancellorTemp = -1;
-let selectedExecTarget = -1;
-
-// --- Settings Management ---
-function loadSettingsFromStorage() {
-  try {
-    const saved = localStorage.getItem(SETTINGS_KEY);
-    if (saved) Object.assign(SETTINGS, JSON.parse(saved));
-  } catch(e) {}
-}
-
-function saveSettingsUI() {
-  Sound.play('click');
-  SETTINGS.votingMode = document.getElementById('opt-voting-mode').value;
-  SETTINGS.mvpVoter = document.getElementById('opt-mvp-voter').checked;
-  SETTINGS.termRestriction = document.getElementById('opt-term-restriction').value;
-  SETTINGS.peekDeckOn3Green = document.getElementById('opt-peek-deck').checked;
-  SETTINGS.randomGovernment = document.getElementById('opt-random-gov').checked;
-  SETTINGS.randomPresident = document.getElementById('opt-random-pres').checked;
-  SETTINGS.masterElectionWin = document.getElementById('opt-master-election-win').checked;
-  SETTINGS.imposterRole = document.getElementById('opt-imposter-role').checked;
-  SETTINGS.customEvilCount = document.getElementById('opt-evil-count').value;
-
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(SETTINGS)); } catch(e) {}
-  updateRolePreview();
-  showScreen('screen-title');
-  showToast('تم حفظ الإعدادات ✓');
-}
-
-function loadSettingsUI() {
-  document.getElementById('opt-voting-mode').value = SETTINGS.votingMode;
-  document.getElementById('opt-mvp-voter').checked = SETTINGS.mvpVoter;
-  document.getElementById('opt-term-restriction').value = SETTINGS.termRestriction || 'auto';
-  document.getElementById('opt-peek-deck').checked = SETTINGS.peekDeckOn3Green;
-  document.getElementById('opt-random-gov').checked = SETTINGS.randomGovernment;
-  document.getElementById('opt-random-pres').checked = SETTINGS.randomPresident;
-  document.getElementById('opt-master-election-win').checked = SETTINGS.masterElectionWin;
-  document.getElementById('opt-imposter-role').checked = SETTINGS.imposterRole;
-  document.getElementById('opt-evil-count').value = SETTINGS.customEvilCount || 'auto';
-}
-
-function showSettingsScreen() {
-  loadSettingsUI();
-  showScreen('screen-settings');
-}
-
-function randomizeSettings() {
-  Sound.play('click');
-  SETTINGS.votingMode = Math.random() > 0.5 ? 'secret' : 'public';
-  SETTINGS.mvpVoter = Math.random() > 0.5;
-  const restrictions = ['auto', 'none', 'chancellor', 'president', 'both'];
-  SETTINGS.termRestriction = restrictions[Math.floor(Math.random() * restrictions.length)];
-  SETTINGS.peekDeckOn3Green = Math.random() > 0.5;
-  SETTINGS.randomGovernment = Math.random() > 0.5;
-  SETTINGS.randomPresident = Math.random() > 0.5;
-  SETTINGS.masterElectionWin = Math.random() > 0.5;
-  SETTINGS.imposterRole = Math.random() > 0.5;
-  SETTINGS.customEvilCount = 'auto';
-  loadSettingsUI();
-  showToast('🎲 تم خلط الإعدادات عشوائياً');
-}
-
-// --- Game State Initialization ---
-function initState(playerNames) {
-  const n = playerNames.length;
-  const cardConfig = CONFIG.cards[n];
-  let roleConfig = { ...CONFIG.roles[n] };
-
-  if (SETTINGS.customEvilCount && SETTINGS.customEvilCount !== 'auto') {
-    let evilCount = parseInt(SETTINGS.customEvilCount, 10);
-    if (evilCount >= n) evilCount = n - 1;
-    roleConfig.criminals = 1;
-    roleConfig.assistants = Math.max(0, evilCount - 1);
-    roleConfig.citizens = n - evilCount;
+ }
+ if(!m)return;m.seen=Date.now();
+ if(host&&!S.g){
+  if(a.type==='settings'){for(const k in DEFAULTS){const v=a.v&&a.v[k];if(typeof v===typeof DEFAULTS[k])S.settings[k]=v}}
+  if(a.type==='start')startGame();
+ }
+ const g=S.g;
+ if(g&&a.type!=='hello'){
+  if(host&&a.type==='lobby'){S.g=null;return sync()}
+  const s=g.players.findIndex(p=>p.u===a.id),pres=s===g.pres&&s>=0,fresh=a.step===g.step,i=a.i;
+  if(g.phase==='roles'){
+   if(a.type==='ready'&&s>=0)g.ready[s]=true;
+   if((host&&a.type==='force'&&fresh)||g.players.every((p,k)=>g.ready[k]))nextPresident();
+  }else if(fresh){
+   if(g.phase==='nominate'&&a.type==='nominate'&&pres&&eligible().includes(i))nominate(i);
+   else if(g.phase==='vote'&&a.type==='vote'&&s>=0&&g.players[s].alive&&typeof a.v==='boolean'){
+    /* التصويت السري نهائي، والعلني ينفع يتغير لحد آخر صوت */
+    if(g.opt.votingMode==='public'||!(s in g.votes))g.votes[s]=a.v;
+    if(g.players.every((p,k)=>!p.alive||k in g.votes))tally()}
+   else if(g.phase==='vote'&&a.type==='force'&&host)tally();
+   else if(g.phase==='presCards'&&a.type==='discard'&&pres&&[0,1,2].includes(i)){g.discard.push(g.drawn[i]);g.hand=g.drawn.filter((_,k)=>k!==i);g.drawn=[];log('👑 الرئيس تخلص من بطاقة سرًا');go('chanCards')}
+   else if(g.phase==='chanCards'&&a.type==='play'&&s===g.chan&&[0,1].includes(i)){
+    const c=g.hand[i];g.discard.push(g.hand[1-i]);g.hand=[];g.last=c;
+    if(c==='green'){g.green++;g.players[g.chan].green++}else g.red++;
+    log(c==='green'?'🟢 تم تمرير بطاقة خضراء!':'🔴 تم تمرير بطاقة حمراء!',c);go('played')}
+   else if(g.phase==='power'&&a.type==='target'&&pres&&targets(g.info.power).includes(i)){
+    const t=g.players[i],p=g.info.power;
+    if(p==='investigate'){t.investigated=true;g.info={power:p,i,citizen:t.role==='citizen'||t.role==='imposter'};log(`🔍 الرئيس حقق مع ${t.name}`,'gold');go('powerDone')}
+    else if(p==='pick_president'){g.special=i;g.info={power:p,i};log(`🎯 الرئيس اختار ${t.name} ليكون الرئيس القادم`,'gold');go('powerDone')}
+    else{t.alive=false;g.info={power:p,i};log(`⚔️ تم إقصاء ${t.name} من اللعبة!`,'red');t.role==='criminal'?end('citizens','تم إقصاء المجرم الأساسي! ⚔️'):go('powerDone')}}
+   else if(a.type==='next'&&(host||pres))proceed();
+   else if(a.type==='cancel'&&host&&['nominate','vote','presCards','chanCards','power'].includes(g.phase)){
+    g.discard.push(...g.drawn,...g.hand);g.drawn=[];g.hand=[];log('⏭️ صاحب الغرفة تخطى دور الحكومة الحالية');nextPresident()}
   }
-
-  let roles = [];
-  for(let i=0;i<roleConfig.criminals;i++) roles.push('criminal');
-  for(let i=0;i<roleConfig.assistants;i++) roles.push('assistant');
-  for(let i=0;i<roleConfig.citizens;i++) roles.push('citizen');
-
-  if (SETTINGS.imposterRole && roles.filter(r => r === 'citizen').length > 1) {
-    const citIdx = roles.indexOf('citizen');
-    if (citIdx !== -1) roles[citIdx] = 'imposter';
-  }
-
-  shuffle(roles);
-
-  const players = playerNames.map((name, i) => ({
-    id: i,
-    name,
-    role: roles[i],
-    team: roles[i] === 'citizen' ? 'citizens' : (roles[i] === 'imposter' ? 'imposter' : 'criminals'),
-    alive: true,
-    investigated: false,
-    greenContributions: 0
-  }));
-
-  const criminalIdx = players.findIndex(p => p.role === 'criminal');
-  const assistantIdxs = players.map((p,i) => p.role === 'assistant' ? i : -1).filter(i => i>=0);
-  const knowledge = {};
-
-  players.forEach((_, i) => { knowledge[i] = []; });
-
-  if (criminalIdx !== -1) {
-    knowledge[criminalIdx] = [...assistantIdxs];
-    assistantIdxs.forEach(ai => {
-      knowledge[ai] = [criminalIdx, ...assistantIdxs.filter(x => x !== ai)];
-    });
-  }
-
-  let deck = [];
-  for(let i=0;i<cardConfig.red;i++) deck.push('red');
-  for(let i=0;i<cardConfig.green;i++) deck.push('green');
-  shuffle(deck);
-
-  G = {
-    version: 2,
-    settings: { ...SETTINGS },
-    players,
-    n,
-    knowledge,
-    deck,
-    discardPile: [],
-    greenPlayed: 0,
-    redPlayed: 0,
-    presidentIdx: -1,
-    chancellorIdx: -1,
-    lastPresidentIdx: -1,
-    lastChancellorIdx: -1,
-    prevGovs: [],
-    voteFailCount: 0,
-    round: 0,
-    phase: 'role_reveal',
-    roleRevealIdx: 0,
-    votes: {},
-    voteOrder: [],
-    currentVoterIdx: 0,
-    lastVoteResult: null,
-    drawnCards: [],
-    presidentDiscarded: -1,
-    chancellorCards: [],
-    lastPlayedCard: null,
-    peekCards: [],
-    activePower: null,
-    powerResult: null,
-    specialPresident: -1,
-    log: [],
-    gameOver: false,
-    peek3GreenUsed: false,
-    savedAt: Date.now()
-  };
-
-  renderLog();
-}
-
-function shuffle(arr) {
-  for(let i = arr.length - 1; i > 0; i--){
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-function getAlivePlayers() {
-  return G.players.filter(p => p.alive);
-}
-
-// --- Navigation & UI Helpers ---
-function showScreen(id) {
-  Sound.play('click');
-  toggleLog(false);
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const target = document.getElementById(id);
-  if (target) {
-    target.classList.add('active');
-    target.scrollTop = 0;
-  }
-  if (id === 'screen-title') {
-    checkSavedGame();
-  }
-}
-
-function returnToMenuSafe() {
-  saveSession();
-  showScreen('screen-title');
-  showToast('💾 تم حفظ تقدم المباراة تلقائياً');
-}
-
-function showModal(title, text, buttonsHTML = null) {
-  document.getElementById('modal-title').textContent = title;
-  document.getElementById('modal-desc').textContent = text;
-  document.getElementById('modal-actions').innerHTML = buttonsHTML ||
-    `<button class="btn btn-primary btn-block" onclick="closeModal()">موافق ✓</button>`;
-  document.getElementById('app-modal').classList.add('active');
-}
-
-function closeModal() {
-  Sound.play('click');
-  document.getElementById('app-modal').classList.remove('active');
-}
-
-function addLog(text, type='neutral') {
-  if (!G.log) G.log = [];
-  G.log.push({ text, type, time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) });
-  renderLog();
-}
-
-function renderLog() {
-  const el = document.getElementById('log-entries');
-  if (!el) return;
-  if (!G.log || G.log.length === 0) {
-    el.innerHTML = `<p class="subtitle text-center mt-2">لا توجد أحداث مسجلة بعد.</p>`;
-    return;
-  }
-  el.innerHTML = G.log.map(l =>
-    `<div class="log-entry log-${l.type}"><span style="color:var(--text-dim);font-size:0.74rem;margin-left:6px">${escapeHTML(l.time)}</span>${escapeHTML(l.text)}</div>`
-  ).reverse().join('');
-}
-
-function toggleLog(forceState) {
-  const panel = document.getElementById('log-panel');
-  const backdrop = document.getElementById('log-backdrop');
-  if (!panel || !backdrop) return;
-  const shouldOpen = typeof forceState === 'boolean' ? forceState : !panel.classList.contains('open');
-  panel.classList.toggle('open', shouldOpen);
-  backdrop.classList.toggle('open', shouldOpen);
-}
-
-function getRoleName(role) {
-  return {citizen:'مواطن 🛡️',criminal:'المجرم 🔪',assistant:'مساعد المجرم 🗡️',imposter:'المحتال 🎭'}[role] || '';
-}
-function getRoleClass(role) {
-  return {citizen:'role-citizen',criminal:'role-criminal',assistant:'role-assistant',imposter:'role-imposter'}[role] || '';
-}
-function getRoleIcon(role) {
-  return {citizen:'🛡️',criminal:'🔪',assistant:'🗡️',imposter:'🎭'}[role] || '❓';
-}
-function getInitials(name) {
-  return escapeHTML((name || '?').trim().charAt(0));
-}
-
-// =========================================================
-// COMPLETE & SECURE SAVE / RESUME SYSTEM
-// =========================================================
-function clearSavedGame() {
-  try {
-    localStorage.removeItem(SAVE_KEY);
-    localStorage.removeItem('al_muamara_save'); // clean legacy key if present
-  } catch(e) {}
-  checkSavedGame();
-}
-
-function saveSession() {
-  if (!G || !Array.isArray(G.players) || G.players.length === 0) return;
-  if (G.gameOver) {
-    clearSavedGame();
-    return;
-  }
-  try {
-    G.savedAt = Date.now();
-    const dataStr = JSON.stringify(G);
-    const encoded = btoa(encodeURIComponent(dataStr));
-    localStorage.setItem(SAVE_KEY, encoded);
-  } catch(e) {}
-}
-
-function readSavedGame() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(decodeURIComponent(atob(raw)));
-    if (!parsed || parsed.version !== 2 || !Array.isArray(parsed.players) || parsed.gameOver) {
-      return null;
-    }
-    return parsed;
-  } catch(e) {
-    clearSavedGame();
-    return null;
-  }
-}
-
-function checkSavedGame() {
-  const card = document.getElementById('resume-card');
-  const meta = document.getElementById('resume-meta-info');
-  if (!card) return;
-  const saved = readSavedGame();
-  if (saved) {
-    const aliveCount = saved.players.filter(p => p.alive).length;
-    const phaseLabel = saved.phase === 'role_reveal'
-      ? `توزيع الأدوار (${(saved.roleRevealIdx || 0) + 1}/${saved.n})`
-      : `الجولة ${saved.round || 1} · 🟢${saved.greenPlayed} 🔴${saved.redPlayed} · أحياء ${aliveCount}`;
-    if (meta) meta.textContent = phaseLabel;
-    card.classList.remove('hidden');
-  } else {
-    card.classList.add('hidden');
-  }
-}
-
-function confirmDeleteSavedGame() {
-  Sound.play('click');
-  showModal(
-    'حذف المباراة المحفوظة',
-    'هل أنت متأكد من حذف المباراة المحفوظة نهائياً؟',
-    `<button class="btn btn-ghost" style="flex:1" onclick="closeModal()">إلغاء</button>
-     <button class="btn btn-red" style="flex:1" onclick="deleteSavedGameConfirmed()">حذف 🗑️</button>`
-  );
-}
-
-function deleteSavedGameConfirmed() {
-  clearSavedGame();
-  closeModal();
-  showToast('تم حذف المباراة المحفوظة');
-}
-
-function resumeSavedGame() {
-  if (checkTransitionLock()) return;
-  const saved = readSavedGame();
-  if (!saved) {
-    clearSavedGame();
-    showModal('تنبيه', 'لا توجد مباراة محفوظة صالحة للاستكمال.');
-    return;
-  }
-
-  G = saved;
-  selectedChancellorTemp = -1;
-  selectedExecTarget = -1;
-  renderLog();
-
-  // Handle Role Reveal phase separately (different screen)
-  if (G.phase === 'role_reveal') {
-    showScreen('screen-roles');
-    const idx = Math.max(0, Math.min(G.roleRevealIdx || 0, G.n - 1));
-    G.roleRevealIdx = idx;
-    updateRoleProgress();
-    // Always land on Pass Device screen so secret role is never leaked on reload
-    showPassDevice(G.players[idx].name, () => showRole(idx));
-    return;
-  }
-
-  // Main Game Screen Restoration
-  showScreen('screen-game');
-  renderScoreTracker();
-  renderFailCounter();
-  updateRoundInfo();
-
-  switch (G.phase) {
-    case 'announce_president':
-      showPhaseAnnouncePresident();
-      break;
-
-    case 'choose_chancellor':
-      showPhaseChooseChancellor();
-      break;
-
-    case 'voting':
-      if (getSetting('votingMode') === 'public') {
-        showPublicVoteScreen();
-      } else {
-        if (G.currentVoterIdx >= G.voteOrder.length) {
-          finalizeVoting();
-        } else {
-          showVotePassDevice();
-        }
-      }
-      break;
-
-    case 'vote_results':
-      if (G.lastVoteResult) {
-        renderVoteResults();
-      } else {
-        finalizeVoting();
-      }
-      break;
-
-    case 'chaos_enacted':
-      renderChaosScreen();
-      break;
-
-    case 'president_cards':
-      // Security: always require Pass Device confirmation on reload
-      renderPresidentCardsPass();
-      break;
-
-    case 'chancellor_cards':
-      // Security: always require Pass Device confirmation on reload
-      renderChancellorCardsPass();
-      break;
-
-    case 'card_played':
-      renderCardPlayedScreen();
-      break;
-
-    case 'peek_deck':
-      // Security: always require Pass Device confirmation on reload
-      renderPeekDeckPass();
-      break;
-
-    case 'power_phase':
-      // Security: always require Pass Device confirmation on reload
-      if (G.activePower) {
-        renderPowerPhasePass(G.activePower);
-      } else {
-        nextPresident();
-      }
-      break;
-
-    case 'power_result':
-      if (G.powerResult && G.powerResult.type === 'investigate') {
-        // Security: protect investigation result behind President pass screen
-        renderInvestigateResultPass(G.powerResult.targetId);
-      } else if (G.powerResult && G.powerResult.type === 'pick_president') {
-        renderPickPresidentResult(G.powerResult.targetId);
-      } else if (G.powerResult && G.powerResult.type === 'execute') {
-        renderExecuteResult(G.powerResult.targetId);
-      } else {
-        nextPresident();
-      }
-      break;
-
-    default:
-      nextPresident();
-      break;
-  }
-
-  showToast('🔄 تم استكمال المباراة من آخر نقطة');
-}
-
-// =========================================================
-// SETUP SCREEN
-// =========================================================
-let setupPlayerCount = 5;
-
-function changePlayerCount(delta) {
-  Sound.play('click');
-  setupPlayerCount = Math.max(5, Math.min(16, setupPlayerCount + delta));
-  document.getElementById('player-count').textContent = setupPlayerCount;
-  renderSetupNames();
-  updateRolePreview();
-}
-
-function renderSetupNames() {
-  const container = document.getElementById('player-names-container');
-  const existing = container.querySelectorAll('.input-field');
-  const existingValues = [];
-  existing.forEach(inp => existingValues.push(inp.value));
-
-  let html = '';
-  for(let i = 0; i < setupPlayerCount; i++) {
-    const val = escapeHTML(existingValues[i] || '');
-    html += `<input class="input-field" type="text" placeholder="اسم اللاعب ${i+1}" value="${val}" maxlength="14" id="pname-${i}">`;
-  }
-  container.innerHTML = html;
-}
-
-function updateRolePreview() {
-  const c = CONFIG.roles[setupPlayerCount];
-  let citizensCount = c.citizens;
-  let assistantsCount = c.assistants;
-  let criminalsCount = c.criminals;
-
-  if (SETTINGS.customEvilCount && SETTINGS.customEvilCount !== 'auto') {
-    let evilCount = parseInt(SETTINGS.customEvilCount, 10);
-    if (evilCount >= setupPlayerCount) evilCount = setupPlayerCount - 1;
-    criminalsCount = 1;
-    assistantsCount = Math.max(0, evilCount - 1);
-    citizensCount = setupPlayerCount - evilCount;
-  }
-
-  let imposterBadge = '';
-  if (SETTINGS.imposterRole && citizensCount > 1) {
-    citizensCount -= 1;
-    imposterBadge = ` · <span style="color:var(--purple);font-weight:700">1 محتال</span>`;
-  }
-
-  document.getElementById('role-preview').innerHTML =
-    `<span style="color:var(--green);font-weight:700">${citizensCount} مواطن</span>${imposterBadge} · <span style="color:var(--red);font-weight:700">${criminalsCount} مجرم + ${assistantsCount} مساعد</span>`;
-}
-
-function startGame() {
-  if (checkTransitionLock()) return;
-  const names = [];
-  for(let i = 0; i < setupPlayerCount; i++) {
-    const name = document.getElementById(`pname-${i}`).value.trim() || `لاعب ${i+1}`;
-    names.push(name);
-  }
-
-  const uniqueNames = new Set(names);
-  if (uniqueNames.size < names.length) {
-    showModal('تنبيه الأسماء', 'يرجى استخدام أسماء مختلفة ومميزة لكل لاعب.');
-    return;
-  }
-
-  initState(names);
-  addLog('🎮 بدأت مباراة جديدة!', 'gold');
-  saveSession();
-  showScreen('screen-roles');
-  startRoleReveal();
-}
-
-// =========================================================
-// ROLE REVEAL PHASE
-// =========================================================
-function updateRoleProgress() {
-  const pill = document.getElementById('role-progress-pill');
-  if (pill) pill.textContent = `توزيع الأدوار: ${(G.roleRevealIdx || 0) + 1} من ${G.n}`;
-}
-
-function startRoleReveal() {
-  G.roleRevealIdx = 0;
-  G.phase = 'role_reveal';
-  updateRoleProgress();
-  saveSession();
-  showPassDevice(G.players[0].name, () => showRole(0));
-}
-
-function showPassDevice(playerName, onConfirm) {
-  const safeName = escapeHTML(playerName);
-  const el = document.getElementById('role-reveal-content');
-  el.innerHTML = `
-    <div class="pass-card">
-      <div style="font-size:3.6rem">📱</div>
-      <h3>سلّم الجهاز إلى</h3>
-      <h1 style="font-size:2rem">${safeName}</h1>
-      <p class="subtitle">تأكد أن لا أحد ينظر إلى الشاشة</p>
-      <button class="btn btn-primary btn-lg btn-block mt-2" id="btn-confirm-pass">أنا ${safeName} ✋</button>
-    </div>
-  `;
-  document.getElementById('btn-confirm-pass').onclick = () => {
-    if (checkTransitionLock()) return;
-    Sound.play('click');
-    onConfirm();
-  };
-}
-
-function showRole(idx) {
-  const player = G.players[idx];
-  const el = document.getElementById('role-reveal-content');
-  let knowledgeHTML = '';
-  const known = G.knowledge[idx];
-
-  if (known && known.length > 0) {
-    if (player.role === 'criminal') {
-      const knownNames = known.map(ki => escapeHTML(G.players[ki].name)).join('، ');
-      knowledgeHTML = `
-        <div class="known-allies-box">
-          <div class="known-allies-title">مساعدوك:</div>
-          <div class="known-allies-list">${knownNames}</div>
-        </div>
-      `;
-    } else if (player.role === 'assistant') {
-      const knownNames = known.map(ki => {
-        const p = G.players[ki];
-        const safeP = escapeHTML(p.name);
-        if (p.role === 'criminal') {
-          return `<span style="color:var(--gold);font-weight:900">${safeP} 👑</span>`;
-        }
-        return safeP;
-      }).join('، ');
-      knowledgeHTML = `
-        <div class="known-allies-box">
-          <div class="known-allies-title">فريق الجريمة:</div>
-          <div class="known-allies-list">${knownNames}</div>
-        </div>
-      `;
-    }
-  }
-
-  el.innerHTML = `
-    <h3 style="color:var(--text-muted)">${escapeHTML(player.name)}</h3>
-    <div class="role-reveal-card ${getRoleClass(player.role)}">
-      <div style="font-size:3.4rem">${getRoleIcon(player.role)}</div>
-      <div style="font-size:1.75rem;font-weight:900">${getRoleName(player.role)}</div>
-      ${knowledgeHTML}
-    </div>
-    <button class="btn btn-ghost btn-lg btn-block mt-1" style="max-width:300px" onclick="nextRoleReveal()">فهمت ✓ التالي</button>
-  `;
-  Sound.play('reveal');
-}
-
-function nextRoleReveal() {
-  if (checkTransitionLock()) return;
-  Sound.play('click');
-  G.roleRevealIdx++;
-  if (G.roleRevealIdx < G.n) {
-    updateRoleProgress();
-    saveSession();
-    showPassDevice(G.players[G.roleRevealIdx].name, () => showRole(G.roleRevealIdx));
-  } else {
-    startGameLoop();
-  }
-}
-
-// =========================================================
-// MAIN GAME HUD & LOOP
-// =========================================================
-function startGameLoop() {
-  showScreen('screen-game');
-  renderScoreTracker();
-  renderFailCounter();
-  nextPresident();
-}
-
-function renderScoreTracker() {
-  let greenHTML = '';
-  for(let i = 0; i < 5; i++) {
-    greenHTML += `<div class="score-slot green ${i < G.greenPlayed ? 'filled' : ''}">${i < G.greenPlayed ? '✓' : (i + 1)}</div>`;
-  }
-  document.getElementById('green-slots').innerHTML = greenHTML;
-
-  let redHTML = '';
-  for(let i = 0; i < 6; i++) {
-    const power = CONFIG.powers[i + 1] || '';
-    let icon = '';
-    if (power === 'investigate') icon = '🔍';
-    else if (power === 'pick_president') icon = '🎯';
-    else if (power === 'execute') icon = '⚔️';
-    redHTML += `<div class="score-slot red ${i < G.redPlayed ? 'filled' : ''}">${i < G.redPlayed ? '✓' : (icon || (i + 1))}</div>`;
-  }
-  document.getElementById('red-slots').innerHTML = redHTML;
-}
-
-function renderFailCounter() {
-  let html = '';
-  for(let i = 0; i < 2; i++) {
-    html += `<div class="fail-dot ${i < G.voteFailCount ? 'active' : ''}">${i < G.voteFailCount ? '✕' : ''}</div>`;
-  }
-  document.getElementById('fail-counter').innerHTML = html;
-}
-
-function updateRoundInfo() {
-  const pres = G.players[G.presidentIdx];
-  const aliveLen = getAlivePlayers().length;
-  document.getElementById('round-info').textContent =
-    `الجولة ${G.round} · 👑 ${pres ? pres.name : ''} · أحياء: ${aliveLen}`;
-  const deckEl = document.getElementById('deck-info');
-  if (deckEl) deckEl.textContent = `🃏 الكومة: ${G.deck.length}`;
-}
-
-function setGameContent(html) {
-  const container = document.getElementById('game-content');
-  container.innerHTML = `<div class="phase-box">${html}</div>`;
-  container.scrollTop = 0;
-}
-
-function nextPresident() {
-  G.round++;
-
-  if (G.specialPresident >= 0 && G.players[G.specialPresident] && G.players[G.specialPresident].alive) {
-    G.presidentIdx = G.specialPresident;
-    G.specialPresident = -1;
-  } else if (getSetting('randomPresident')) {
-    const aliveOther = getAlivePlayers().filter(p => p.id !== G.presidentIdx);
-    if (aliveOther.length > 0) {
-      G.presidentIdx = aliveOther[Math.floor(Math.random() * aliveOther.length)].id;
-    } else {
-      G.presidentIdx = getAlivePlayers()[0].id;
-    }
-  } else {
-    let next = G.presidentIdx;
-    do {
-      next = (next + 1) % G.n;
-    } while (!G.players[next].alive);
-    G.presidentIdx = next;
-  }
-
-  G.chancellorIdx = -1;
-  G.activePower = null;
-  G.powerResult = null;
-  G.lastVoteResult = null;
-  G.phase = 'announce_president';
-
-  updateRoundInfo();
-  addLog(`👑 ${G.players[G.presidentIdx].name} أصبح الرئيس`, 'gold');
-  saveSession();
-  showPhaseAnnouncePresident();
-}
-
-function showPhaseAnnouncePresident() {
-  const pres = G.players[G.presidentIdx];
-  const safeName = escapeHTML(pres.name);
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:2.8rem">👑</div>
-      <h2>الرئيس الجديد</h2>
-      <div class="player-avatar" style="width:54px;height:54px;font-size:1.45rem">${getInitials(pres.name)}</div>
-      <h2 style="color:var(--gold)">${safeName}</h2>
-      <p class="subtitle">${getSetting('randomGovernment')
-        ? 'سيتم اختيار المستشار عشوائياً لتشكيل الحكومة'
-        : 'يجب على الرئيس اختيار مستشار لتشكيل الحكومة'}</p>
-      <button class="btn btn-primary btn-lg btn-block mt-1" onclick="goToChooseChancellor()">
-        ${getSetting('randomGovernment') ? '🎲 تشكيل الحكومة عشوائياً' : 'اختيار المستشار 🤝'}
-      </button>
-    </div>
-  `);
-}
-
-function goToChooseChancellor() {
-  if (checkTransitionLock()) return;
-  Sound.play('click');
-  G.phase = 'choose_chancellor';
-  saveSession();
-  showPhaseChooseChancellor();
-}
-
-function getIneligiblePlayers() {
-  const ineligible = new Set();
-  const n = G.n;
-  const alive = getAlivePlayers();
-  const termType = getSetting('termRestriction') || 'auto';
-
-  ineligible.add(G.presidentIdx);
-  G.players.forEach((p, i) => { if (!p.alive) ineligible.add(i); });
-
-  let effectiveTerm = termType;
-  if (termType === 'auto') {
-    effectiveTerm = CONFIG.termLimits[n] || 'chancellor';
-  }
-
-  if (effectiveTerm === 'chancellor') {
-    if (G.lastChancellorIdx >= 0 && G.players[G.lastChancellorIdx].alive) ineligible.add(G.lastChancellorIdx);
-  } else if (effectiveTerm === 'president') {
-    if (G.lastPresidentIdx >= 0 && G.players[G.lastPresidentIdx].alive) ineligible.add(G.lastPresidentIdx);
-  } else if (effectiveTerm === 'both') {
-    if (G.lastChancellorIdx >= 0 && G.players[G.lastChancellorIdx].alive) ineligible.add(G.lastChancellorIdx);
-    if (G.lastPresidentIdx >= 0 && G.players[G.lastPresidentIdx].alive) ineligible.add(G.lastPresidentIdx);
-  } else if (effectiveTerm === 'two_governments') {
-    G.prevGovs.slice(-2).forEach(gov => {
-      if (G.players[gov.pres] && G.players[gov.pres].alive) ineligible.add(gov.pres);
-      if (G.players[gov.chan] && G.players[gov.chan].alive) ineligible.add(gov.chan);
-    });
-  }
-
-  if (alive.length - ineligible.size <= 0) {
-    ineligible.clear();
-    ineligible.add(G.presidentIdx);
-    G.players.forEach((p, i) => { if (!p.alive) ineligible.add(i); });
-  }
-
-  return ineligible;
-}
-
-function showPhaseChooseChancellor() {
-  selectedChancellorTemp = -1;
-  const pres = G.players[G.presidentIdx];
-  const ineligible = getIneligiblePlayers();
-
-  // Fixed Random Government bug (no DOM crash, no inputLock conflict)
-  if (getSetting('randomGovernment')) {
-    const eligible = G.players.map((_, i) => i).filter(i => !ineligible.has(i));
-    if (eligible.length > 0) {
-      const randomChan = eligible[Math.floor(Math.random() * eligible.length)];
-      G.chancellorIdx = randomChan;
-      addLog(`🎲 تم اختيار ${G.players[randomChan].name} مستشارًا عشوائيًا للرئيس ${pres.name}`, 'gold');
-      startVoting();
-      return;
-    }
-  }
-
-  let playersHTML = '';
-  G.players.forEach((p, i) => {
-    const safeName = escapeHTML(p.name);
-    if (!p.alive) {
-      playersHTML += `<div class="player-card eliminated"><div class="player-avatar">${getInitials(p.name)}</div><div class="player-name">${safeName}</div><div class="player-status">مُقصى</div></div>`;
-      return;
-    }
-    const isIneligible = ineligible.has(i);
-    const isPresident = i === G.presidentIdx;
-    const classes = ['player-card'];
-    if (isPresident) classes.push('is-president');
-    if (isIneligible) classes.push('disabled');
-    const greenCount = p.greenContributions || 0;
-
-    playersHTML += `<div class="${classes.join(' ')}" onclick="selectChancellor(${i})" id="pc-${i}">
-      <div class="player-avatar">${getInitials(p.name)}</div>
-      <div class="player-name">${safeName}</div>
-      <div class="player-status">${isPresident ? 'الرئيس 👑' : (isIneligible ? 'غير متاح' : 'متاح')}</div>
-      <div class="player-green-counter">🟢 ${greenCount}</div>
-    </div>`;
-  });
-
-  setGameContent(`
-    <div class="text-center w-full">
-      <h3 style="color:var(--gold)">👑 ${escapeHTML(pres.name)} يختار المستشار</h3>
-      <p class="subtitle" style="font-size:0.84rem">اضغط على لاعب لتسميته مستشارًا</p>
-    </div>
-    <div class="player-grid">${playersHTML}</div>
-    <button class="btn btn-primary btn-lg btn-block hidden" id="btn-confirm-chancellor" onclick="confirmChancellor()">تأكيد الاختيار</button>
-  `);
-}
-
-function selectChancellor(idx) {
-  Sound.play('click');
-  selectedChancellorTemp = idx;
-
-  document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-  const card = document.getElementById(`pc-${idx}`);
-  if (card) card.classList.add('selected');
-
-  const btn = document.getElementById('btn-confirm-chancellor');
-  if (btn) {
-    btn.classList.remove('hidden');
-    btn.textContent = `اختيار ${G.players[idx].name} مستشارًا ✓`;
-  }
-}
-
-function confirmChancellor() {
-  if (checkTransitionLock()) return;
-  if (G.phase !== 'choose_chancellor' || selectedChancellorTemp < 0) return;
-  Sound.play('vote');
-  G.chancellorIdx = selectedChancellorTemp;
-  selectedChancellorTemp = -1;
-  addLog(`🤝 ${G.players[G.presidentIdx].name} اختار ${G.players[G.chancellorIdx].name} مستشارًا`, 'gold');
-  startVoting();
-}
-
-// =========================================================
-// VOTING PHASE (PUBLIC & SECRET WITH FULL RESUME)
-// =========================================================
-function getMvpPlayerIdx() {
-  let maxCount = 0;
-  let mvpIdx = -1;
-  G.players.forEach(p => {
-    if (!p.alive) return; // Only living players hold active MVP double-vote
-    const count = p.greenContributions || 0;
-    if (count > maxCount) {
-      maxCount = count;
-      mvpIdx = p.id;
-    }
-  });
-  return maxCount >= 3 ? mvpIdx : -1;
-}
-
-function startVoting() {
-  G.phase = 'voting';
-  G.votes = {};
-  G.voteOrder = getAlivePlayers().map(p => p.id);
-  shuffle(G.voteOrder);
-  G.currentVoterIdx = 0;
-  G.lastVoteResult = null;
-  saveSession();
-
-  Sound.play('reveal');
-  addLog('🗳️ بدأ التصويت على الحكومة', 'neutral');
-
-  if (getSetting('votingMode') === 'public') {
-    showPublicVoteScreen();
-  } else {
-    showVotePassDevice();
-  }
-}
-
-function showPublicVoteScreen() {
-  const pres = G.players[G.presidentIdx];
-  const chan = G.players[G.chancellorIdx];
-  const mvpIdx = getSetting('mvpVoter') ? getMvpPlayerIdx() : -1;
-
-  const rowsHTML = G.voteOrder.map(pid => {
-    const p = G.players[pid];
-    const isMvp = (pid === mvpIdx);
-    const v = G.votes[pid];
-    const yesCls = v === true ? 'vote-chosen' : (v === false ? 'vote-dimmed' : '');
-    const noCls = v === false ? 'vote-chosen' : (v === true ? 'vote-dimmed' : '');
-
-    return `
-      <div class="public-vote-row">
-        <span class="public-vote-name">${escapeHTML(p.name)} ${isMvp ? '<span style="color:var(--gold)">⭐x2</span>' : ''}</span>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-xs btn-green ${yesCls}" id="pv-yes-${pid}" onclick="setPublicVote(${pid}, true)">👍 موافق</button>
-          <button class="btn btn-xs btn-red ${noCls}" id="pv-no-${pid}" onclick="setPublicVote(${pid}, false)">👎 رافض</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  const allVoted = G.voteOrder.every(pid => G.votes[pid] !== undefined);
-
-  setGameContent(`
-    <div class="text-center w-full">
-      <h3 style="color:var(--gold)">📢 التصويت العلني المباشر</h3>
-      <p class="subtitle" style="font-size:0.84rem">
-        👑 <strong style="color:var(--gold)">${escapeHTML(pres.name)}</strong> · 📋 <strong style="color:var(--purple)">${escapeHTML(chan.name)}</strong>
-      </p>
-    </div>
-    <div class="flex-col gap-1 w-full">${rowsHTML}</div>
-    <button class="btn btn-primary btn-lg btn-block mt-1" id="btn-submit-public-vote" ${allVoted ? '' : 'disabled'} onclick="finalizeVoting()">
-      اعتماد النتائج 📊
-    </button>
-  `);
-}
-
-function setPublicVote(pid, approve) {
-  Sound.play('click');
-  G.votes[pid] = approve;
-  saveSession();
-
-  const yesBtn = document.getElementById(`pv-yes-${pid}`);
-  const noBtn = document.getElementById(`pv-no-${pid}`);
-  if (yesBtn && noBtn) {
-    yesBtn.classList.toggle('vote-chosen', approve);
-    yesBtn.classList.toggle('vote-dimmed', !approve);
-    noBtn.classList.toggle('vote-chosen', !approve);
-    noBtn.classList.toggle('vote-dimmed', approve);
-  }
-
-  const allVoted = G.voteOrder.every(id => G.votes[id] !== undefined);
-  const btn = document.getElementById('btn-submit-public-vote');
-  if (btn) btn.disabled = !allVoted;
-}
-
-function showVotePassDevice() {
-  if (G.currentVoterIdx >= G.voteOrder.length) {
-    finalizeVoting();
-    return;
-  }
-
-  const voterId = G.voteOrder[G.currentVoterIdx];
-  const voter = G.players[voterId];
-  const safeName = escapeHTML(voter.name);
-
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:3rem">🗳️</div>
-      <span style="font-size:0.8rem;color:var(--text-muted)">المصوّت ${G.currentVoterIdx + 1} من ${G.voteOrder.length}</span>
-      <h3>سلّم الجهاز إلى</h3>
-      <h2 style="color:var(--gold)">${safeName}</h2>
-      <button class="btn btn-primary btn-lg btn-block mt-1" onclick="showVoteScreen(${voterId})">أنا ${safeName} ✋</button>
-    </div>
-  `);
-}
-
-function showVoteScreen(voterId) {
-  if (checkTransitionLock()) return;
-  Sound.play('click');
-  const pres = G.players[G.presidentIdx];
-  const chan = G.players[G.chancellorIdx];
-  const isMvp = (getSetting('mvpVoter') && voterId === getMvpPlayerIdx());
-
-  setGameContent(`
-    <div class="pass-card">
-      <h3>هل توافق على هذه الحكومة؟</h3>
-      ${isMvp ? '<div style="color:var(--gold);font-weight:800;font-size:0.9rem">⭐ صوتك محسوب بصوتين!</div>' : ''}
-      <div style="margin:6px 0;font-size:1rem;line-height:1.8">
-        👑 الرئيس: <strong style="color:var(--gold)">${escapeHTML(pres.name)}</strong><br>
-        📋 المستشار: <strong style="color:var(--purple)">${escapeHTML(chan.name)}</strong>
-      </div>
-      <div class="vote-btn-group">
-        <button class="btn btn-green vote-btn" onclick="castVote(${voterId}, true)">موافق 👍</button>
-        <button class="btn btn-red vote-btn" onclick="castVote(${voterId}, false)">رافض 👎</button>
-      </div>
-    </div>
-  `);
-}
-
-function castVote(voterId, approve) {
-  if (checkTransitionLock()) return;
-  if (G.phase !== 'voting' || G.votes[voterId] !== undefined) return;
-  Sound.play(approve ? 'approve' : 'reject');
-  G.votes[voterId] = approve;
-  G.currentVoterIdx++;
-  saveSession();
-
-  const isLast = G.currentVoterIdx >= G.voteOrder.length;
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:3rem">${approve ? '👍' : '👎'}</div>
-      <h2>تم تسجيل صوتك سرًا</h2>
-      <p class="subtitle">${isLast ? 'اكتمل تصويت الجميع!' : 'سلّم الجهاز للاعب التالي'}</p>
-      <button class="btn btn-ghost btn-lg btn-block mt-1" onclick="showVotePassDevice()">
-        ${isLast ? 'عرض النتائج 📊' : 'التالي ←'}
-      </button>
-    </div>
-  `);
-}
-
-function finalizeVoting() {
-  if (G.phase !== 'vote_results') {
-    let approveCount = 0;
-    let rejectCount = 0;
-    const mvpIdx = getSetting('mvpVoter') ? getMvpPlayerIdx() : -1;
-
-    G.voteOrder.forEach(pid => {
-      const weight = (pid === mvpIdx) ? 2 : 1;
-      if (G.votes[pid]) approveCount += weight;
-      else rejectCount += weight;
-    });
-
-    let approved;
-    let isTie = false;
-    if (approveCount > rejectCount) approved = true;
-    else if (approveCount < rejectCount) approved = false;
-    else {
-      isTie = true;
-      approved = Math.random() > 0.5;
-    }
-
-    G.lastVoteResult = { approveCount, rejectCount, approved, isTie, mvpIdx };
-    G.phase = 'vote_results';
-
-    const resultText = approved ? 'تمت الموافقة ✓' : 'تم الرفض ✕';
-    const tieLog = isTie ? ' (حُسمت عشوائياً بسبب التعادل)' : '';
-    addLog(`🗳️ النتيجة: ${approveCount} موافق / ${rejectCount} رافض → ${resultText}${tieLog}`, approved ? 'green' : 'red');
-    saveSession();
-  }
-
-  Sound.play('vote');
-  renderVoteResults();
-}
-
-function renderVoteResults() {
-  const { approveCount, rejectCount, approved, isTie, mvpIdx } = G.lastVoteResult;
-
-  const chipsHTML = G.voteOrder.map(pid => {
-    const p = G.players[pid];
-    const v = G.votes[pid];
-    const isMvp = (pid === mvpIdx);
-    return `<div class="vote-chip ${v ? 'approve' : 'reject'}">${escapeHTML(p.name)} ${isMvp ? '⭐x2' : ''} ${v ? '👍' : '👎'}</div>`;
-  }).join('');
-
-  const resultText = approved ? 'تمت الموافقة على الحكومة ✓' : 'تم رفض الحكومة ✕';
-  const resultColor = approved ? 'var(--green)' : 'var(--red)';
-
-  setGameContent(`
-    <div class="pass-card">
-      <h2 style="color:${resultColor}">${resultText}</h2>
-      ${isTie ? '<div style="color:var(--gold);font-weight:700;font-size:0.84rem">⚖️ تعادل في الأصوات! تم الحسم عشوائياً</div>' : ''}
-      <div class="vote-results mt-1">${chipsHTML}</div>
-      <p style="font-size:1.15rem;font-weight:800;margin-top:4px">${approveCount} 👍 مقابل ${rejectCount} 👎</p>
-      <button class="btn ${approved ? 'btn-green' : 'btn-red'} btn-lg btn-block mt-1" onclick="${approved ? 'onVoteApproved()' : 'onVoteRejected()'}">
-        ${approved ? 'متابعة ← مرحلة البطاقات' : 'متابعة ← الرئيس التالي'}
-      </button>
-    </div>
-  `);
-}
-
-function onVoteApproved() {
-  if (checkTransitionLock()) return;
-  Sound.play('click');
-  G.voteFailCount = 0;
-  renderFailCounter();
-  G.lastPresidentIdx = G.presidentIdx;
-  G.lastChancellorIdx = G.chancellorIdx;
-  G.prevGovs.push({ pres: G.presidentIdx, chan: G.chancellorIdx });
-
-  const chancellor = G.players[G.chancellorIdx];
-  if (getSetting('masterElectionWin') && G.redPlayed >= 3 && chancellor.role === 'criminal') {
-    endGame('criminals', 'تم انتخاب المجرم الأساسي مستشارًا بعد إقرار 3 بطاقات حمراء! 🔴');
-    return;
-  }
-
-  startCardPhase();
-}
-
-function onVoteRejected() {
-  if (checkTransitionLock()) return;
-  Sound.play('click');
-  G.voteFailCount++;
-  renderFailCounter();
-  addLog(`⚠️ عداد الفوضى: ${G.voteFailCount}/2`, 'red');
-
-  if (G.voteFailCount >= 2) {
-    G.voteFailCount = 0;
-    G.redPlayed++;
-    // Prevent chaos red card from leaking its presidential power into the next turn
-    G[`power_used_${G.redPlayed}`] = true;
-    G.phase = 'chaos_enacted';
-    renderFailCounter();
-    renderScoreTracker();
-    addLog('🔴 فشل التصويت مرتين! بطاقة حمراء تلقائية (فوضى بدون قدرة رئاسية)', 'red');
-    saveSession();
-    renderChaosScreen();
-    return;
-  }
-
-  saveSession();
-  nextPresident();
-}
-
-function renderChaosScreen() {
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:3.4rem">💥</div>
-      <h2 style="color:var(--red)">فوضى!</h2>
-      <p class="subtitle">فشل التصويت مرتين متتاليتين.<br>تم تطبيق بطاقة حمراء تلقائية دون تفعيل قدرات رئاسية.</p>
-      <button class="btn btn-red btn-lg btn-block mt-1" onclick="afterChaosEnactment()">متابعة ←</button>
-    </div>
-  `);
-}
-
-function afterChaosEnactment() {
-  if (checkTransitionLock()) return;
-  Sound.play('click');
-  if (checkWinConditions()) return;
-  nextPresident();
-}
-
-// =========================================================
-// LEGISLATIVE CARDS PHASE (PROTECTED ON RESUME)
-// =========================================================
-function startCardPhase() {
-  G.phase = 'president_cards';
-
-  if (G.deck.length < 3) {
-    G.deck = G.deck.concat(G.discardPile);
-    G.discardPile = [];
-    shuffle(G.deck);
-    addLog('🔄 تم إعادة خلط الكومة من جديد', 'neutral');
-  }
-
-  G.drawnCards = G.deck.splice(0, 3);
-  updateRoundInfo();
-  saveSession();
-  renderPresidentCardsPass();
-}
-
-function renderPresidentCardsPass() {
-  const pres = G.players[G.presidentIdx];
-  const safeName = escapeHTML(pres.name);
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:3.2rem">🃏</div>
-      <h2>مرحلة البطاقات</h2>
-      <h3>سلّم الجهاز إلى الرئيس</h3>
-      <h2 style="color:var(--gold)">${safeName}</h2>
-      <button class="btn btn-primary btn-lg btn-block mt-1" onclick="showPresidentCards()">أنا ${safeName} ✋</button>
-    </div>
-  `);
-}
-
-function showPresidentCards() {
-  if (checkTransitionLock()) return;
-  Sound.play('card');
-
-  const cardsHTML = G.drawnCards.map((c, i) => `
-    <button class="policy-card-btn ${c === 'green' ? 'card-green' : 'card-red'}" onclick="presidentDiscard(${i})">
-      <span class="card-icon">${c === 'green' ? '🟢' : '🔴'}</span>
-      <span>${c === 'green' ? 'خضراء' : 'حمراء'}</span>
-      <span style="font-size:0.74rem;opacity:0.75">اضغط للحذف</span>
-    </button>
-  `).join('');
-
-  setGameContent(`
-    <div class="text-center w-full">
-      <h3 style="color:var(--gold)">👑 الرئيس: اختر بطاقة للتخلص منها</h3>
-      <p class="subtitle" style="font-size:0.84rem">البطاقة التي تضغط عليها ستُحذف، والبطاقتان الباقيتان تذهبان للمستشار</p>
-    </div>
-    <div class="policy-cards-grid">${cardsHTML}</div>
-  `);
-}
-
-function presidentDiscard(idx) {
-  if (checkTransitionLock()) return;
-  if (G.phase !== 'president_cards') return;
-  Sound.play('card');
-
-  G.presidentDiscarded = idx;
-  G.discardPile.push(G.drawnCards[idx]);
-  G.chancellorCards = G.drawnCards.filter((_, i) => i !== idx);
-  addLog('👑 الرئيس تخلص من بطاقة سرًا', 'neutral');
-
-  G.phase = 'chancellor_cards';
-  saveSession();
-  renderChancellorCardsPass();
-}
-
-function renderChancellorCardsPass() {
-  const chan = G.players[G.chancellorIdx];
-  const safeName = escapeHTML(chan.name);
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:3.2rem">📋</div>
-      <h2>دور المستشار</h2>
-      <h3>سلّم الجهاز إلى المستشار</h3>
-      <h2 style="color:var(--purple)">${safeName}</h2>
-      <button class="btn btn-primary btn-lg btn-block mt-1" onclick="showChancellorCards()">أنا ${safeName} ✋</button>
-    </div>
-  `);
-}
-
-function showChancellorCards() {
-  if (checkTransitionLock()) return;
-  Sound.play('card');
-
-  const cardsHTML = G.chancellorCards.map((c, i) => `
-    <button class="policy-card-btn ${c === 'green' ? 'card-green' : 'card-red'}" onclick="chancellorPlay(${i})">
-      <span class="card-icon">${c === 'green' ? '🟢' : '🔴'}</span>
-      <span>${c === 'green' ? 'خضراء' : 'حمراء'}</span>
-      <span style="font-size:0.74rem;opacity:0.75">اضغط للتمرير</span>
-    </button>
-  `).join('');
-
-  setGameContent(`
-    <div class="text-center w-full">
-      <h3 style="color:var(--purple)">📋 المستشار: اختر بطاقة لتمريرها</h3>
-      <p class="subtitle" style="font-size:0.84rem">البطاقة التي تختارها ستُعتمد رسمياً على اللوحة</p>
-    </div>
-    <div class="policy-cards-grid">${cardsHTML}</div>
-  `);
-}
-
-function chancellorPlay(idx) {
-  if (checkTransitionLock()) return;
-  if (G.phase !== 'chancellor_cards') return;
-
-  G.phase = 'card_played';
-  const played = G.chancellorCards[idx];
-  const discarded = G.chancellorCards[1 - idx];
-  G.discardPile.push(discarded);
-  G.lastPlayedCard = played;
-
-  if (played === 'green') {
-    G.greenPlayed++;
-    Sound.play('greenCard');
-    G.players[G.chancellorIdx].greenContributions = (G.players[G.chancellorIdx].greenContributions || 0) + 1;
-    addLog('🟢 تم تمرير بطاقة خضراء!', 'green');
-  } else {
-    G.redPlayed++;
-    Sound.play('redCard');
-    addLog('🔴 تم تمرير بطاقة حمراء!', 'red');
-  }
-
-  renderScoreTracker();
-  saveSession();
-  renderCardPlayedScreen();
-}
-
-function renderCardPlayedScreen() {
-  const isGreen = G.lastPlayedCard === 'green';
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:3.8rem">${isGreen ? '🟢' : '🔴'}</div>
-      <h2 style="color:var(--${isGreen ? 'green' : 'red'})">${isGreen ? 'بطاقة خضراء!' : 'بطاقة حمراء!'}</h2>
-      <p class="subtitle">${isGreen ? 'خطوة إضافية لصالح المواطنين' : 'تقدم جديد لصالح المجرمين'}</p>
-      <button class="btn ${isGreen ? 'btn-green' : 'btn-red'} btn-lg btn-block mt-1" onclick="afterCardPlayed()">متابعة ←</button>
-    </div>
-  `);
-}
-
-function afterCardPlayed() {
-  if (checkTransitionLock()) return;
-  Sound.play('click');
-
-  if (checkWinConditions()) return;
-
-  if (getSetting('peekDeckOn3Green') && G.greenPlayed === 3 && !G.peek3GreenUsed) {
-    G.peek3GreenUsed = true;
-    showPeekDeckPhase();
-    return;
-  }
-
-  // Trigger red power only if a red card was actually played and power not yet used
-  const power = CONFIG.powers[G.redPlayed];
-  if (G.lastPlayedCard === 'red' && power && !G[`power_used_${G.redPlayed}`]) {
-    G[`power_used_${G.redPlayed}`] = true;
-    showPowerPhase(power);
-    return;
-  }
-
-  nextPresident();
-}
-
-// =========================================================
-// SPECIAL POWERS & PEEK DECK (WITH FULL RESUME)
-// =========================================================
-function showPeekDeckPhase() {
-  Sound.play('reveal');
-  G.phase = 'peek_deck';
-
-  if (G.deck.length < 3) {
-    G.deck = G.deck.concat(G.discardPile);
-    G.discardPile = [];
-    shuffle(G.deck);
-  }
-
-  G.peekCards = G.deck.slice(0, 3);
-  updateRoundInfo();
-  addLog('👁️ الرئيس تفقّد الكروت الثلاث القادمة', 'gold');
-  saveSession();
-  renderPeekDeckPass();
-}
-
-function renderPeekDeckPass() {
-  const pres = G.players[G.presidentIdx];
-  const safeName = escapeHTML(pres.name);
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:3rem">👁️</div>
-      <h2 style="color:var(--gold)">كشف المستقبل</h2>
-      <p class="subtitle">رؤية البطاقات الثلاث القادمة في الكومة (للرئيس فقط)</p>
-      <h3>سلّم الجهاز إلى الرئيس: <span style="color:var(--gold)">${safeName}</span></h3>
-      <button class="btn btn-primary btn-lg btn-block mt-1" onclick="showPeekResult()">أنا ${safeName} ✋</button>
-    </div>
-  `);
-}
-
-function showPeekResult() {
-  if (checkTransitionLock()) return;
-  Sound.play('reveal');
-  const pillsHTML = (G.peekCards || []).map(c =>
-    `<div class="peek-pill ${c === 'green' ? 'green' : 'red'}">${c === 'green' ? '🟢 خضراء' : '🔴 حمراء'}</div>`
-  ).join('');
-
-  setGameContent(`
-    <div class="pass-card">
-      <h3 style="color:var(--gold)">👁️ البطاقات الثلاث القادمة</h3>
-      <div class="peek-list mt-1">${pillsHTML}</div>
-      <p class="subtitle" style="color:var(--red);font-size:0.84rem">⚠️ هذه المعلومة سرية للرئيس فقط!</p>
-      <button class="btn btn-ghost btn-lg btn-block mt-1" onclick="afterPeekPhase()">فهمت ← متابعة</button>
-    </div>
-  `);
-}
-
-function afterPeekPhase() {
-  if (checkTransitionLock()) return;
-  Sound.play('click');
-  nextPresident();
-}
-
-function showPowerPhase(power) {
-  Sound.play('reveal');
-  G.phase = 'power_phase';
-  G.activePower = power;
-
-  let powerName = 'قدرة خاصة';
-  if (power === 'investigate') powerName = '🔍 التحقيق';
-  else if (power === 'pick_president') powerName = '🎯 اختيار الرئيس القادم';
-  else if (power === 'execute') powerName = '⚔️ الإعدام';
-
-  addLog(`⚡ قدرة خاصة: ${powerName}`, 'gold');
-  saveSession();
-  renderPowerPhasePass(power);
-}
-
-function renderPowerPhasePass(power) {
-  const pres = G.players[G.presidentIdx];
-  const safeName = escapeHTML(pres.name);
-
-  let powerName = 'قدرة خاصة', powerDesc = '';
-  if (power === 'investigate') { powerName = '🔍 التحقيق'; powerDesc = 'الرئيس يختار لاعبًا ويكشف انتماءه سرًا'; }
-  else if (power === 'pick_president') { powerName = '🎯 اختيار الرئيس القادم'; powerDesc = 'الرئيس يحدد من يكون الرئيس التالي مباشرة'; }
-  else if (power === 'execute') { powerName = '⚔️ الإعدام'; powerDesc = 'الرئيس يقصي لاعبًا نهائيًا من اللعبة'; }
-
-  setGameContent(`
-    <div class="pass-card">
-      <h2 style="color:var(--gold)">${powerName}</h2>
-      <p class="subtitle">${powerDesc}</p>
-      <h3>سلّم الجهاز إلى الرئيس: <span style="color:var(--gold)">${safeName}</span></h3>
-      <button class="btn btn-primary btn-lg btn-block mt-1" onclick="executePower('${power}')">أنا ${safeName} ✋</button>
-    </div>
-  `);
-}
-
-function executePower(power) {
-  if (checkTransitionLock()) return;
-  Sound.play('click');
-  if (power === 'investigate') showInvestigate();
-  else if (power === 'pick_president') showPickPresident();
-  else if (power === 'execute') showExecute();
-}
-
-function showInvestigate() {
-  const alive = getAlivePlayers().filter(p => p.id !== G.presidentIdx && !p.investigated);
-  if (alive.length === 0) {
-    addLog('🔍 لا يوجد لاعبون متاحون للتحقيق', 'neutral');
-    nextPresident();
-    return;
-  }
-
-  const playersHTML = alive.map(p => `
-    <div class="player-card" onclick="investigatePlayer(${p.id})">
-      <div class="player-avatar">${getInitials(p.name)}</div>
-      <div class="player-name">${escapeHTML(p.name)}</div>
-    </div>
-  `).join('');
-
-  setGameContent(`
-    <div class="text-center w-full">
-      <h3 style="color:var(--gold)">🔍 التحقيق السري</h3>
-      <p class="subtitle" style="font-size:0.84rem">اختر لاعبًا لكشف انتمائه</p>
-    </div>
-    <div class="player-grid">${playersHTML}</div>
-  `);
-}
-
-function investigatePlayer(id) {
-  if (checkTransitionLock()) return;
-  Sound.play('reveal');
-  G.players[id].investigated = true;
-  G.phase = 'power_result';
-  G.powerResult = { type: 'investigate', targetId: id };
-  addLog(`🔍 الرئيس حقق مع ${G.players[id].name}`, 'gold');
-  saveSession();
-  renderInvestigateResult(id);
-}
-
-function renderInvestigateResultPass(targetId) {
-  const pres = G.players[G.presidentIdx];
-  const safeName = escapeHTML(pres.name);
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:3rem">🔍</div>
-      <h2 style="color:var(--gold)">نتيجة التحقيق السرية</h2>
-      <h3>سلّم الجهاز إلى الرئيس: <span style="color:var(--gold)">${safeName}</span></h3>
-      <button class="btn btn-primary btn-lg btn-block mt-1" onclick="renderInvestigateResult(${targetId})">أنا ${safeName} ✋</button>
-    </div>
-  `);
-}
-
-function renderInvestigateResult(id) {
-  const target = G.players[id];
-  const isCitizen = target.team === 'citizens' || target.role === 'imposter';
-
-  setGameContent(`
-    <div class="pass-card">
-      <h2>${escapeHTML(target.name)}</h2>
-      <div class="btn ${isCitizen ? 'btn-green' : 'btn-red'} btn-block" style="pointer-events:none;padding:16px">
-        ${isCitizen ? '🛡️ من فريق المواطنين' : '🔪 من فريق المجرمين'}
-      </div>
-      <p class="subtitle" style="color:var(--red);font-size:0.84rem">⚠️ نتيجة سرية للرئيس فقط!</p>
-      <button class="btn btn-ghost btn-lg btn-block mt-1" onclick="nextPresident()">فهمت ← متابعة</button>
-    </div>
-  `);
-}
-
-function showPickPresident() {
-  const alive = getAlivePlayers().filter(p => p.id !== G.presidentIdx);
-  const playersHTML = alive.map(p => `
-    <div class="player-card" onclick="pickNextPresident(${p.id})">
-      <div class="player-avatar">${getInitials(p.name)}</div>
-      <div class="player-name">${escapeHTML(p.name)}</div>
-    </div>
-  `).join('');
-
-  setGameContent(`
-    <div class="text-center w-full">
-      <h3 style="color:var(--gold)">🎯 اختيار الرئيس القادم</h3>
-      <p class="subtitle" style="font-size:0.84rem">اختر من يكون الرئيس التالي مباشرة</p>
-    </div>
-    <div class="player-grid">${playersHTML}</div>
-  `);
-}
-
-function pickNextPresident(id) {
-  if (checkTransitionLock()) return;
-  Sound.play('click');
-  G.specialPresident = id;
-  G.phase = 'power_result';
-  G.powerResult = { type: 'pick_president', targetId: id };
-  addLog(`🎯 الرئيس اختار ${G.players[id].name} ليكون الرئيس القادم`, 'gold');
-  saveSession();
-  renderPickPresidentResult(id);
-}
-
-function renderPickPresidentResult(id) {
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:3rem">🎯</div>
-      <h2 style="color:var(--gold)">${escapeHTML(G.players[id].name)}</h2>
-      <p class="subtitle">سيكون الرئيس في الجولة القادمة</p>
-      <button class="btn btn-primary btn-lg btn-block mt-1" onclick="nextPresident()">متابعة ←</button>
-    </div>
-  `);
-}
-
-function showExecute() {
-  selectedExecTarget = -1;
-  const alive = getAlivePlayers().filter(p => p.id !== G.presidentIdx);
-  const playersHTML = alive.map(p => `
-    <div class="player-card" onclick="selectExecute(${p.id})" id="exec-${p.id}">
-      <div class="player-avatar">${getInitials(p.name)}</div>
-      <div class="player-name">${escapeHTML(p.name)}</div>
-    </div>
-  `).join('');
-
-  setGameContent(`
-    <div class="text-center w-full">
-      <h3 style="color:var(--red)">⚔️ الإعدام</h3>
-      <p class="subtitle" style="color:#ff8a9b;font-size:0.84rem">اختر لاعبًا لإقصائه نهائيًا من اللعبة!</p>
-    </div>
-    <div class="player-grid">${playersHTML}</div>
-    <button class="btn btn-red btn-lg btn-block hidden" id="btn-confirm-exec" onclick="confirmExecute()">تأكيد الإعدام ⚔️</button>
-  `);
-}
-
-function selectExecute(id) {
-  Sound.play('click');
-  selectedExecTarget = id;
-  document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-  const card = document.getElementById(`exec-${id}`);
-  if (card) card.classList.add('selected');
-  const btn = document.getElementById('btn-confirm-exec');
-  if (btn) {
-    btn.classList.remove('hidden');
-    btn.textContent = `إقصاء ${G.players[id].name} ⚔️`;
-  }
-}
-
-function confirmExecute() {
-  if (checkTransitionLock()) return;
-  if (selectedExecTarget < 0) return;
-  Sound.play('execute');
-  const target = G.players[selectedExecTarget];
-  target.alive = false;
-  addLog(`⚔️ تم إقصاء ${target.name} من اللعبة!`, 'red');
-  selectedExecTarget = -1;
-
-  if (checkExecutionWin(target.id)) return;
-
-  G.phase = 'power_result';
-  G.powerResult = { type: 'execute', targetId: target.id };
-  updateRoundInfo();
-  saveSession();
-  renderExecuteResult(target.id);
-}
-
-function renderExecuteResult(id) {
-  setGameContent(`
-    <div class="pass-card">
-      <div style="font-size:3.4rem">⚔️</div>
-      <h2 style="color:var(--red)">تم الإقصاء!</h2>
-      <h3>${escapeHTML(G.players[id].name)}</h3>
-      <p class="subtitle">تم إخراجه من اللعبة نهائيًا</p>
-      <button class="btn btn-ghost btn-lg btn-block mt-1" onclick="nextPresident()">متابعة ←</button>
-    </div>
-  `);
-}
-
-// =========================================================
-// WIN CONDITIONS & GAME OVER
-// =========================================================
-function checkWinConditions() {
-  if (G.greenPlayed >= 5) {
-    endGame('citizens', 'تم تمرير 5 بطاقات خضراء! 🟢');
-    return true;
-  }
-  if (G.redPlayed >= 6) {
-    endGame('criminals', 'تم تمرير 6 بطاقات حمراء! 🔴');
-    return true;
-  }
-  return false;
-}
-
-function checkExecutionWin(executedIdx) {
-  const executed = G.players[executedIdx];
-  if (executed.role === 'criminal') {
-    endGame('citizens', 'تم إقصاء المجرم الأساسي! ⚔️');
-    return true;
-  }
-  return false;
-}
-
-function endGame(winner, reason) {
-  G.gameOver = true;
-  clearSavedGame();
-  showScreen('screen-gameover');
-
-  const overlay = document.getElementById('win-overlay');
-  overlay.className = `win-overlay ${winner === 'citizens' ? 'citizens-win' : 'criminals-win'}`;
-
-  const aliveImposters = G.players.filter(p => p.alive && p.role === 'imposter');
-  let imposterWinText = '';
-  if (aliveImposters.length > 0) {
-    const imposterNames = aliveImposters.map(p => escapeHTML(p.name)).join('، ');
-    imposterWinText = `<br><span style="color:var(--purple);font-weight:800">🎭 انتصار للمحتال (${imposterNames}) بالبقاء حياً!</span>`;
-  }
-
-  document.getElementById('win-icon').textContent = winner === 'citizens' ? '🛡️' : '🔪';
-  document.getElementById('win-title').innerHTML = winner === 'citizens'
-    ? '<span style="color:var(--green)">فوز المواطنين!</span>'
-    : '<span style="color:var(--red)">فوز المجرمين!</span>';
-  document.getElementById('win-reason').innerHTML = escapeHTML(reason) + imposterWinText;
-
-  let rolesHTML = '<h3 class="mb-1 text-center w-full">كشف الأدوار وإنجازات المستشارين</h3>';
-  G.players.forEach(p => {
-    let roleColor = 'var(--purple)';
-    if (p.team === 'citizens') roleColor = 'var(--green)';
-    else if (p.team === 'criminals') roleColor = 'var(--red)';
-
-    const greenCount = p.greenContributions || 0;
-    rolesHTML += `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.05);border-radius:var(--radius-sm);border:1px solid var(--border);width:100%">
-        <div class="player-avatar" style="width:32px;height:32px;font-size:0.85rem;margin:0;flex-shrink:0">${getInitials(p.name)}</div>
-        <div style="flex:1;min-width:0;text-align:right">
-          <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(p.name)} ${!p.alive ? '<span style="color:var(--text-dim);font-size:0.78rem">(مُقصى)</span>' : ''}</div>
-          <div style="font-size:0.74rem;color:var(--green)">🟢 كروت خضراء كمستشار: ${greenCount}</div>
-        </div>
-        <div style="color:${roleColor};font-weight:800;font-size:0.82rem;flex-shrink:0">${getRoleName(p.role)}</div>
-      </div>
-    `;
-  });
-  document.getElementById('win-roles').innerHTML = rolesHTML;
-
-  if (winner === 'citizens') Sound.play('victory');
-  else Sound.play('defeat');
-
-  addLog(`🏆 ${winner === 'citizens' ? 'المواطنون فازوا!' : 'المجرمون فازوا!'} - ${reason}`, winner === 'citizens' ? 'green' : 'red');
-}
-
-function resetGame() {
-  Sound.play('click');
-  G = {};
-  clearSavedGame();
-  renderLog();
-  showScreen('screen-title');
-}
-
-// Save automatically if browser tab is closed or hidden mid-game
-window.addEventListener('pagehide', () => saveSession());
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') saveSession();
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  loadSettingsFromStorage();
-  renderSetupNames();
-  updateRolePreview();
-  checkSavedGame();
-});
-
-document.addEventListener('click', () => Sound.init(), { once: true });
-document.addEventListener('touchstart', () => Sound.init(), { once: true });
+ }
+ sync();
+}
+/* كل لاعب يستقبل المعلومات المسموح له يشوفها بس */
+function viewFor(u){
+ const base={you:u,isHost:u===me,settings:S.settings,members:S.order.map(x=>({n:S.m[x].n,on:online(x),me:x===u,host:x===me}))};
+ const g=S.g;if(!g)return base;
+ const s=g.players.findIndex(p=>p.u===u),mine=g.players[s],over=g.phase==='over',pres=s>=0&&s===g.pres,ph=g.phase;
+ const evil=g.players.map((p,i)=>i).filter(i=>['criminal','assistant'].includes(g.players[i].role));
+ const showVotes=ph==='vote'&&g.opt.votingMode==='public';
+ return {...base,g:{step:g.step,phase:ph,round:g.round,green:g.green,red:g.red,fail:g.fail,pres:g.pres,chan:g.chan,seat:s,mode:g.opt.votingMode,mvp:mvp(),log:g.log.slice(-40),last:g.last,
+  players:g.players.map((p,i)=>({name:p.name,alive:p.alive,green:p.green,on:online(p.u),role:over?p.role:null,
+   voted:ph==='vote'?i in g.votes:ph==='roles'?!!g.ready[i]:false,vote:showVotes&&i in g.votes?g.votes[i]:null})),
+  role:mine?mine.role:null,
+  allies:mine&&evil.includes(s)?evil.filter(i=>i!==s).map(i=>({name:g.players[i].name,boss:g.players[i].role==='criminal'})):[],
+  myVote:ph==='vote'&&s in g.votes?g.votes[s]:null,
+  result:ph==='voteResult'?g.result:null,
+  eligible:ph==='nominate'?eligible():null,
+  cards:ph==='presCards'&&pres?g.drawn:ph==='chanCards'&&s===g.chan?g.hand:null,
+  peek:ph==='peek'&&pres?g.info.peek:null,
+  targets:ph==='power'&&pres?targets(g.info.power):null,
+  info:over?g.info:ph==='power'?{power:g.info.power}:ph==='powerDone'?{power:g.info.power,i:g.info.i,citizen:pres?g.info.citizen:undefined}:null}};
+}
+function sync(){
+ store.set('mu-room',JSON.stringify({code,S}));
+ S.order.forEach(u=>{if(u!==me)pub('to/'+u,viewFor(u))});
+ update(viewFor(me));
+}
+function host(name,saved){
+ isHost=true;
+ if(saved){code=saved.code;S=saved.S}
+ else{code=Array.from({length:5},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.random()*31|0]).join('');
+  let o={};try{o=JSON.parse(store.get('al_muamara_settings'))||{}}catch(e){}
+  S={m:{},order:[],g:null,settings:{...DEFAULTS,...o}}}
+ connect(PREFIX+code+'/up',handle,()=>handle({type:'hello',id:me,name}));
+ setInterval(()=>{if(S.m[me]){S.m[me].seen=Date.now();sync()}},4000);
+}
+function join(name,c){
+ code=c;const hello=()=>pub('up',{type:'hello',id:me,name});
+ connect(PREFIX+code+'/to/'+me,v=>{lastSeen=Date.now();if(v.full)return net('الغرفة ممتلئة (16 لاعبًا)');net('');update(v)},hello);
+ const t0=Date.now();
+ setInterval(()=>{hello();if(Date.now()-(lastSeen||t0)>12000)net('لا يوجد رد من صاحب الغرفة. تأكد من الكود وأن صفحته مفتوحة')},4000);
+}
+
+/* ───────── الشاشات ───────── */
+const rules=()=>el('details',{class:'panel'},el('summary',{},'📖 القواعد والأدوار'),
+ P('المواطنون 🛡️: يمررون 5 بطاقات خضراء أو يعدمون كبير المجرمين.'),
+ P('المجرمون 🔪: يتخفون ويحاولون تمرير 6 بطاقات حمراء.'),
+ P('المحتال 🎭 (اختياري): يظهر كمواطن عند التحقيق، ويفوز إذا بقي حيًا حتى النهاية.'),
+ P('كل جولة: الرئيس يرشح مستشارًا، الجميع يصوت، الرئيس يتخلص من بطاقة من ثلاث، والمستشار يلعب واحدة من اثنتين. فشل التصويت مرتين = بطاقة حمراء تلقائية.'));
+const screen=(...k)=>$('view').replaceChildren(...k.flat(9).filter(Boolean));
+function home(){
+ const name=el('input',{class:'input-field',maxlength:12,placeholder:'اسمك','aria-label':'اسمك'});name.value=store.get('tr-name')||'';
+ const room=el('input',{class:'input-field',maxlength:5,placeholder:'كود الغرفة','aria-label':'كود الغرفة'});room.value=location.hash.slice(1).toUpperCase();
+ const need=f=>()=>{const n=name.value.trim();if(!n){name.focus();return net('اكتب اسمك أولًا')}store.set('tr-name',n);screen(P('لحظة…'));f(n)};
+ let saved=null;try{saved=JSON.parse(store.get('mu-room'))}catch(e){}
+ screen(T('div','🕵️','huge'),T('h1','المؤامرة'),P('خداع · تحليل · إدارة ثقة · من 5 إلى 16 لاعبًا'),name,
+  B('إنشاء غرفة جديدة 🎮',need(n=>host(n)),'btn-primary btn-lg btn-block'),room,
+  B('دخول الغرفة',()=>{const c=room.value.trim().toUpperCase();if(c.length!==5)return net('الكود 5 حروف');need(n=>join(n,c))()},'btn-ghost btn-block'),
+  saved&&saved.S&&B('🔄 العودة لغرفتي ('+saved.code+')',need(n=>host(n,saved)),'btn-ghost btn-sm'),rules());
+}
+function update(v){
+ const j=JSON.stringify(v);if(j===last)return;last=j;
+ const old=V&&V.g,g=v.g;V=v;
+ if(!old||!g||old.step!==g.step){pickSel=null;
+  if(g)Sound.play({vote:'reveal',voteResult:'vote',presCards:'card',chanCards:'card',played:g.last==='green'?'greenCard':'redCard',chaos:'redCard',power:'reveal',over:'victory',powerDone:g.info&&g.info.power==='execute'?'execute':'click'}[g.phase])}
+ const y=scrollY;render();scrollTo(0,old&&g&&old.step===g.step?y:0);
+}
+function settingsPanel(){
+ const box=el('details',{class:'panel',id:'settings'},el('summary',{},'⚙️ إعدادات المباراة'));
+ if(logOpen==='settings')box.open=true;box.ontoggle=()=>logOpen=box.open?'settings':false;
+ box.append($('settings-tpl').content.cloneNode(true));
+ for(const k in OPT){const x=box.querySelector('#'+OPT[k]);if(x.type==='checkbox')x.checked=V.settings[k];else x.value=V.settings[k];
+  x.onchange=()=>{const v={...V.settings,[k]:x.type==='checkbox'?x.checked:x.value};store.set('al_muamara_settings',JSON.stringify(v));send({type:'settings',v})}}
+ box.append(B('🎲 إعدادات عشوائية',()=>{const r=()=>Math.random()>.5,any=a=>a[Math.random()*a.length|0];
+  send({type:'settings',v:{votingMode:any(['secret','public']),mvpVoter:r(),termRestriction:any(['auto','none','chancellor','president','both']),peekDeckOn3Green:r(),randomGovernment:r(),randomPresident:r(),masterElectionWin:r(),imposterRole:r(),customEvilCount:'auto'}})},'btn-ghost btn-sm'));
+ return box;
+}
+function render(){
+ const v=V,g=v.g,H=v.isHost;
+ if(!g){
+  const n=v.members.filter(m=>m.on).length,link=location.protocol.startsWith('http')?location.href.split('#')[0]+'#'+code:null;
+  let preview=null;if(n>=5){const k=Math.min(n,16);let[c,a]=CONFIG.roles[k];const e=v.settings.customEvilCount;if(e!=='auto'){const x=Math.min(+e,k-1);a=x-1;c=k-x}preview=P(`${c} مواطن · 1 مجرم + ${a} مساعد`)}
+  return screen(T('h1','المؤامرة'),el('div',{class:'panel center'},P('كود الغرفة'),T('div',code,'code'),
+    link&&B('نسخ رابط الدعوة',b=>navigator.clipboard.writeText(link).then(()=>b.textContent='تم النسخ ✅',()=>b.textContent=link),'btn-ghost btn-sm')),
+   T('h3',`اللاعبون (${n})`),el('div',{class:'player-grid'},v.members.map(m=>el('div',{class:'player-card'+(m.on?'':' off')},T('div',m.n.charAt(0),'player-avatar'),T('div',m.n+(m.me?' (أنت)':''),'player-name'),T('div',m.host?'صاحب الغرفة':m.on?'متصل':'غير متصل','player-status')))),
+   preview,H?[settingsPanel(),B('🚀 ابدأ!',()=>send({type:'start'}),'btn-primary btn-lg btn-block',n<5),n<5&&P('يلزم 5 لاعبين على الأقل')]:P('في انتظار صاحب الغرفة…'),rules());
+ }
+ const me_=g.seat>=0?g.players[g.seat]:null,nm=i=>g.players[i].name,pres=g.seat===g.pres,ph=g.phase,live=me_&&me_.alive;
+ const next=(label='متابعة ←',c='btn-primary')=>(H||pres)?B(label,()=>send({type:'next'}),c+' btn-lg'):P('في انتظار الرئيس…');
+ const roleCard=()=>{const r=ROLE[g.role];return el('div',{class:'role-reveal-card '+r[2]},T('div',r[1],'huge'),T('h2',r[0]),
+  g.allies.length>0&&el('div',{class:'known-allies-box'},T('div',g.role==='criminal'?'المساعدون:':'فريق الجريمة:','known-allies-title'),T('div',g.allies.map(a=>a.name+(a.boss?' 👑':'')).join('، '),'known-allies-list')))};
+ const cardBtns=(cards,act)=>el('div',{class:'row'},cards.map((c,i)=>B(c==='green'?'🟢 خضراء':'🔴 حمراء',()=>send({type:act,i}),(c==='green'?'btn-green':'btn-red')+' card-btn')));
+ const grid=(allowed,onPick)=>el('div',{class:'player-grid'},g.players.map((p,i)=>{
+  const ok=allowed&&allowed.includes(i),c=el('button',{type:'button',class:'player-card'+(p.alive?'':' eliminated')+(i===g.pres?' is-president':'')+(pickSel===i?' selected':'')+(allowed&&!ok?' dim':'')+(p.on?'':' off'),onclick:()=>{if(ok){pickSel=i;render()}}},
+   T('div',p.name.charAt(0),'player-avatar'),T('div',p.name+(i===g.seat?' (أنت)':''),'player-name'),T('div',!p.alive?'مُقصى':i===g.pres?'الرئيس':i===g.chan?'المستشار':!p.on?'غير متصل':'','player-status'),T('div','🟢 '+p.green,'player-green-counter'));
+  c.disabled=!ok;return c}));
+ const slots=(color,total,done)=>el('div',{class:'score-slots'},Array.from({length:total},(_,i)=>T('div',i<done?'✓':color==='red'?({2:'🔍',3:'🎯',4:'⚔️',5:'⚔️'}[i+1]||i+1):i+1,'score-slot '+color+(i<done?' filled':''))));
+ const head=el('div',{class:'center'},T('div','المواطنون','lbl green'),slots('green',5,g.green),T('div','المجرمون','lbl red'),slots('red',6,g.red),
+  el('div',{class:'fail-counter'},[0,1].map(i=>T('div',i<g.fail?'✕':'','fail-dot'+(i<g.fail?' active':''))),T('span','عداد الفشل','lbl')),
+  g.round>0&&T('div',`الجولة ${g.round} | الرئيس: ${nm(g.pres)} | أحياء: ${g.players.filter(p=>p.alive).length}`,'lbl'));
+ const hostBox=H&&el('div',{class:'row'},
+  ph==='vote'&&B('احسب الأصوات دلوقتي',()=>send({type:'force'}),'btn-ghost btn-sm'),
+  ['nominate','vote','presCards','chanCards','power'].includes(ph)&&B('⏭️ تخطي الحكومة',()=>send({type:'cancel'}),'btn-ghost btn-sm'),
+  B('إنهاء والعودة للغرفة',b=>{if(b.dataset.sure)send({type:'lobby'});else{b.dataset.sure=1;b.textContent='اضغط مرة أخرى للتأكيد'}},'btn-ghost btn-sm'));
+ if(ph==='over'){
+  const w=g.info.winner==='citizens',imp=g.players.filter(p=>p.alive&&p.role==='imposter').map(p=>p.name);
+  return screen(T('div',w?'🛡️':'🔪','huge'),T('h1',w?'فوز المواطنين!':'فوز المجرمين!'),P(g.info.reason),imp.length>0&&T('h3',`🎭 انتصار للمحتال (${imp.join('، ')}) بالبقاء حيًا!`),
+   T('h3','كشف الأدوار وإنجازات المستشارين'),g.players.map(p=>el('div',{class:'line'},el('b',{},p.name+(p.alive?'':' (مُقصى)')),T('span','🟢 '+p.green),T('span',ROLE[p.role][0]))),
+   H?B('🔄 لعبة جديدة',()=>send({type:'lobby'}),'btn-primary btn-lg'):P('في انتظار صاحب الغرفة…'));
+ }
+ if(ph==='roles'){
+  if(!me_)return screen(P('المباراة بدأت، ستنضم في المباراة القادمة'),hostBox);
+  return screen(T('h3',me_.name+'، دورك السري'),roleCard(),me_.voted?P('في انتظار الباقين…'):B('فهمت ✓',()=>send({type:'ready'}),'btn-primary btn-lg'),
+   P(`جاهزون: ${g.players.filter(p=>p.voted).length}/${g.players.length}`),H&&B('ابدأ دون انتظار',()=>send({type:'force'}),'btn-ghost btn-sm'),hostBox);
+ }
+ let body=[];
+ if(ph==='nominate'){
+  body=[T('h3',pres?'👑 أنت الرئيس: اختر المستشار':`👑 ${nm(g.pres)} يختار المستشار`),grid(pres?g.eligible:null),
+   pres&&pickSel!=null&&B(`اختيار ${nm(pickSel)} مستشارًا ✓`,()=>send({type:'nominate',i:pickSel}),'btn-primary btn-lg')];
+ }else if(ph==='vote'){
+  const pub_=g.mode==='public';
+  body=[T('h3',pub_?'📢 تصويت علني':'🗳️ تصويت سري'),el('div',{class:'panel center'},T('div','👑 الرئيس: '+nm(g.pres)),T('div','📋 المستشار: '+nm(g.chan))),
+   g.mvp===g.seat&&g.seat>=0&&T('h3','⭐ صوتك محسوب بصوتين!'),
+   !live?P('تتابع التصويت فقط'):(!pub_&&g.myVote!=null)?P('تم تسجيل صوتك '+(g.myVote?'👍':'👎')):el('div',{class:'row'},
+     B('موافق 👍',()=>send({type:'vote',v:true}),'btn-green vote-btn'+(g.myVote===true?' chosen':'')),B('رافض 👎',()=>send({type:'vote',v:false}),'btn-red vote-btn'+(g.myVote===false?' chosen':''))),
+   el('div',{class:'vote-results'},g.players.map((p,i)=>p.alive&&T('div',p.name+(i===g.mvp?' ⭐x2':'')+' '+(p.vote===true?'👍':p.vote===false?'👎':p.voted?'✅':'⏳'),'vote-chip '+(p.vote===true?'approve':p.vote===false?'reject':'wait'))))];
+ }else if(ph==='voteResult'){
+  const r=g.result;
+  body=[T('h2',r.ok?'تمت الموافقة ✓':'تم الرفض ✕'),r.tie&&T('h3','⚖️ تعادل! تم الحسم عشوائيًا'),
+   el('div',{class:'vote-results'},r.list.map(x=>T('div',nm(x.i)+(x.x2?' ⭐x2':'')+' '+(x.v?'👍':'👎'),'vote-chip '+(x.v?'approve':'reject')))),T('h3',`${r.yes} 👍 مقابل ${r.no} 👎`),next('متابعة ←',r.ok?'btn-green':'btn-red')];
+ }else if(ph==='chaos'){
+  body=[T('div','💥','huge'),T('h2','فوضى!'),P('فشل التصويت مرتين متتاليتين، فتم تطبيق بطاقة حمراء تلقائية دون قدرات رئاسية'),next()];
+ }else if(ph==='presCards'){
+  body=g.cards?[T('h3','👑 اختر بطاقة للتخلص منها'),P('الباقي يذهب للمستشار'),cardBtns(g.cards,'discard')]:[T('div','🃏','huge'),P(`الرئيس ${nm(g.pres)} يختار البطاقات…`)];
+ }else if(ph==='chanCards'){
+  body=g.cards?[T('h3','📋 المستشار: اختر بطاقة لتمريرها'),cardBtns(g.cards,'play')]:[T('div','📋','huge'),P(`المستشار ${nm(g.chan)} يختار البطاقة…`)];
+ }else if(ph==='played'){
+  const gr=g.last==='green';body=[T('div',gr?'🟢':'🔴','huge'),T('h2',gr?'بطاقة خضراء!':'بطاقة حمراء!'),next('متابعة',gr?'btn-green':'btn-red')];
+ }else if(ph==='peek'){
+  body=g.peek?[T('h3','👁️ البطاقات الثلاث القادمة'),T('h2',g.peek.map(c=>c==='green'?'🟢':'🔴').join(' ')),P('⚠️ سر للرئيس فقط!')]:[T('div','👁️','huge'),P('الرئيس يطّلع على البطاقات القادمة…')];
+  body.push(next());
+ }else if(ph==='power'){
+  const[title,desc]=POWER[g.info.power];
+  body=g.targets?[T('h3',title),P(desc),grid(g.targets),pickSel!=null&&B('تأكيد: '+nm(pickSel),()=>send({type:'target',i:pickSel}),(g.info.power==='execute'?'btn-red':'btn-primary')+' btn-lg')]:[T('h2',title),P(`الرئيس ${nm(g.pres)} يستخدم قدرته…`)];
+ }else if(ph==='powerDone'){
+  const t=nm(g.info.i),p=g.info.power;
+  body=[T('h2',t),p==='execute'?P('⚔️ تم إقصاؤه من اللعبة نهائيًا'):p==='pick_president'?P('🎯 سيكون الرئيس القادم'):
+   pres?[T('h3',g.info.citizen?'🛡️ من فريق المواطنين':'🔪 من فريق المجرمين'),P('⚠️ سر لك وحدك!')]:P('🔍 الرئيس حقق معه'),next()];
+ }
+ const mine=g.role&&el('div',{class:'center'},B(showRole?'🙈 إخفاء دوري':'👁️ دوري السري',()=>{showRole=!showRole;render()},'btn-ghost btn-sm'),showRole&&roleCard());
+ const logBox=el('details',{class:'panel'},el('summary',{},'📋 سجل الأحداث'),[...g.log].reverse().map(l=>T('div',l.t,'log-entry log-'+l.type)));
+ if(logOpen==='log')logBox.open=true;logBox.ontoggle=()=>logOpen=logBox.open?'log':false;
+ screen(head,me_&&!me_.alive&&T('h3','💀 تم إقصاؤك، تابع بصمت'),el('div',{class:'stage'},body),mine,['nominate','power'].includes(ph)?null:grid(null),logBox,hostBox);
+}
+home();
 </script>
 </body>
 </html>
