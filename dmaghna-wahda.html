@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>دماغنا واحدة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Lalezar&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Cairo,system-ui,'Noto Sans Arabic',sans-serif;background:#10243f;color:#fff;min-height:100vh;background-image:
+repeating-conic-gradient(from 45deg at 50% 50%,#ffffff08 0 25%,#0000 0 50%),radial-gradient(circle at 50% 0,#7c1d1d,#0000 60%);background-size:56px 56px,100% 100%}
+body::before{content:'';display:block;height:22px;background:conic-gradient(from 135deg at 50% 0,#f2b134 90deg,#0000 0) 0 0/28px 22px,#b3232f}
+main{max-width:480px;margin:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+h1{font-family:Lalezar,Cairo,sans-serif;font-weight:400;text-align:center;font-size:2.8rem;color:#f2b134}
+ul{list-style:none;display:flex;flex-direction:column;gap:6px;line-height:1.7}
+h2{text-align:center;font-size:1.2rem}
+p{text-align:center;line-height:1.7;color:#eadfc8}
+input,button{font:inherit;border-radius:14px;border:0;padding:14px;width:100%}
+input{background:#fff;color:#10243f;text-align:center}
+input[type=range]{background:none;direction:ltr;padding:0}
+button{background:#c8283a;color:#fff;font-weight:700;cursor:pointer}
+button.alt{background:#1d4163}
+button:disabled{opacity:.4}
+.row{display:flex;gap:10px}
+.card{background:#0b1a2fdd;border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.code{font-size:2.4rem;letter-spacing:8px;text-align:center;direction:ltr;font-weight:800}
+.chip{display:flex;justify-content:space-between;background:#1d4163;border-radius:10px;padding:8px 12px}
+.off{opacity:.45}
+svg{width:100%;direction:ltr;touch-action:none;display:block}
+.ends{display:flex;direction:ltr;justify-content:space-between;gap:12px;font-weight:700}
+.ends span{direction:rtl;max-width:48%}
+.clue{font-size:1.5rem;font-weight:800;text-align:center;background:#fff;color:#10243f;border-radius:14px;padding:12px;overflow-wrap:anywhere}
+#net{text-align:center;color:#f2b134;font-size:.85rem;min-height:1.2em}
+</style>
+</head>
+<body>
+<main><div id="net"></div><div id="app"></div></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
+<script>
+const BROKER = window.TEST_BROKER || 'wss://broker.emqx.io:8084/mqtt';
+const PREFIX = 'taraddod-k7q2/';
+const WIN = 10;
+const RULES = ['👥 فريقين، وكل جولة قائد من الفريق اللي عليه الدور يشوف مكان الهدف لوحده.',
+'💡 القائد يكتب تلميحة مكانها بين الكلمتين عند الهدف.',
+'🎯 كل واحد في الفريق يحط تخمينه، واللعبة تختار واحد منهم عشوائي. فاتفقوا مع بعض!',
+'🏆 النقط 4 أو 3 أو 2 حسب القرب، وأول فريق يوصل '+WIN+' يكسب.'];
+const TIPS = ['✅ خليك واضح: كلمتين تلاتة بالكتير.','✅ خليك مبدع: بلاش كلمات الطرفين ولا حاجة شبهها.','❌ ماتألفش كلام محدش هيفهمه غيرك.','❌ ماتغشش: لا أرقام، ولا يمين وشمال ونص.'];
+const PAIRS = [
+['الكل بيعمله','محدش بيعمله'],['مولّع','متلّج'],['أكلة تفتح النفس','أكلة تسد النفس'],['ببلاش تقريبًا','يخرب بيتك'],['سهلة','مستحيلة'],
+['فاكهة جامدة','فاكهة أي كلام'],['يفطّس ضحك','دمه تقيل'],['جدعنة','تلزيق'],['ذوق','قلة ذوق'],['روقان','دوشة'],
+['على الموضة','من أيام جدو'],['خروجة تحفة','خروجة تقفّل'],['أمان','فيها موتك'],['حلويات ملوكي','حلويات غلابة'],['عيدية تفرّح','عيدية تكسف'],
+['شغلانة مريّحة','شغلانة تهد الحيل'],['ريحة ترد الروح','ريحة تقلب البطن'],['مواصلة مريحة','مواصلة عذاب'],['نجم كبير','محدش يعرفه'],['إيده ماسكة','إيده فرطة'],
+['أكل بيت','أكل شارع'],['مصيف عالمي','مصيف تعبان'],['عادي تتأخر عليه','ماينفعش تتأخر عليه'],['أنتخة','نشاط'],['ينفع في الفرح','مصيبة لو في الفرح'],
+['حشو محشي جامد','ماينفعش يتحشي'],['يتاكل مع العيش','مايتاكلش مع العيش'],['حاجة تتقال لحماتك','حاجة ماتتقالش لحماتك'],['مسلسل رمضان أساسي','ماحدش يتفرج عليه'],['عذر مقنع','عذر مفقوس'],
+['سحور يسند','سحور يعطّش'],['زحمة موت','فاضي خالص'],['هدية تتشال','هدية تتلف لحد تاني'],['شعبي','كلاس'],['أم مصرية هتوافق','أم مصرية هترمي الشبشب']];
+
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const rand = n => Math.floor(Math.random()*n);
+const rid = () => Math.random().toString(36).slice(2,10);
+let me = store.get('tr-id'); if(!me){me=rid();store.set('tr-id',me)}
+let client, code = '', isHost = false, S = null, V = null, lastJSON = '', lastSeen = 0;
+let draft = 90, clueDraft = '', shownRound = 0;
+
+/* ---------- network ---------- */
+const net = t => document.getElementById('net').textContent = t;
+function connect(topic, onMsg, onReady){
+  if(typeof mqtt === 'undefined'){net('تعذر تحميل مكتبة الاتصال، تأكد من النت');return}
+  net('جاري الاتصال…');
+  client = mqtt.connect(BROKER,{clientId:'tr_'+me+rid(),reconnectPeriod:2000});
+  client.on('connect',()=>{net('');client.subscribe(topic,()=>onReady())});
+  client.on('message',(t,m)=>{try{onMsg(JSON.parse(m.toString()))}catch(e){console.error(e)}});
+  client.on('reconnect',()=>net('بنعيد الاتصال…'));
+  client.on('error',()=>net('مشكلة في الاتصال'));
+}
+const pub = (t,d) => client && client.publish(PREFIX+code+'/'+t, JSON.stringify(d));
+function send(a){a.id=me; if(isHost) handle(a); else pub('up',a)}
+
+/* ---------- host (the only source of truth) ---------- */
+function newState(){return {phase:'lobby',players:{},order:[],score:[0,0],turn:0,lead:[0,0],round:0,used:[]}}
+const online = p => p && (p.id===me || Date.now()-p.seen<15000);
+const members = t => S.order.filter(i=>S.players[i].team===t);
+const ready = t => members(t).filter(i=>online(S.players[i])).length>=2;
+function newPair(){
+  if(S.used.length>=PAIRS.length) S.used=[];
+  let i; do i=rand(PAIRS.length); while(S.used.includes(i));
+  S.used.push(i); S.pair=PAIRS[i];
+}
+function startRound(){
+  const other=1-S.turn, next = S.round && ready(other) ? other : ready(S.turn) ? S.turn : ready(other) ? other : null;
+  if(next===null){S.phase='lobby';return}
+  S.turn=next;
+  const list=members(next).filter(i=>online(S.players[i]));
+  S.leader=list[S.lead[next]++ % list.length];
+  S.round++; S.phase='clue'; S.target=10+rand(161); S.clue=''; S.guesses={}; S.picked=null; S.points=0; newPair();
+}
+const guessers = () => members(S.turn).filter(i=>i!==S.leader);
+const pointsFor = d => d<=4?4 : d<=12?3 : d<=20?2 : 0;
+function reveal(){
+  const ids=Object.keys(S.guesses); if(!ids.length) return;
+  S.picked=ids[rand(ids.length)];
+  S.points=pointsFor(Math.abs(S.guesses[S.picked]-S.target));
+  S.score[S.turn]+=S.points; S.phase='reveal';
+}
+function handle(a){
+  if(!S || typeof a.id!=='string' || !/^[a-z0-9]{4,12}$/.test(a.id)) return;
+  let p=S.players[a.id];
+  if(a.type==='hello'){
+    const name=String(a.name||'').trim().slice(0,16)||'لاعب';
+    if(!p){
+      if(S.order.length>=20) return;
+      p=S.players[a.id]={id:a.id,name,team:members(0).length<=members(1).length?0:1};
+      S.order.push(a.id);
+    }
+    p.name=name; p.seen=Date.now();
+  }
+  if(!p) return;
+  p.seen=Date.now();
+  const host=a.id===me, lead=a.id===S.leader;
+  if(a.type==='team' && S.phase==='lobby') p.team=p.team?0:1;
+  if(a.type==='start' && host && S.phase==='lobby'){S.score=[0,0];S.round=0;S.turn=0;startRound()}
+  if(a.type==='pair' && lead && S.phase==='clue') newPair();
+  if(a.type==='clue' && lead && S.phase==='clue' && a.round===S.round){
+    const c=String(a.text||'').trim().slice(0,60); if(c){S.clue=c;S.phase='guess'}
+  }
+  if(a.type==='guess' && S.phase==='guess' && a.round===S.round && guessers().includes(a.id)){
+    const v=Number(a.value); if(v>=0&&v<=180) S.guesses[a.id]=v;
+  }
+  if(a.type==='force' && (host||lead) && S.phase==='guess') reveal();
+  if(a.type==='next' && (host||lead) && S.phase==='reveal'){
+    if(ready(0)&&ready(1)&&Math.max(...S.score)>=WIN) S.phase='end'; else startRound();
+  }
+  if(a.type==='skip' && host && S.phase!=='lobby') startRound();
+  if(a.type==='lobby' && host) S.phase='lobby';
+  sync();
+}
+function viewFor(id){
+  const done = S.phase==='reveal';
+  return {phase:S.phase,round:S.round,turn:S.turn,leader:S.leader,score:S.score,pair:S.pair,clue:S.clue,host:me,
+    players:S.order.map(i=>{const p=S.players[i];return {id:i,name:p.name,team:p.team,on:!!online(p),voted:!!(S.guesses&&i in S.guesses)}}),
+    target: done||(id===S.leader) ? S.target : null,
+    mine: S.guesses ? S.guesses[id] ?? null : null,
+    guesses: done ? S.guesses : null, picked: done?S.picked:null, points: done?S.points:null,
+    canStart: ready(0)||ready(1), you:S.players[id]?id:null};
+}
+function sync(){
+  if(S.phase==='guess'){
+    const need=guessers().filter(i=>online(S.players[i]));
+    if(need.length && need.every(i=>i in S.guesses)) reveal();
+  }
+  store.set('tr-room',JSON.stringify({code,S}));
+  S.order.forEach(i=>{if(i!==me) pub('to/'+i,viewFor(i))});
+  show(viewFor(me));
+}
+
+/* ---------- join / create ---------- */
+function host(name, saved){
+  isHost=true;
+  if(saved){code=saved.code;S=saved.S}
+  else{code=Array.from({length:5},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[rand(31)]).join('');S=newState()}
+  connect(PREFIX+code+'/up', handle, ()=>handle({type:'hello',id:me,name}));
+  setInterval(()=>{if(S.players[me]) sync()},4000);
+}
+function join(name,c){
+  code=c;
+  const hello=()=>pub('up',{type:'hello',id:me,name});
+  connect(PREFIX+code+'/to/'+me, v=>{lastSeen=Date.now();net('');show(v)}, hello);
+  const started=Date.now();
+  setInterval(()=>{
+    hello();
+    if(Date.now()-(lastSeen||started)>12000) net('مفيش رد من صاحب القعدة. اتأكد من الكود وإن صفحته مفتوحة');
+  },4000);
+}
+
+/* ---------- UI ---------- */
+function el(tag,props={},...kids){const e=Object.assign(document.createElement(tag),props);e.append(...kids.filter(k=>k!=null&&k!==false));return e}
+const btn=(t,fn,cls='',disabled=false)=>el('button',{textContent:t,onclick:fn,className:cls,disabled});
+const P=t=>el('p',{textContent:t});
+const app=()=>document.getElementById('app');
+function screen(...k){app().replaceChildren(el('div',{style:'display:flex;flex-direction:column;gap:12px'},...k.filter(Boolean)))}
+
+const list=a=>el('div',{className:'card'},el('ul',{},...a.map(t=>el('li',{textContent:t}))));
+function home(){
+  const name=el('input',{placeholder:'اسمك',maxLength:16,value:store.get('tr-name')||''});
+  const room=el('input',{placeholder:'كود القعدة',maxLength:5,value:location.hash.slice(1).toUpperCase()});
+  const go=fn=>()=>{const n=name.value.trim();if(!n){name.focus();net('اكتب اسمك الأول');return}store.set('tr-name',n);screen(P('لحظة…'));fn(n)};
+  let saved=null;try{saved=JSON.parse(store.get('tr-room'))}catch(e){}
+  screen(el('h1',{textContent:'دماغنا واحدة ☕'}),P('ارمي تلميحة… ونشوف صحابك فاهمينك ولا لأ'),name,
+    btn('افتح قعدة جديدة',go(n=>host(n))),room,
+    btn('خش على القعدة',()=>{const c=room.value.trim().toUpperCase();if(c.length!==5){net('الكود 5 حروف');return}go(n=>join(n,c))()},'alt'),
+    saved&&saved.S&&btn('ارجع لقعدتي ('+saved.code+')',go(n=>host(n,saved)),'alt'),list(RULES));
+}
+
+function dial({target=null,markers=[],needle=null,onDrag=null}){
+  const NS='http://www.w3.org/2000/svg';
+  const s=document.createElementNS(NS,'svg'); s.setAttribute('viewBox','0 0 320 175');
+  const add=(tag,a,text)=>{const n=document.createElementNS(NS,tag);for(const k in a)n.setAttribute(k,a[k]);if(text!=null)n.textContent=text;s.append(n);return n};
+  const pt=(v,r)=>[160-r*Math.cos(v*Math.PI/180),165-r*Math.sin(v*Math.PI/180)];
+  const wedge=(a,b,fill)=>{a=Math.max(0,a);b=Math.min(180,b);if(b<=a)return;add('path',{d:`M160 165L${pt(a,150)}A150 150 0 0 1 ${pt(b,150)}Z`,fill})};
+  wedge(0,180,'#f4e6c3');
+  if(target!=null){
+    [[-20,-12,2,'#f2b134'],[-12,-4,3,'#d9542b'],[-4,4,4,'#168f8a'],[4,12,3,'#d9542b'],[12,20,2,'#f2b134']].forEach(([a,b,n,c])=>{
+      wedge(target+a,target+b,c);
+      const m=target+(a+b)/2; if(m>=2&&m<=178){const [x,y]=pt(m,134);add('text',{x,y:y+4,'text-anchor':'middle','font-size':12,'font-weight':800,fill:'#10243f'},n)}
+    });
+  }
+  markers.forEach((m,i)=>{
+    const [x,y]=pt(m.value,m.big?105:65+(i%4)*16);
+    add('line',{x1:160,y1:165,x2:x,y2:y,stroke:m.big?'#c8283a':'#1d4163','stroke-width':m.big?5:1.5});
+    add('circle',{cx:x,cy:y,r:m.big?14:10,fill:m.big?'#c8283a':'#1d4163'});
+    add('text',{x,y:y+4,'text-anchor':'middle','font-size':11,fill:'#fff'},Array.from(m.name).slice(0,2).join(''));
+  });
+  let line;
+  const setNeedle=v=>{const [x,y]=pt(v,140);line.setAttribute('x2',x);line.setAttribute('y2',y)};
+  if(needle!=null){line=add('line',{x1:160,y1:165,stroke:'#c8283a','stroke-width':6,'stroke-linecap':'round'});setNeedle(needle)}
+  add('circle',{cx:160,cy:165,r:10,fill:'#c8283a'});
+  if(onDrag){
+    const move=e=>{const r=s.getBoundingClientRect();
+      const x=(e.clientX-r.left)*320/r.width-160, y=165-(e.clientY-r.top)*175/r.height;
+      const v=Math.round(Math.max(0,Math.min(180,180-Math.atan2(Math.max(y,0),x)*180/Math.PI)));setNeedle(v);onDrag(v)};
+    s.onpointerdown=e=>{s.setPointerCapture(e.pointerId);move(e)};
+    s.onpointermove=e=>{if(e.buttons)move(e)};
+  }
+  s.setNeedle=setNeedle;
+  return s;
+}
+// pair[0] sits on the right, pair[1] on the left
+const ends=p=>el('div',{className:'ends'},el('span',{textContent:'⬅ '+p[1]}),el('span',{textContent:p[0]+' ➡'}));
+
+function show(v){
+  const j=JSON.stringify(v); if(j===lastJSON) return; lastJSON=j; V=v;
+  if(!v.you) return;
+  if(v.round!==shownRound){shownRound=v.round;draft=90;clueDraft=''}
+  const typing=document.activeElement&&document.activeElement.id==='clue';
+  render();
+  if(typing){const i=document.getElementById('clue');if(i)i.focus()}
+}
+function render(){
+  const v=V, mine=v.players.find(p=>p.id===v.you), isH=v.you===v.host, lead=v.you===v.leader;
+  const nm=id=>(v.players.find(p=>p.id===id)||{}).name||'لاعب';
+  const T=['فريق الكشري 🍝','فريق الفول 🫘'];
+  const teams=()=>el('div',{className:'row',style:'align-items:flex-start'},...[0,1].map(t=>el('div',{className:'card',style:'flex:1;min-width:0'},
+    el('h2',{textContent:T[t]+' · '+v.score[t]}),
+    ...v.players.filter(p=>p.team===t).map(p=>el('div',{className:'chip'+(p.on?'':' off')},
+      el('span',{textContent:p.name+(p.id===v.you?' (انت)':'')}),
+      el('span',{textContent:v.phase==='guess'&&p.voted?'✅':p.id===v.leader&&v.phase!=='lobby'?'⭐':''}))))));
+  if(v.phase==='lobby'){
+    const link=location.protocol.startsWith('http')?location.href.split('#')[0]+'#'+code:null;
+    return screen(el('div',{className:'card'},P('كود القعدة'),el('div',{className:'code',textContent:code}),
+      link&&btn('انسخ لينك الدعوة',e=>{const b=e.target;navigator.clipboard.writeText(link).then(()=>b.textContent='اتنسخ ✅',()=>b.textContent=link)},'alt')),
+      teams(),btn('غيّر فريقي',()=>send({type:'team'}),'alt'),
+      isH?btn('يلا بينا',()=>send({type:'start'}),'',!v.canStart):P('مستنيين صاحب القعدة يبدأ'),
+      P('كل فريق محتاج لاعبين على الأقل. فريق واحد = لعب تعاوني، وفريقين = الأول لـ '+WIN+' نقطة يكسب.'));
+  }
+  if(v.phase==='end'){
+    const w=v.score[0]===v.score[1]?'تعادل… حبايب!':T[v.score[0]>v.score[1]?0:1]+' كسب! الشاي على الخسران ☕';
+    return screen(el('h1',{textContent:w}),teams(),isH?btn('لعبة جديدة',()=>send({type:'lobby'})):null);
+  }
+  const k=[el('h2',{textContent:'جولة '+v.round+' · دور '+T[v.turn]}),P('صاحب التلميحة: '+nm(v.leader))];
+  if(v.phase==='clue'){
+    if(lead){
+      const inp=el('input',{id:'clue',placeholder:'اكتب تلميحتك',maxLength:60,value:clueDraft,oninput:e=>clueDraft=e.target.value});
+      k.push(dial({target:v.target}),ends(v.pair),P('اكتب حاجة مكانها على العداد عند الـ4'),inp,
+        btn('ابعت التلميحة',()=>send({type:'clue',text:clueDraft,round:v.round})),btn('غيّر الكلمتين',()=>send({type:'pair'}),'alt'),list(TIPS));
+    } else k.push(dial({}),ends(v.pair),P('بيعصر دماغه على تلميحة… استنوا عليه 🤔'));
+  }
+  if(v.phase==='guess'){
+    k.push(el('div',{className:'clue',textContent:v.clue}));
+    const can=!lead&&mine.team===v.turn;
+    if(can&&v.mine==null){
+      let range;
+      const d=dial({needle:draft,onDrag:x=>{draft=x;range.value=x}});
+      range=el('input',{type:'range',min:0,max:180,value:draft,oninput:e=>{draft=+e.target.value;d.setNeedle(draft)}});
+      k.push(d,ends(v.pair),range,btn('ثبّت تخميني',()=>send({type:'guess',value:draft,round:v.round})));
+    } else k.push(dial({needle:v.mine}),ends(v.pair),P(lead?'مستني تخمينات فريقك. وإوعى تلمّح 🤐':can?'تخمينك اتسجل، مستنيين الباقي':'الفريق التاني بيخمّن'));
+    if((lead||isH)&&v.players.some(p=>p.voted)) k.push(btn('اختار دلوقتي من غير انتظار',()=>send({type:'force'}),'alt'));
+  }
+  if(v.phase==='reveal'){
+    const ids=Object.keys(v.guesses), box=el('div',{style:'display:flex;flex-direction:column;gap:12px'});
+    k.push(el('div',{className:'clue',textContent:v.clue}),box);
+    const round=v.round;
+    const final=()=>box.replaceChildren(
+      dial({target:v.target,markers:ids.map(i=>({value:v.guesses[i],name:nm(i),big:i===v.picked}))}),ends(v.pair),
+      el('h2',{textContent:'اللعبة اختارت تخمين '+nm(v.picked)}),
+      el('h1',{textContent:v.points===4?'في الجون! +4 🎯':v.points?'+'+v.points+' 👏':'ولا نقطة… يا خسارة 😂'}),
+      ...((lead||isH)?[btn('الجولة اللي بعدها',()=>send({type:'next'}))]:[]));
+    if(spun===code+round) final();
+    else if(spinning!==code+round){spinning=code+round;spin(0)}
+    else spinBox=box;
+    function spin(n){
+      spinBox=box;
+      const step=i=>{
+        if(!V||V.phase!=='reveal'||V.round!==round){spinning='';return}
+        if(i>=14){spun=code+round;spinning='';lastJSON='';render();return}
+        const id=ids[i%ids.length];
+        spinBox.replaceChildren(dial({markers:[{value:v.guesses[id],name:nm(id),big:true}]}),ends(v.pair),el('h2',{textContent:'🎲 بنختار… '+nm(id)}));
+        setTimeout(()=>step(i+1),80+i*12);
+      };
+      step(n);
+    }
+  }
+  k.push(teams());
+  if(isH) k.push(btn('تخطي الجولة',()=>send({type:'skip'}),'alt'),btn('رجوع للانتظار',()=>send({type:'lobby'}),'alt'));
+  screen(...k);
+}
+let spun='', spinning='', spinBox=null;
+home();
+</script>
+</body>
+</html>
