@@ -1667,6 +1667,9 @@
                 }
             });
 
+            // لقطة لمن كان حياً في بداية الليلة قبل تطبيق القتل، عشان أفعال الليل تتحسب حتى لو صاحبها مات في نفس الليلة
+            const aliveAtNightStart = new Set(Object.values(players).filter(p => p.isAlive).map(p => p.id));
+
             const deadNames = [];
             killedIds.forEach(id => {
                 if (players[id] && players[id].isAlive) {
@@ -1706,7 +1709,8 @@
             const mutedNames = [];
             Object.entries(actions.silencerTargets || {}).forEach(([silId, targetId]) => {
                 const silencer = players[silId];
-                if (silencer && silencer.isAlive && silencer.role === 'silencer' && targetId && targetId !== 'skip') {
+                // الإسكات يتحسب لو الساكت كان حياً في بداية الليلة، حتى لو اتقتل في نفس الليلة (زي الطبيب والقناص)، وتأثيره بيتلغي مع بداية الجولة الجديدة
+                if (silencer && aliveAtNightStart.has(silId) && silencer.role === 'silencer' && targetId && targetId !== 'skip') {
                     silencer.lastMutedId = targetId;
                     if (players[targetId] && players[targetId].isAlive) {
                         players[targetId].isMuted = true;
