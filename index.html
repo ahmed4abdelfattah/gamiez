@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -341,7 +340,7 @@
                             ألعابنا
                         </span>
                         <span id="totalGamesBadge" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
-                            5 ألعاب جاهزة
+                            6 ألعاب جاهزة
                         </span>
                     </div>
                     <p class="text-[11px] sm:text-xs font-bold text-slate-400 truncate">
@@ -443,7 +442,7 @@
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="filterBar">
                 <button id="allFilterBtn" type="button" data-filter="all"
                     class="filter-pill active px-4 py-2 rounded-full text-xs sm:text-sm font-extrabold border border-white/10 bg-white/5 text-slate-200 cursor-pointer">
-                    الكل (5)
+                    الكل (6)
                 </button>
                 <button type="button" data-filter="online"
                     class="filter-pill px-4 py-2 rounded-full text-xs sm:text-sm font-extrabold border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
@@ -857,6 +856,71 @@
                     <!-- CTA Button -->
                     <div class="play-btn w-full py-3.5 px-4 rounded-2xl bg-gradient-to-l from-amber-300 via-rose-400 to-red-500 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-rose-500/25 group-hover:brightness-105">
                         <span>العب دلوقتي ☕</span>
+                        <span class="transition-transform duration-200 group-hover:-translate-x-1" aria-hidden="true">←</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- CARD 6: الأطرش في الزفة -->
+            <a href="atrash.html"
+               class="game-card group flex flex-col"
+               data-id="atrash"
+               data-title="الأطرش في الزفة"
+               data-icon="🥁"
+               data-theme="amber"
+               data-tags="online deception"
+               style="animation-delay: 0.34s">
+
+                <!-- Custom Illustrated Cover Banner -->
+                <div class="relative h-40 sm:h-44 overflow-hidden bg-gradient-to-br from-[#14284b] via-[#1a1a3a] to-[#0b1024] p-4 flex flex-col justify-between">
+                    <svg class="absolute inset-0 w-full h-full opacity-90 pointer-events-none" viewBox="0 0 420 180" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                        <!-- Wedding bunting & lights -->
+                        <path d="M0 8H420" stroke="#FFF4DC" stroke-opacity="0.6" stroke-width="1.5"/>
+                        <path d="M0 8H42L21 36ZM84 8H126L105 36ZM168 8H210L189 36ZM252 8H294L273 36ZM336 8H378L357 36Z" fill="#B3261E" opacity="0.75"/>
+                        <path d="M42 8H84L63 36ZM126 8H168L147 36ZM210 8H252L231 36ZM294 8H336L315 36ZM378 8H420L399 36Z" fill="#F2B22C" opacity="0.6"/>
+                        <g fill="#FFE27A"><circle cx="42" cy="12" r="4"/><circle cx="126" cy="12" r="4"/><circle cx="210" cy="12" r="4"/><circle cx="294" cy="12" r="4"/><circle cx="378" cy="12" r="4"/></g>
+                        <!-- Question bubbles: one is the odd one -->
+                        <g font-family="Cairo, sans-serif" font-weight="900" font-size="22" text-anchor="middle">
+                            <circle cx="55" cy="95" r="22" fill="#0F6B4F"/><text x="55" y="103" fill="#FFF4DC">؟</text>
+                            <circle cx="112" cy="80" r="22" fill="#0F6B4F"/><text x="112" y="88" fill="#FFF4DC">؟</text>
+                            <circle cx="169" cy="100" r="25" fill="#F2B22C"/><text x="169" y="108" fill="#14284B">!</text>
+                            <circle cx="226" cy="82" r="22" fill="#0F6B4F"/><text x="226" y="90" fill="#FFF4DC">؟</text>
+                        </g>
+                    </svg>
+
+                    <!-- Top Badges Row -->
+                    <div class="relative z-10 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+                        <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-amber-950/80 text-amber-200 border border-amber-400/40">
+                            🌐 أونلاين مع صحابك
+                        </span>
+                        <span class="text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 sm:py-1 rounded-full bg-black/60 text-amber-100/90 border border-white/10">
+                            خداع واستنتاج
+                        </span>
+                    </div>
+
+                    <!-- Floating Game Emblem -->
+                    <div class="relative z-10 flex items-end justify-between gap-2">
+                        <div class="float-slow relative w-16 h-16 rounded-2xl bg-slate-950/80 border border-amber-300/45 flex items-center justify-center text-4xl shadow-xl shadow-black/50" style="animation-delay: 1.7s">
+                            <span aria-hidden="true">🥁</span>
+                        </div>
+                        <span class="text-[11px] sm:text-xs font-extrabold text-amber-300/95 bg-black/65 px-2.5 py-1 rounded-lg border border-amber-400/25">
+                            غرف خاصة بالكود
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="p-5 flex-1 flex flex-col">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <h2 class="text-2xl font-black text-amber-300 group-hover:text-amber-200 transition">
+                            الأطرش في الزفة
+                        </h2>
+                        <span class="text-xs font-bold text-slate-400">🗳️ مين الأطرش؟</span>
+                    </div>
+
+                    <!-- CTA Button -->
+                    <div class="play-btn w-full py-3.5 px-4 rounded-2xl bg-gradient-to-l from-amber-400 via-amber-500 to-orange-400 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 group-hover:brightness-105">
+                        <span>العب دلوقتي 🥁</span>
                         <span class="transition-transform duration-200 group-hover:-translate-x-1" aria-hidden="true">←</span>
                     </div>
                 </div>
@@ -1529,4 +1593,4 @@
         })();
     </script>
 </body>
-    </html>
+</html>
