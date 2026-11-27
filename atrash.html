@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الأطرش في الزفة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;800&family=Lalezar&display=swap" rel="stylesheet">
+<style>
+:root{--n:#14284B;--r:#B3261E;--g:#F2B22C;--gr:#0F6B4F;--c:#FFF4DC;--i:#1B1B1B}
+*{box-sizing:border-box}
+body{margin:0;background:var(--n);color:#fff;font:500 17px/1.65 Cairo,Tahoma,sans-serif;min-height:100vh}
+.band{height:18px;background:repeating-linear-gradient(45deg,var(--r) 0 12px,var(--g) 12px 18px,var(--gr) 18px 30px,var(--c) 30px 34px)}
+.flags{height:30px;background:conic-gradient(from 150deg at 50% 100%,var(--g) 60deg,#0000 0) 0 0/40px 30px,conic-gradient(from -30deg at 50% 0,var(--r) 60deg,#0000 0) 20px 0/40px 30px}
+main{max-width:460px;margin:auto;padding:8px 18px 40px;display:flex;flex-direction:column;gap:12px}
+h1,h2,.big{font-family:Lalezar,Cairo,sans-serif;font-weight:400;text-align:center;color:var(--g);margin:0;line-height:1.5}
+h1{font-size:42px}h2{font-size:32px}.big{font-size:26px}
+p{margin:0;text-align:center}
+.box{background:var(--c);color:var(--i);border:4px solid var(--g);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.q{background:var(--g);color:var(--i);border:2px solid var(--i);border-radius:20px;padding:10px 14px;font:24px/1.6 Lalezar,Cairo,sans-serif;text-align:center}
+button,input,select{font:inherit;border-radius:12px;min-height:48px;border:2px solid var(--i)}
+button{cursor:pointer;background:var(--g);color:var(--i);font:22px Lalezar,Cairo,sans-serif;padding:4px 16px}
+button:disabled{opacity:.45;cursor:default}
+button.alt{background:var(--r);color:#fff}
+input,select{width:100%;padding:0 12px;background:#fff;color:var(--i)}
+.row{display:flex;gap:8px;align-items:center}.row>input{flex:1;min-width:0}
+.card{background:#fff;color:var(--i);border:2px solid var(--i);border-radius:14px;padding:8px 12px}
+.card small{color:#555;display:block}.card b{font-size:20px;overflow-wrap:anywhere}
+.picks{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.picks button{font-size:17px;min-height:44px;background:#eee}
+.picks button[aria-pressed=true]{background:var(--r);color:#fff}
+.timer{align-self:center;background:var(--r);border:3px solid var(--c);border-radius:40px;padding:0 20px;font:26px Lalezar,sans-serif}
+.err{color:#FFD0C8;min-height:1.6em}
+ul{margin:0;padding-inline-start:20px}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.top a{color:var(--c);font-weight:800;text-decoration:none;min-height:44px;display:flex;align-items:center}
+.code{font:52px/1.3 Lalezar,sans-serif;letter-spacing:8px;color:var(--r);text-align:center;direction:ltr}
+.net{background:var(--r);border-radius:10px;padding:2px 10px;text-align:center}
+[hidden]{display:none}
+.box button.card{font:inherit;text-align:start;width:100%}.box button.card.on{background:var(--r);color:#fff}.box button.card.on small{color:#fff}.box button.card:disabled{opacity:.65}
+</style>
+</head>
+<body>
+<div class="band"></div><div class="flags"></div>
+<main><div class="top"><a href="index.html" id="homeLink">🏠 كل الألعاب</a><span id="codeTag"></span></div><div class="net" id="net" role="status" hidden></div><div id="app" style="display:contents"></div></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script>
+const Q=[
+["إيه أحسن حيوان تربيه في البيت؟","إيه أطعم حيوان في الأكل؟"],
+["أكلة نفسك فيها دلوقتي؟","أكلة مستحيل تدوقها تاني؟"],
+["تروح فين في إجازة الصيف؟","تروح فين لو عايز تستخبى من الديّانة؟"],
+["حاجة بتاخدها معاك البحر؟","حاجة بتاخدها معاك الامتحان؟"],
+["أحلى مشروب في الشتا؟","أحلى مشروب في الصيف؟"],
+["حاجة بتعملها أول ما تصحى؟","حاجة بتعملها قبل ما تنام؟"],
+["هدية تجيبها لصاحبك؟","هدية تجيبها لحماتك؟"],
+["حاجة تلاقيها في المطبخ؟","حاجة تلاقيها في الحمّام؟"],
+["أكتر حاجة بتفرّحك؟","أكتر حاجة بتعصّبك؟"],
+["حاجة بتتقال في الفرح؟","حاجة بتتقال في الخناقة؟"],
+["أحسن أكلة على الفطار؟","أحسن أكلة على السحور؟"],
+["كام ساعة بتنام في اليوم؟","كام ساعة بتمسك الموبايل في اليوم؟"],
+["محافظة نفسك تزورها؟","محافظة نفسك تعيش فيها؟"],
+["حاجة بتشتريها من السوبر ماركت؟","حاجة بتشتريها من الصيدلية؟"],
+["حلويات بتحبها؟","حلويات بتتعمل في العيد؟"],
+["وسيلة مواصلات بتحبها؟","وسيلة مواصلات بتكرهها؟"],
+["شغلانة كان نفسك فيها وإنت صغير؟","شغلانة مستحيل تشتغلها؟"],
+["حاجة بتخاف منها؟","حاجة بتقرف منها؟"],
+["بتعمل إيه لو النور قطع؟","بتعمل إيه لو النت فصل؟"],
+["كام جنيه تكفيك في خروجة؟","كام جنيه تديها عيدية؟"],
+["حاجة بتتاكل بالعيش؟","حاجة بتتاكل بالمعلقة؟"],
+["لعبة كنت بتلعبها في الشارع؟","لعبة بتلعبها على الموبايل؟"],
+["أول حاجة تعملها لو كسبت مليون جنيه؟","أول حاجة تعملها لو خسرت كل فلوسك؟"],
+["فاكهة صيفي بتحبها؟","فاكهة شتوي بتحبها؟"]];
+const TIMES={answer:45,vote:90},PREFIX='alaabna-atrash-v1-',ABC='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const $=id=>document.getElementById(id),app=$('app');
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const rand=n=>Array.from({length:n},()=>ABC[Math.random()*ABC.length|0]).join('');
+const token=(()=>{let t=null;try{t=sessionStorage.getItem('atrash_token')}catch(e){}if(!t){t=rand(16);try{sessionStorage.setItem('atrash_token',t)}catch(e){}}return t})();
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+function el(tag,props={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(props)){if(k.startsWith('on'))e[k]=v;else if(k==='class')e.className=v;else e.setAttribute(k,v)}e.append(...kids.flat());return e}
+const H=t=>el('h2',{},t),P=t=>el('p',{},t),B=(t,f,c='')=>el('button',{type:'button',class:c,onclick:f},t);
+const net=t=>{$('net').textContent=t||'';$('net').hidden=!t};
+
+let peer,isHost=false,code='',myName='',G,conn,view,lastSig='',draft='',endAt=0,lastSeen=0,send=()=>{},joinTimer;
+
+/* ================= المضيف: هو اللي ماسك حالة اللعبة ================= */
+function createRoom(name,rounds,tries=0){
+ code=rand(5);net('بنعمل الأوضة…');
+ peer=new Peer(PREFIX+code,window.PEER_OPTS||{});
+ peer.on('open',()=>{net('');if(G)return;isHost=true;
+  G={phase:'lobby',rounds,r:0,deck:shuffle(Q),players:[{id:token,name,score:0,seen:Date.now()}]};
+  send=m=>handle(token,m);
+  setInterval(hostTick,500);push()});
+ peer.on('connection',c=>{
+  c.on('data',m=>{if(!m||typeof m!=='object')return;
+   if(m.t==='join')return join(c,m);
+   const p=G&&G.players.find(p=>p.conn===c);if(!p)return;
+   p.seen=Date.now();
+   if(m.t==='ping')return c.send({t:'view',v:viewFor(p)});
+   if(m.t==='leave'){p.seen=0;if(G.phase==='lobby')G.players=G.players.filter(x=>x!==p);return push()}
+   if(m.t==='answer'||m.t==='vote')handle(p.id,m)});
+ });
+ peer.on('disconnected',()=>setTimeout(()=>{if(!peer.destroyed&&peer.disconnected)peer.reconnect()},1500));
+ peer.on('error',e=>{if(e.type==='unavailable-id'&&!G&&tries<4){peer.destroy();createRoom(name,rounds,tries+1)}else if(!G){peer.destroy();home('معرفناش نعمل الأوضة، اتأكد من النت وجرّب تاني')}});
+}
+function join(c,m){
+ if(!G)return;
+ const name=String(m.name||'').trim().slice(0,14),id=String(m.id||'').slice(0,32);
+ let p=G.players.find(p=>p.id===id)||G.players.find(p=>p.name===name&&!online(p));
+ const no=t=>c.send({t:'no',msg:t});
+ if(!p){
+  if(!name||!id)return no('اكتب اسمك الأول');
+  if(G.players.some(p=>p.name===name))return no('الاسم ده متاخد، اختار غيره');
+  if(G.players.length>=10)return no('الأوضة كاملة (١٠ لاعيبة)');
+  p={id,name,score:0};G.players.push(p);
+ }else if(p.id===token)return no('الاسم ده بتاع صاحب الأوضة');
+ else if(p.id!==id)rename(p,id);
+ p.conn=c;p.seen=Date.now();push();
+}
+function rename(p,id){const old=p.id;p.id=id;
+ if(G.active){G.active=G.active.map(x=>x===old?id:x);G.order=G.order&&G.order.map(x=>x===old?id:x);
+  for(const o of [G.ans,G.votes])if(old in o){o[id]=o[old];delete o[old]}
+  for(const k in G.votes)if(G.votes[k]===old)G.votes[k]=id;if(G.deaf===old)G.deaf=id}}
+const online=p=>p.id===token||Date.now()-p.seen<12000;
+const find=id=>G.players.find(p=>p.id===id);
+function handle(id,m){
+ if(m.t==='answer'&&G.phase==='answer'&&G.active.includes(id)&&!(id in G.ans)){
+  const v=String(m.v||'').trim().slice(0,40);if(!v)return;G.ans[id]=v;
+ }else if(m.t==='vote'&&G.phase==='vote'&&G.active.includes(id)&&G.active.includes(m.v)&&m.v!==id){G.votes[id]=m.v}
+ else return;
+ push();
+}
+function startRound(){
+ const on=G.players.filter(online);if(on.length<3){net('محتاجين ٣ لاعيبة متصلين على الأقل');setTimeout(()=>net(''),3000);return}
+ if(!G.deck.length)G.deck=shuffle(Q);
+ let pair=G.deck.pop();if(Math.random()<.5)pair=[pair[1],pair[0]];
+ G.active=on.map(p=>p.id);G.pair=pair;G.deaf=G.active[Math.random()*G.active.length|0];
+ G.ans={};G.votes={};G.order=null;G.r++;G.phase='answer';G.deadline=Date.now()+TIMES.answer*1000;push();
+}
+function reveal(){G.active.forEach(id=>{if(!(id in G.ans))G.ans[id]='(ملحقش يجاوب)'});G.order=shuffle(G.active);G.phase='reveal';push()}
+function startVote(){G.phase='vote';G.deadline=Date.now()+TIMES.vote*1000;push()}
+function finishVote(){
+ const count={};G.active.forEach(id=>count[id]=0);Object.values(G.votes).forEach(id=>count[id]++);
+ const top=Math.max(...Object.values(count)),caught=top>0&&count[G.deaf]===top&&Object.values(count).filter(c=>c===top).length===1;
+ G.active.forEach(id=>{const p=find(id);if(caught&&id!==G.deaf)p.score++;if(!caught&&id===G.deaf)p.score+=2});
+ G.count=count;G.caught=caught;G.phase='result';push();
+}
+function again(){G.players=G.players.filter(online);G.players.forEach(p=>p.score=0);G.r=0;G.phase='lobby';push()}
+function hostTick(){
+ if(G.phase==='lobby'){const n=G.players.length;G.players=G.players.filter(online);if(n!==G.players.length)push();else render(viewFor(find(token)));return}
+ if(G.phase==='answer'){const waiting=G.active.filter(id=>!(id in G.ans)&&online(find(id)));
+  if(!waiting.length||Date.now()>G.deadline+1500)return reveal()}
+ if(G.phase==='vote'&&Date.now()>G.deadline)return finishVote();
+ render(viewFor(find(token)));
+}
+/* كل لاعب بيتبعتله اللي يخصه بس: محدش يعرف مين الأطرش قبل النتيجة */
+function viewFor(p){
+ const ph=G.phase,inR=!!G.active&&G.active.includes(p.id),done=ph==='result'||ph==='end';
+ const v={phase:ph,me:p.id,r:G.r,rounds:G.rounds,inRound:inR,
+  players:G.players.map(x=>({id:x.id,name:x.name,score:x.score,on:online(x),host:x.id===token,
+   answered:ph==='answer'&&x.id in G.ans,voted:ph==='vote'&&x.id in G.votes,playing:!!G.active&&G.active.includes(x.id)}))};
+ if(ph==='answer'||ph==='vote')v.left=Math.max(0,G.deadline-Date.now());
+ if(ph==='answer'&&inR){v.q=G.pair[p.id===G.deaf?1:0];v.sent=p.id in G.ans}
+ if(ph==='reveal'||ph==='vote'||ph==='result'){v.q=G.pair[0];v.answers=G.order.map(id=>({id,name:find(id).name,a:G.ans[id]}))}
+ if(ph==='vote')v.myVote=G.votes[p.id]||null;
+ if(ph==='result'){v.deaf=G.deaf;v.deafQ=G.pair[1];v.caught=G.caught;v.count=G.count}
+ return v;
+}
+function push(){G.players.forEach(p=>{if(p.id!==token&&p.conn&&p.conn.open)p.conn.send({t:'view',v:viewFor(p)})});render(viewFor(find(token)))}
+
+/* ================= الضيف ================= */
+function joinRoom(room,name){
+ code=room;myName=name;net('بندخل الأوضة…');
+ peer=new Peer(window.PEER_OPTS||{});
+ peer.on('open',connect);
+ peer.on('disconnected',()=>setTimeout(()=>{if(!peer.destroyed&&peer.disconnected)peer.reconnect()},1500));
+ peer.on('error',e=>{if(!view&&e.type==='peer-unavailable')quit('مفيش أوضة بالكود ده');else if(!view&&e.type!=='disconnected')quit('الاتصال فشل، جرّب تاني');else net('الاتصال وقع، بنحاول تاني…')});
+ joinTimer=setTimeout(()=>{if(!view)quit('معرفناش نوصل لصاحب الأوضة. جرّبوا على نفس الواي فاي')},15000);
+ lastSeen=Date.now();
+ setInterval(()=>{if(conn&&conn.open)conn.send({t:'ping'});
+  if(view&&Date.now()-lastSeen>10000){net('الاتصال وقع، بنحاول تاني… (لازم صاحب الأوضة يفضل فاتح اللعبة)');lastSeen=Date.now()-4000;connect()}},3000);
+}
+function connect(){
+ if(!peer||peer.destroyed)return;if(peer.disconnected){peer.reconnect();return}
+ if(conn)conn.close();
+ const c=conn=peer.connect(PREFIX+code,{reliable:true});
+ c.on('open',()=>c.send({t:'join',id:token,name:myName}));
+ c.on('data',m=>{if(c!==conn)return;lastSeen=Date.now();if(m.t==='no')return quit(m.msg);
+  if(m.t==='view'){clearTimeout(joinTimer);net('');store.set('atrash_name',myName);render(m.v)}});
+ send=m=>{if(c.open)c.send(m)};
+}
+function quit(msg){clearTimeout(joinTimer);if(peer)peer.destroy();peer=null;sessionStorage.setItem('atrash_msg',msg);location.reload()}
+
+/* ================= الشاشات ================= */
+function home(msg=''){
+ net('');lastSig='';
+ const name=el('input',{maxlength:14,placeholder:'اسمك','aria-label':'اسمك',value:store.get('atrash_name')||''});
+ const room=el('input',{maxlength:5,placeholder:'كود الأوضة','aria-label':'كود الأوضة',dir:'ltr',autocapitalize:'characters',value:(new URLSearchParams(location.search).get('room')||'').toUpperCase()});
+ const sel=el('select',{'aria-label':'عدد الأدوار'},[3,5,7,10].map(v=>el('option',{value:v},v+' أدوار')));sel.value=5;
+ const err=el('p',{class:'err',role:'alert'},msg);
+ const getName=()=>{const n=name.value.trim();if(!n)err.textContent='اكتب اسمك الأول';else if(!window.Peer){err.textContent='مكتبة الاتصال ما اتحملتش، اتأكد من النت وحدّث الصفحة';return ''}store.set('atrash_name',n);return n};
+ const lock=()=>app.querySelectorAll('button').forEach(b=>b.disabled=true);
+ app.replaceChildren(el('h1',{},'الأطرش في الزفة'),P('أونلاين: كل واحد من موبايله، من ٣ لـ ١٠'),name,err,
+  el('div',{class:'box'},el('div',{class:'big',style:'color:var(--r)'},'ادخل أوضة صحابك'),room,
+   B('ادخل',()=>{const n=getName(),c=room.value.trim().toUpperCase();if(!n)return;if(c.length!==5)return err.textContent='الكود ٥ حروف وأرقام';lock();joinRoom(c,n)})),
+  el('div',{class:'box'},el('div',{class:'big',style:'color:var(--r)'},'أو اعمل أوضة'),sel,
+   B('اعمل أوضة جديدة',()=>{const n=getName();if(!n)return;lock();createRoom(n,+sel.value)},'alt')),
+  el('details',{},el('summary',{},'إزاي نلعب؟'),el('ul',{},[
+   'كل دور واحد بيبقى «الأطرش» وبيجيله سؤال شبه سؤال الباقيين، وهو مش دريان.',
+   'كل واحد يجاوب في السر قبل ما الوقت يخلص.',
+   'الإجابات بتظهر ملخبطة، اتناقشوا وصوّتوا. تقدروا تغيّروا الصوت لحد ما الوقت يخلص.',
+   'لو الأطرش لوحده خد أعلى أصوات، كل واحد من الباقيين ياخد نقطة. غير كده الأطرش ياخد نقطتين.'].map(t=>el('li',{},t)))));
+}
+function render(v){
+ if(!v)return;view=v;if(v.left!==undefined)endAt=Date.now()+v.left;
+ const sig=JSON.stringify({...v,left:0});
+ if(sig===lastSig)return clock();
+ const old=lastSig?JSON.parse(lastSig):{};lastSig=sig;
+ if(old.r!==v.r||old.phase!==v.phase)draft='';
+ const focused=document.activeElement&&document.activeElement.id==='ans';
+ $('codeTag').textContent='أوضة '+code;$('homeLink').onclick=e=>{if(!confirm(isHost?'لو خرجت الأوضة هتتقفل على الكل. متأكد؟':'تخرج من اللعبة؟'))e.preventDefault();else send({t:'leave'})};
+ const names=Object.fromEntries(v.players.map(p=>[p.id,p.name]));
+ const hostBtn=(t,f,wait)=>isHost?B(t,f):P(wait||'مستنيين صاحب الأوضة…');
+ const timer=()=>el('div',{class:'timer',id:'timer',role:'timer'},'');
+ const answers=()=>v.answers.map(a=>el('div',{class:'card'},el('small',{},a.name),el('b',{},a.a)));
+ const list=f=>el('div',{class:'box'},v.players.filter(f.filter||(()=>true)).map(p=>el('div',{class:'card'},f.text(p))));
+ let n=[];
+ if(v.phase==='lobby'){
+  const link=location.href.split(/[?#]/)[0]+'?room='+code;
+  const copy=B('انسخ لينك الدعوة',()=>navigator.clipboard.writeText(link).then(()=>copy.textContent='اتنسخ ✓',()=>prompt('انسخ اللينك',link)));
+  const go=hostBtn('يلا نلعب',startRound);if(isHost)go.disabled=v.players.length<3;
+  n=[H('الأوضة'),el('div',{class:'box'},P('كود الأوضة'),el('div',{class:'code'},code),copy),
+   P(`اللاعيبة (${v.players.length} من ١٠) — محتاجين ٣ على الأقل`),list({text:p=>p.name+(p.host?' 👑':'')}),go,
+   isHost?P('خلّي الصفحة دي مفتوحة طول اللعب'):''];
+ }else if(v.phase==='answer'){
+  n=[H(`الدور ${v.r} من ${v.rounds}`),timer()];
+  if(!v.inRound)n.push(P('الدور بدأ، هتدخل من الدور اللي بعده'));
+  else if(v.sent)n.push(el('div',{class:'big'},'إجابتك وصلت، استنى الباقيين'));
+  else{const inp=el('input',{id:'ans',maxlength:40,placeholder:'اكتب إجابتك هنا…','aria-label':'إجابتك',autocomplete:'off',value:draft,oninput:e=>draft=e.target.value});
+   const go=()=>{if(inp.value.trim())send({t:'answer',v:inp.value});else inp.focus()};inp.onkeydown=e=>{if(e.key==='Enter')go()};
+   n.push(el('div',{class:'q'},v.q),inp,B('ابعت',go))}
+  n.push(list({filter:p=>p.playing,text:p=>p.name+' — '+(p.answered?'جاوب ✓':p.on?'لسه بيكتب…':'مش متصل')}));
+ }else if(v.phase==='reveal'){
+  n=[H('الكشف والرغي'),el('div',{class:'q'},v.q),el('div',{class:'box'},answers()),P('مين إجابته برّه الليلة خالص؟ اتناقشوا!'),hostBtn('يلا نصوّت',startVote,'لما تخلصوا رغي، صاحب الأوضة يفتح التصويت')];
+ }else if(v.phase==='vote'){
+  n=[H('التصويت'),timer(),el('div',{class:'q'},v.q),P(v.inRound?'دوس على اللي شاكك فيه، وتقدر تغيّر لحد ما الوقت يخلص':'بتتفرج الدور ده'),
+   el('div',{class:'box'},v.answers.map(a=>{const mine=a.id===v.me,b=el('button',{type:'button',class:'card'+(v.myVote===a.id?' on':''),'aria-pressed':v.myVote===a.id,onclick:()=>send({t:'vote',v:a.id})},el('small',{},a.name+(mine?' (إنت)':'')),el('b',{},a.a));b.disabled=mine||!v.inRound;return b})),
+   P(`صوّت ${v.players.filter(p=>p.voted).length} من ${v.players.filter(p=>p.playing).length}`),isHost&&v.players.filter(p=>p.playing&&p.on).every(p=>p.voted)?B('اقفل التصويت واكشف',finishVote):''];
+ }else if(v.phase==='result'){
+  const deafAns=v.answers.find(a=>a.id===v.deaf).a,rank=[...v.players].sort((a,b)=>b.score-a.score);
+  n=[H(v.caught?'اتقفش الأطرش!':'الأطرش فلت!'),el('div',{class:'box'},el('div',{class:'big',style:'color:var(--r)'},'الأطرش كان: '+names[v.deaf]),P('سؤاله كان:'),el('div',{class:'q'},v.deafQ),P('إجابته: '+deafAns),P(v.caught?'كل واحد من الباقيين خد نقطة':'خد نقطتين لوحده')),
+   el('div',{class:'box'},rank.map(p=>el('div',{class:'card'},`${p.name}: ${p.score} نقطة`+(p.id in v.count?` — أصوات عليه: ${v.count[p.id]}`:'')))),
+   hostBtn(v.r<v.rounds?'الدور اللي بعده':'مين الكسبان؟',()=>{if(G.r<G.rounds)startRound();else{G.phase='end';push()}})];
+ }else{
+  const rank=[...v.players].sort((a,b)=>b.score-a.score),win=rank.filter(p=>p.score===rank[0].score).map(p=>p.name);
+  n=[el('h1',{},'مبروك يا معلّم!'),el('div',{class:'big'},(win.length>1?'تعادل: ':'الكسبان: ')+win.join(' و ')),el('div',{class:'box'},rank.map(p=>el('div',{class:'card'},`${p.name}: ${p.score} نقطة`))),hostBtn('العبوا تاني',again)];
+ }
+ app.replaceChildren(...n);if(focused&&$('ans')){const i=$('ans');i.focus();i.setSelectionRange(i.value.length,i.value.length)}
+ if(old.phase!==v.phase)scrollTo(0,0);clock();
+}
+function clock(){const t=$('timer');if(!t)return;const l=Math.max(0,Math.ceil((endAt-Date.now())/1000));t.textContent=l;
+ if(!l&&view.phase==='answer'&&view.inRound&&!view.sent&&draft.trim())send({t:'answer',v:draft})}
+setInterval(clock,250);
+addEventListener('beforeunload',e=>{if(isHost){e.preventDefault();e.returnValue=''}});
+home(sessionStorage.getItem('atrash_msg')||'');sessionStorage.removeItem('atrash_msg');
+</script>
+</body>
+</html>
