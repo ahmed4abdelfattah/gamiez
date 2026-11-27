@@ -30,18 +30,18 @@ input,select{width:100%;padding:0 12px;background:#fff;color:var(--i)}
 .timer{align-self:center;background:var(--r);border:3px solid var(--c);border-radius:40px;padding:0 20px;font:26px Lalezar,sans-serif}
 .err{color:#FFD0C8;min-height:1.6em}
 ul{margin:0;padding-inline-start:20px}
-.top{display:flex;justify-content:space-between;gap:8px;align-items:center}
-.top a{color:var(--c);font-weight:800;text-decoration:none;min-height:44px;display:flex;align-items:center}
-.code{font:52px/1.3 Lalezar,sans-serif;letter-spacing:8px;color:var(--r);text-align:center;direction:ltr}
-.net{background:var(--r);border-radius:10px;padding:2px 10px;text-align:center}
-[hidden]{display:none}
-.box button.card{font:inherit;text-align:start;width:100%}.box button.card.on{background:var(--r);color:#fff}.box button.card.on small{color:#fff}.box button.card:disabled{opacity:.65}
+.code{font:44px Lalezar,sans-serif;letter-spacing:8px;text-align:center;direction:ltr}
+.off{opacity:.45}.red{color:var(--r)}.box p{color:inherit}
+.home{display:block;max-width:460px;margin:8px auto 0;padding:0 18px;color:var(--g);font-weight:800;text-decoration:none}
+#net{color:var(--g);text-align:center;min-height:1.6em}
 </style>
 </head>
 <body>
 <div class="band"></div><div class="flags"></div>
-<main><div class="top"><a href="index.html" id="homeLink">🏠 كل الألعاب</a><span id="codeTag"></span></div><div class="net" id="net" role="status" hidden></div><div id="app" style="display:contents"></div></main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<a class="home" href="index.html">🏠 كل الألعاب</a>
+<div id="net" role="status"></div>
+<main id="app"></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
 <script>
 const Q=[
 ["إيه أحسن حيوان تربيه في البيت؟","إيه أطعم حيوان في الأكل؟"],
@@ -68,198 +68,187 @@ const Q=[
 ["لعبة كنت بتلعبها في الشارع؟","لعبة بتلعبها على الموبايل؟"],
 ["أول حاجة تعملها لو كسبت مليون جنيه؟","أول حاجة تعملها لو خسرت كل فلوسك؟"],
 ["فاكهة صيفي بتحبها؟","فاكهة شتوي بتحبها؟"]];
-const TIMES={answer:45,vote:90},PREFIX='alaabna-atrash-v1-',ABC='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const $=id=>document.getElementById(id),app=$('app');
-const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-const rand=n=>Array.from({length:n},()=>ABC[Math.random()*ABC.length|0]).join('');
-const token=(()=>{let t=null;try{t=sessionStorage.getItem('atrash_token')}catch(e){}if(!t){t=rand(16);try{sessionStorage.setItem('atrash_token',t)}catch(e){}}return t})();
+const BROKER=window.TEST_BROKER||'wss://broker.emqx.io:8084/mqtt', PREFIX='atrash-m4x9/';
+const TIMES=Object.assign({answer:45,vote:90},window.TEST_TIMES);
+const app=document.getElementById('app');
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-function el(tag,props={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(props)){if(k.startsWith('on'))e[k]=v;else if(k==='class')e.className=v;else e.setAttribute(k,v)}e.append(...kids.flat());return e}
-const H=t=>el('h2',{},t),P=t=>el('p',{},t),B=(t,f,c='')=>el('button',{type:'button',class:c,onclick:f},t);
-const net=t=>{$('net').textContent=t||'';$('net').hidden=!t};
+function el(tag,props={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(props)){if(k.startsWith('on'))e[k]=v;else if(k==='class')e.className=v;else e.setAttribute(k,v)}e.append(...kids.flat().filter(x=>x!=null&&x!==false));return e}
+const H=t=>el('h2',{},t), P=t=>el('p',{},t), B=(t,f,c='')=>el('button',{type:'button',class:c,onclick:f},t);
+const show=(...n)=>app.replaceChildren(...n.flat().filter(Boolean));
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const rid=()=>Math.random().toString(36).slice(2,10);
+let me=store.get('at-id');if(!me){me=rid();store.set('at-id',me)}
+let client,code='',isHost=false,S=null,V=null,last='',lastSeen=0,endAt=0,draft='',round=0,sentFor=0;
+const net=t=>document.getElementById('net').textContent=t;
 
-let peer,isHost=false,code='',myName='',G,conn,view,lastSig='',draft='',endAt=0,lastSeen=0,send=()=>{},joinTimer;
+/* الاتصال */
+function connect(topic,onMsg,onReady){
+ if(typeof mqtt==='undefined')return net('تعذر تحميل مكتبة الاتصال، اتأكد من النت وحدّث الصفحة');
+ net('جاري الاتصال…');
+ client=mqtt.connect(BROKER,{clientId:'at_'+me+rid(),reconnectPeriod:2000});
+ client.on('connect',()=>{net('');client.subscribe(topic,onReady)});
+ client.on('message',(t,m)=>{try{onMsg(JSON.parse(m.toString()))}catch(e){console.error(e)}});
+ client.on('reconnect',()=>net('بنعيد الاتصال…'));
+}
+const pub=(t,d)=>client&&client.publish(PREFIX+code+'/'+t,JSON.stringify(d));
+const send=a=>{a.id=me;isHost?handle(a):pub('up',a)};
 
-/* ================= المضيف: هو اللي ماسك حالة اللعبة ================= */
-function createRoom(name,rounds,tries=0){
- code=rand(5);net('بنعمل الأوضة…');
- peer=new Peer(PREFIX+code,window.PEER_OPTS||{});
- peer.on('open',()=>{net('');if(G)return;isHost=true;
-  G={phase:'lobby',rounds,r:0,deck:shuffle(Q),players:[{id:token,name,score:0,seen:Date.now()}]};
-  send=m=>handle(token,m);
-  setInterval(hostTick,500);push()});
- peer.on('connection',c=>{
-  c.on('data',m=>{if(!m||typeof m!=='object')return;
-   if(m.t==='join')return join(c,m);
-   const p=G&&G.players.find(p=>p.conn===c);if(!p)return;
-   p.seen=Date.now();
-   if(m.t==='ping')return c.send({t:'view',v:viewFor(p)});
-   if(m.t==='leave'){p.seen=0;if(G.phase==='lobby')G.players=G.players.filter(x=>x!==p);return push()}
-   if(m.t==='answer'||m.t==='vote')handle(p.id,m)});
- });
- peer.on('disconnected',()=>setTimeout(()=>{if(!peer.destroyed&&peer.disconnected)peer.reconnect()},1500));
- peer.on('error',e=>{if(e.type==='unavailable-id'&&!G&&tries<4){peer.destroy();createRoom(name,rounds,tries+1)}else if(!G){peer.destroy();home('معرفناش نعمل الأوضة، اتأكد من النت وجرّب تاني')}});
-}
-function join(c,m){
- if(!G)return;
- const name=String(m.name||'').trim().slice(0,14),id=String(m.id||'').slice(0,32);
- let p=G.players.find(p=>p.id===id)||G.players.find(p=>p.name===name&&!online(p));
- const no=t=>c.send({t:'no',msg:t});
- if(!p){
-  if(!name||!id)return no('اكتب اسمك الأول');
-  if(G.players.some(p=>p.name===name))return no('الاسم ده متاخد، اختار غيره');
-  if(G.players.length>=10)return no('الأوضة كاملة (١٠ لاعيبة)');
-  p={id,name,score:0};G.players.push(p);
- }else if(p.id===token)return no('الاسم ده بتاع صاحب الأوضة');
- else if(p.id!==id)rename(p,id);
- p.conn=c;p.seen=Date.now();push();
-}
-function rename(p,id){const old=p.id;p.id=id;
- if(G.active){G.active=G.active.map(x=>x===old?id:x);G.order=G.order&&G.order.map(x=>x===old?id:x);
-  for(const o of [G.ans,G.votes])if(old in o){o[id]=o[old];delete o[old]}
-  for(const k in G.votes)if(G.votes[k]===old)G.votes[k]=id;if(G.deaf===old)G.deaf=id}}
-const online=p=>p.id===token||Date.now()-p.seen<12000;
-const find=id=>G.players.find(p=>p.id===id);
-function handle(id,m){
- if(m.t==='answer'&&G.phase==='answer'&&G.active.includes(id)&&!(id in G.ans)){
-  const v=String(m.v||'').trim().slice(0,40);if(!v)return;G.ans[id]=v;
- }else if(m.t==='vote'&&G.phase==='vote'&&G.active.includes(id)&&G.active.includes(m.v)&&m.v!==id){G.votes[id]=m.v}
- else return;
- push();
-}
+/* صاحب القعدة هو اللي بيدير اللعبة */
+const online=i=>i===me||Date.now()-S.p[i].seen<15000;
+const playing=()=>S.in.filter(online);
 function startRound(){
- const on=G.players.filter(online);if(on.length<3){net('محتاجين ٣ لاعيبة متصلين على الأقل');setTimeout(()=>net(''),3000);return}
- if(!G.deck.length)G.deck=shuffle(Q);
- let pair=G.deck.pop();if(Math.random()<.5)pair=[pair[1],pair[0]];
- G.active=on.map(p=>p.id);G.pair=pair;G.deaf=G.active[Math.random()*G.active.length|0];
- G.ans={};G.votes={};G.order=null;G.r++;G.phase='answer';G.deadline=Date.now()+TIMES.answer*1000;push();
+ const ids=S.order.filter(online).slice(0,10);
+ if(ids.length<3){S.phase='lobby';return}
+ if(!S.deck.length)S.deck=shuffle(Q);
+ S.pair=S.deck.pop();if(Math.random()<.5)S.pair=[S.pair[1],S.pair[0]];
+ S.in=ids;S.deaf=ids[Math.random()*ids.length|0];S.ans={};S.votes={};S.r++;
+ S.phase='answer';S.end=Date.now()+TIMES.answer*1000;
 }
-function reveal(){G.active.forEach(id=>{if(!(id in G.ans))G.ans[id]='(ملحقش يجاوب)'});G.order=shuffle(G.active);G.phase='reveal';push()}
-function startVote(){G.phase='vote';G.deadline=Date.now()+TIMES.vote*1000;push()}
-function finishVote(){
- const count={};G.active.forEach(id=>count[id]=0);Object.values(G.votes).forEach(id=>count[id]++);
- const top=Math.max(...Object.values(count)),caught=top>0&&count[G.deaf]===top&&Object.values(count).filter(c=>c===top).length===1;
- G.active.forEach(id=>{const p=find(id);if(caught&&id!==G.deaf)p.score++;if(!caught&&id===G.deaf)p.score+=2});
- G.count=count;G.caught=caught;G.phase='result';push();
+function reveal(){S.shown=shuffle(S.in);S.in.forEach(i=>{if(!(i in S.ans))S.ans[i]='(ملحقش يجاوب)'});S.phase='talk'}
+function result(){
+ const count={};S.in.forEach(i=>count[i]=0);Object.values(S.votes).forEach(j=>count[j]++);
+ const top=Math.max(...Object.values(count));
+ S.caught=top>0&&count[S.deaf]===top&&Object.values(count).filter(c=>c===top).length===1;
+ S.in.forEach(i=>{if(S.caught&&i!==S.deaf)S.p[i].score++;if(!S.caught&&i===S.deaf)S.p[i].score+=2});
+ S.count=count;S.phase='result';
 }
-function again(){G.players=G.players.filter(online);G.players.forEach(p=>p.score=0);G.r=0;G.phase='lobby';push()}
-function hostTick(){
- if(G.phase==='lobby'){const n=G.players.length;G.players=G.players.filter(online);if(n!==G.players.length)push();else render(viewFor(find(token)));return}
- if(G.phase==='answer'){const waiting=G.active.filter(id=>!(id in G.ans)&&online(find(id)));
-  if(!waiting.length||Date.now()>G.deadline+1500)return reveal()}
- if(G.phase==='vote'&&Date.now()>G.deadline)return finishVote();
- render(viewFor(find(token)));
+function advance(){
+ const now=Date.now();
+ if(S.phase==='answer'){const a=playing();if((a.length&&a.every(i=>i in S.ans))||now>S.end+2500)reveal()}
+ else if(S.phase==='vote'&&now>S.end+1000)result();
 }
-/* كل لاعب بيتبعتله اللي يخصه بس: محدش يعرف مين الأطرش قبل النتيجة */
-function viewFor(p){
- const ph=G.phase,inR=!!G.active&&G.active.includes(p.id),done=ph==='result'||ph==='end';
- const v={phase:ph,me:p.id,r:G.r,rounds:G.rounds,inRound:inR,
-  players:G.players.map(x=>({id:x.id,name:x.name,score:x.score,on:online(x),host:x.id===token,
-   answered:ph==='answer'&&x.id in G.ans,voted:ph==='vote'&&x.id in G.votes,playing:!!G.active&&G.active.includes(x.id)}))};
- if(ph==='answer'||ph==='vote')v.left=Math.max(0,G.deadline-Date.now());
- if(ph==='answer'&&inR){v.q=G.pair[p.id===G.deaf?1:0];v.sent=p.id in G.ans}
- if(ph==='reveal'||ph==='vote'||ph==='result'){v.q=G.pair[0];v.answers=G.order.map(id=>({id,name:find(id).name,a:G.ans[id]}))}
- if(ph==='vote')v.myVote=G.votes[p.id]||null;
- if(ph==='result'){v.deaf=G.deaf;v.deafQ=G.pair[1];v.caught=G.caught;v.count=G.count}
- return v;
-}
-function push(){G.players.forEach(p=>{if(p.id!==token&&p.conn&&p.conn.open)p.conn.send({t:'view',v:viewFor(p)})});render(viewFor(find(token)))}
-
-/* ================= الضيف ================= */
-function joinRoom(room,name){
- code=room;myName=name;net('بندخل الأوضة…');
- peer=new Peer(window.PEER_OPTS||{});
- peer.on('open',connect);
- peer.on('disconnected',()=>setTimeout(()=>{if(!peer.destroyed&&peer.disconnected)peer.reconnect()},1500));
- peer.on('error',e=>{if(!view&&e.type==='peer-unavailable')quit('مفيش أوضة بالكود ده');else if(!view&&e.type!=='disconnected')quit('الاتصال فشل، جرّب تاني');else net('الاتصال وقع، بنحاول تاني…')});
- joinTimer=setTimeout(()=>{if(!view)quit('معرفناش نوصل لصاحب الأوضة. جرّبوا على نفس الواي فاي')},15000);
- lastSeen=Date.now();
- setInterval(()=>{if(conn&&conn.open)conn.send({t:'ping'});
-  if(view&&Date.now()-lastSeen>10000){net('الاتصال وقع، بنحاول تاني… (لازم صاحب الأوضة يفضل فاتح اللعبة)');lastSeen=Date.now()-4000;connect()}},3000);
-}
-function connect(){
- if(!peer||peer.destroyed)return;if(peer.disconnected){peer.reconnect();return}
- if(conn)conn.close();
- const c=conn=peer.connect(PREFIX+code,{reliable:true});
- c.on('open',()=>c.send({t:'join',id:token,name:myName}));
- c.on('data',m=>{if(c!==conn)return;lastSeen=Date.now();if(m.t==='no')return quit(m.msg);
-  if(m.t==='view'){clearTimeout(joinTimer);net('');store.set('atrash_name',myName);render(m.v)}});
- send=m=>{if(c.open)c.send(m)};
-}
-function quit(msg){clearTimeout(joinTimer);if(peer)peer.destroy();peer=null;sessionStorage.setItem('atrash_msg',msg);location.reload()}
-
-/* ================= الشاشات ================= */
-function home(msg=''){
- net('');lastSig='';
- const name=el('input',{maxlength:14,placeholder:'اسمك','aria-label':'اسمك',value:store.get('atrash_name')||''});
- const room=el('input',{maxlength:5,placeholder:'كود الأوضة','aria-label':'كود الأوضة',dir:'ltr',autocapitalize:'characters',value:(new URLSearchParams(location.search).get('room')||'').toUpperCase()});
- const sel=el('select',{'aria-label':'عدد الأدوار'},[3,5,7,10].map(v=>el('option',{value:v},v+' أدوار')));sel.value=5;
- const err=el('p',{class:'err',role:'alert'},msg);
- const getName=()=>{const n=name.value.trim();if(!n)err.textContent='اكتب اسمك الأول';else if(!window.Peer){err.textContent='مكتبة الاتصال ما اتحملتش، اتأكد من النت وحدّث الصفحة';return ''}store.set('atrash_name',n);return n};
- const lock=()=>app.querySelectorAll('button').forEach(b=>b.disabled=true);
- app.replaceChildren(el('h1',{},'الأطرش في الزفة'),P('أونلاين: كل واحد من موبايله، من ٣ لـ ١٠'),name,err,
-  el('div',{class:'box'},el('div',{class:'big',style:'color:var(--r)'},'ادخل أوضة صحابك'),room,
-   B('ادخل',()=>{const n=getName(),c=room.value.trim().toUpperCase();if(!n)return;if(c.length!==5)return err.textContent='الكود ٥ حروف وأرقام';lock();joinRoom(c,n)})),
-  el('div',{class:'box'},el('div',{class:'big',style:'color:var(--r)'},'أو اعمل أوضة'),sel,
-   B('اعمل أوضة جديدة',()=>{const n=getName();if(!n)return;lock();createRoom(n,+sel.value)},'alt')),
-  el('details',{},el('summary',{},'إزاي نلعب؟'),el('ul',{},[
-   'كل دور واحد بيبقى «الأطرش» وبيجيله سؤال شبه سؤال الباقيين، وهو مش دريان.',
-   'كل واحد يجاوب في السر قبل ما الوقت يخلص.',
-   'الإجابات بتظهر ملخبطة، اتناقشوا وصوّتوا. تقدروا تغيّروا الصوت لحد ما الوقت يخلص.',
-   'لو الأطرش لوحده خد أعلى أصوات، كل واحد من الباقيين ياخد نقطة. غير كده الأطرش ياخد نقطتين.'].map(t=>el('li',{},t)))));
-}
-function render(v){
- if(!v)return;view=v;if(v.left!==undefined)endAt=Date.now()+v.left;
- const sig=JSON.stringify({...v,left:0});
- if(sig===lastSig)return clock();
- const old=lastSig?JSON.parse(lastSig):{};lastSig=sig;
- if(old.r!==v.r||old.phase!==v.phase)draft='';
- const focused=document.activeElement&&document.activeElement.id==='ans';
- $('codeTag').textContent='أوضة '+code;$('homeLink').onclick=e=>{if(!confirm(isHost?'لو خرجت الأوضة هتتقفل على الكل. متأكد؟':'تخرج من اللعبة؟'))e.preventDefault();else send({t:'leave'})};
- const names=Object.fromEntries(v.players.map(p=>[p.id,p.name]));
- const hostBtn=(t,f,wait)=>isHost?B(t,f):P(wait||'مستنيين صاحب الأوضة…');
- const timer=()=>el('div',{class:'timer',id:'timer',role:'timer'},'');
- const answers=()=>v.answers.map(a=>el('div',{class:'card'},el('small',{},a.name),el('b',{},a.a)));
- const list=f=>el('div',{class:'box'},v.players.filter(f.filter||(()=>true)).map(p=>el('div',{class:'card'},f.text(p))));
- let n=[];
- if(v.phase==='lobby'){
-  const link=location.href.split(/[?#]/)[0]+'?room='+code;
-  const copy=B('انسخ لينك الدعوة',()=>navigator.clipboard.writeText(link).then(()=>copy.textContent='اتنسخ ✓',()=>prompt('انسخ اللينك',link)));
-  const go=hostBtn('يلا نلعب',startRound);if(isHost)go.disabled=v.players.length<3;
-  n=[H('الأوضة'),el('div',{class:'box'},P('كود الأوضة'),el('div',{class:'code'},code),copy),
-   P(`اللاعيبة (${v.players.length} من ١٠) — محتاجين ٣ على الأقل`),list({text:p=>p.name+(p.host?' 👑':'')}),go,
-   isHost?P('خلّي الصفحة دي مفتوحة طول اللعب'):''];
- }else if(v.phase==='answer'){
-  n=[H(`الدور ${v.r} من ${v.rounds}`),timer()];
-  if(!v.inRound)n.push(P('الدور بدأ، هتدخل من الدور اللي بعده'));
-  else if(v.sent)n.push(el('div',{class:'big'},'إجابتك وصلت، استنى الباقيين'));
-  else{const inp=el('input',{id:'ans',maxlength:40,placeholder:'اكتب إجابتك هنا…','aria-label':'إجابتك',autocomplete:'off',value:draft,oninput:e=>draft=e.target.value});
-   const go=()=>{if(inp.value.trim())send({t:'answer',v:inp.value});else inp.focus()};inp.onkeydown=e=>{if(e.key==='Enter')go()};
-   n.push(el('div',{class:'q'},v.q),inp,B('ابعت',go))}
-  n.push(list({filter:p=>p.playing,text:p=>p.name+' — '+(p.answered?'جاوب ✓':p.on?'لسه بيكتب…':'مش متصل')}));
- }else if(v.phase==='reveal'){
-  n=[H('الكشف والرغي'),el('div',{class:'q'},v.q),el('div',{class:'box'},answers()),P('مين إجابته برّه الليلة خالص؟ اتناقشوا!'),hostBtn('يلا نصوّت',startVote,'لما تخلصوا رغي، صاحب الأوضة يفتح التصويت')];
- }else if(v.phase==='vote'){
-  n=[H('التصويت'),timer(),el('div',{class:'q'},v.q),P(v.inRound?'دوس على اللي شاكك فيه، وتقدر تغيّر لحد ما الوقت يخلص':'بتتفرج الدور ده'),
-   el('div',{class:'box'},v.answers.map(a=>{const mine=a.id===v.me,b=el('button',{type:'button',class:'card'+(v.myVote===a.id?' on':''),'aria-pressed':v.myVote===a.id,onclick:()=>send({t:'vote',v:a.id})},el('small',{},a.name+(mine?' (إنت)':'')),el('b',{},a.a));b.disabled=mine||!v.inRound;return b})),
-   P(`صوّت ${v.players.filter(p=>p.voted).length} من ${v.players.filter(p=>p.playing).length}`),isHost&&v.players.filter(p=>p.playing&&p.on).every(p=>p.voted)?B('اقفل التصويت واكشف',finishVote):''];
- }else if(v.phase==='result'){
-  const deafAns=v.answers.find(a=>a.id===v.deaf).a,rank=[...v.players].sort((a,b)=>b.score-a.score);
-  n=[H(v.caught?'اتقفش الأطرش!':'الأطرش فلت!'),el('div',{class:'box'},el('div',{class:'big',style:'color:var(--r)'},'الأطرش كان: '+names[v.deaf]),P('سؤاله كان:'),el('div',{class:'q'},v.deafQ),P('إجابته: '+deafAns),P(v.caught?'كل واحد من الباقيين خد نقطة':'خد نقطتين لوحده')),
-   el('div',{class:'box'},rank.map(p=>el('div',{class:'card'},`${p.name}: ${p.score} نقطة`+(p.id in v.count?` — أصوات عليه: ${v.count[p.id]}`:'')))),
-   hostBtn(v.r<v.rounds?'الدور اللي بعده':'مين الكسبان؟',()=>{if(G.r<G.rounds)startRound();else{G.phase='end';push()}})];
- }else{
-  const rank=[...v.players].sort((a,b)=>b.score-a.score),win=rank.filter(p=>p.score===rank[0].score).map(p=>p.name);
-  n=[el('h1',{},'مبروك يا معلّم!'),el('div',{class:'big'},(win.length>1?'تعادل: ':'الكسبان: ')+win.join(' و ')),el('div',{class:'box'},rank.map(p=>el('div',{class:'card'},`${p.name}: ${p.score} نقطة`))),hostBtn('العبوا تاني',again)];
+function handle(a){
+ if(!S||typeof a.id!=='string'||!/^[a-z0-9]{4,12}$/.test(a.id))return;
+ let p=S.p[a.id];
+ if(a.type==='hello'){
+  let name=String(a.name||'').trim().slice(0,14)||'لاعب';
+  if(!p){
+   if(S.order.length>=10){const gone=S.order.find(i=>!online(i)&&(S.phase==='lobby'||!S.in.includes(i)));
+    if(!gone)return pub('to/'+a.id,{full:true});S.order=S.order.filter(i=>i!==gone);delete S.p[gone]}
+   const base=name;for(let n=2;S.order.some(i=>S.p[i].n===name);n++)name=base+' '+n;
+   p=S.p[a.id]={n:name,score:0};S.order.push(a.id);
+  }
+  p.seen=Date.now();
  }
- app.replaceChildren(...n);if(focused&&$('ans')){const i=$('ans');i.focus();i.setSelectionRange(i.value.length,i.value.length)}
- if(old.phase!==v.phase)scrollTo(0,0);clock();
+ if(!p)return;
+ p.seen=Date.now();
+ const host=a.id===me,inside=S.in.includes(a.id),now=a.round===S.r;
+ if(a.type==='start'&&host&&S.phase==='lobby'&&S.order.filter(online).length>=3){
+  S.rounds=[3,5,7,10].includes(a.rounds)?a.rounds:5;S.r=0;S.order.forEach(i=>S.p[i].score=0);startRound()}
+ if(a.type==='answer'&&S.phase==='answer'&&inside&&now){const v=String(a.v||'').trim().slice(0,40);if(v&&!(a.id in S.ans))S.ans[a.id]=v}
+ if(a.type==='tovote'&&host&&S.phase==='talk'){S.phase='vote';S.end=Date.now()+TIMES.vote*1000}
+ if(a.type==='vote'&&S.phase==='vote'&&inside&&now&&a.to!==a.id&&S.in.includes(a.to))S.votes[a.id]=a.to;
+ if(a.type==='result'&&host&&S.phase==='vote'&&playing().every(i=>i in S.votes))result();
+ if(a.type==='next'&&host&&S.phase==='result'){if(S.r<S.rounds)startRound();else S.phase='end'}
+ if(a.type==='skip'&&host&&S.phase!=='lobby'){if(S.phase!=='result')S.r--;startRound()}
+ if(a.type==='lobby'&&host)S.phase='lobby';
+ sync();
 }
-function clock(){const t=$('timer');if(!t)return;const l=Math.max(0,Math.ceil((endAt-Date.now())/1000));t.textContent=l;
- if(!l&&view.phase==='answer'&&view.inRound&&!view.sent&&draft.trim())send({t:'answer',v:draft})}
-setInterval(clock,250);
-addEventListener('beforeunload',e=>{if(isHost){e.preventDefault();e.returnValue=''}});
-home(sessionStorage.getItem('atrash_msg')||'');sessionStorage.removeItem('atrash_msg');
+function viewFor(id){
+ const ph=S.phase,inside=S.in.includes(id),open=ph==='talk'||ph==='vote'||ph==='result';
+ return {you:id,host:me,phase:ph,r:S.r,rounds:S.rounds,inside,
+  players:S.order.map(i=>({id:i,n:S.p[i].n,score:S.p[i].score,on:online(i),
+   done:ph==='answer'?i in S.ans:ph==='vote'?i in S.votes:false})),
+  q:ph==='answer'&&inside?S.pair[id===S.deaf?1:0]:open?S.pair[0]:null,
+  answers:open?S.shown.map(i=>({id:i,n:S.p[i]?S.p[i].n:'',a:S.ans[i]})):null,
+  mine:ph==='answer'?S.ans[id]??null:null,vote:ph==='vote'?S.votes[id]??null:null,
+  res:ph==='result'?{deaf:S.deaf,q:S.pair[1],caught:S.caught,count:S.count}:null,
+  left:ph==='answer'||ph==='vote'?Math.max(0,S.end-Date.now()):0};
+}
+function sync(){
+ advance();
+ store.set('at-room',JSON.stringify({code,S}));
+ S.order.forEach(i=>{if(i!==me)pub('to/'+i,viewFor(i))});
+ update(viewFor(me));
+}
+function host(name,saved){
+ isHost=true;
+ if(saved){code=saved.code;S=saved.S}
+ else{code=Array.from({length:5},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.random()*31|0]).join('');S={phase:'lobby',p:{},order:[],in:[],deck:[],r:0,rounds:5}}
+ connect(PREFIX+code+'/up',handle,()=>handle({type:'hello',id:me,name}));
+ let beat=0;setInterval(()=>{if(!S.p[me])return;const before=S.phase;advance();if(S.phase!==before||++beat%4===0)sync()},1000);
+}
+function join(name,c){
+ code=c;const hello=()=>pub('up',{type:'hello',id:me,name});
+ connect(PREFIX+code+'/to/'+me,v=>{lastSeen=Date.now();if(v.full)return net('القعدة كاملة (١٠ لاعيبة)');net('');update(v)},hello);
+ const t0=Date.now();
+ setInterval(()=>{hello();if(Date.now()-(lastSeen||t0)>12000)net('مفيش رد من صاحب القعدة. اتأكد من الكود وإن صفحته مفتوحة')},4000);
+}
+
+/* الشاشات */
+const how=()=>el('details',{},el('summary',{},'إزاي نلعب؟'),el('ul',{},[
+ 'كل دور واحد بيبقى «الأطرش» وبيجيله سؤال شبه سؤال الباقيين، وهو مش دريان.',
+ 'كل واحد يجاوب من موبايله في السر قبل ما الوقت يخلص.',
+ 'الإجابات بتظهر ملخبطة، اتناقشوا وصوّتوا على اللي شاكين فيه.',
+ 'لو الأطرش لوحده خد أعلى أصوات، كل واحد من الباقيين ياخد نقطة. غير كده الأطرش ياخد نقطتين.'].map(t=>el('li',{},t))));
+function home(){
+ const name=el('input',{maxlength:14,placeholder:'اسمك','aria-label':'اسمك'});name.value=store.get('tr-name')||'';
+ const room=el('input',{maxlength:5,placeholder:'كود القعدة','aria-label':'كود القعدة'});room.value=location.hash.slice(1).toUpperCase();
+ const go=f=>{const n=name.value.trim();if(!n){name.focus();return net('اكتب اسمك الأول')}store.set('tr-name',n);show(P('لحظة…'));f(n)};
+ let saved=null;try{saved=JSON.parse(store.get('at-room'))}catch(e){}
+ show(el('h1',{},'الأطرش في الزفة'),P('كل واحد من موبايله، من ٣ لـ ١٠ لاعيبة'),name,
+  B('افتح قعدة جديدة',()=>go(n=>host(n))),room,
+  B('خش على القعدة',()=>{const c=room.value.trim().toUpperCase();if(c.length!==5)return net('الكود ٥ حروف');go(n=>join(n,c))},'alt'),
+  saved&&saved.S&&B('ارجع لقعدتي ('+saved.code+')',()=>go(n=>host(n,saved))),how());
+}
+function update(v){
+ endAt=Date.now()+v.left;
+ const j=JSON.stringify({...v,left:0});if(j===last)return;last=j;V=v;
+ if(v.r!==round){round=v.r;draft='';sentFor=0}
+ const focus=document.activeElement&&document.activeElement.id==='ans';
+ const y=scrollY,ph=app.dataset.ph;app.dataset.ph=v.phase+v.r;
+ render();
+ if(focus&&document.getElementById('ans'))document.getElementById('ans').focus();
+ scrollTo(0,ph===app.dataset.ph?y:0);
+}
+function sendAnswer(){if(draft.trim())send({type:'answer',v:draft,round:V.r})}
+setInterval(()=>{
+ if(!V)return;const l=Math.max(0,Math.ceil((endAt-Date.now())/1000)),t=document.getElementById('timer');if(t)t.textContent=l;
+ if(V.phase==='answer'&&V.inside&&V.mine==null&&l<=1&&sentFor!==V.r&&draft.trim()){sentFor=V.r;sendAnswer()}
+},250);
+function render(){
+ const v=V,isH=v.you===v.host,name=i=>(v.players.find(p=>p.id===i)||{}).n||'لاعب';
+ const timer=()=>el('div',{class:'timer',role:'timer',id:'timer'},Math.ceil((endAt-Date.now())/1000));
+ const answers=()=>el('div',{class:'box'},v.answers.map(x=>el('div',{class:'card'},el('small',{},x.n),el('b',{},x.a))));
+ const status=()=>el('div',{class:'box'},v.players.map(p=>el('div',{class:'card'+(p.on?'':' off')},(p.done?'✅ ':'⏳ ')+p.n)));
+ const hostBtns=()=>isH?[B('تخطّي الدور',()=>send({type:'skip'}),'alt'),B('رجوع للقعدة',()=>send({type:'lobby'}),'alt')]:[];
+ if(v.phase==='lobby'){
+  const link=location.protocol.startsWith('http')?location.href.split('#')[0]+'#'+code:null;
+  const sel=el('select',{'aria-label':'عدد الأدوار'},[3,5,7,10].map(n=>el('option',{value:n},n+' أدوار')));sel.value=v.rounds;sel.onchange=()=>{S.rounds=+sel.value;sync()};
+  const n=v.players.filter(p=>p.on).length,start=B('يلا نلعب',()=>send({type:'start',rounds:+sel.value}));start.disabled=n<3;
+  return show(el('h1',{},'الأطرش في الزفة'),el('div',{class:'box'},P('كود القعدة'),el('div',{class:'code'},code),
+   link&&B('انسخ لينك الدعوة',e=>{const b=e.target;navigator.clipboard.writeText(link).then(()=>b.textContent='اتنسخ ✅',()=>b.textContent=link)})),
+   el('div',{class:'box'},v.players.map(p=>el('div',{class:'card'+(p.on?'':' off')},p.n+(p.id===v.you?' (إنت)':'')+(p.id===v.host?' ⭐':'')))),
+   isH?[sel,start,n<3&&P('محتاجين ٣ لاعيبة على الأقل')]:P('مستنيين صاحب القعدة يبدأ'),how());
+ }
+ if(v.phase==='end'){
+  const rank=[...v.players].sort((a,b)=>b.score-a.score),win=rank.filter(p=>p.score===rank[0].score).map(p=>p.n);
+  return show(el('h1',{},'مبروك يا معلّم!'),el('div',{class:'big'},(win.length>1?'تعادل: ':'الكسبان: ')+win.join(' و ')),
+   el('div',{class:'box'},rank.map(p=>el('div',{class:'card'},`${p.n}: ${p.score} نقطة`))),isH?B('العبوا تاني',()=>send({type:'lobby'})):P('مستنيين صاحب القعدة'));
+ }
+ const title=H(`الدور ${v.r} من ${v.rounds}`);
+ if(!v.inside&&v.phase!=='result')return show(title,P('الدور شغال، هتدخل من الدور اللي بعده'),hostBtns());
+ if(v.phase==='answer'){
+  if(v.mine!=null)return show(title,timer(),el('div',{class:'q'},v.q),P('إجابتك: '+v.mine),P('مستنيين الباقيين…'),status(),hostBtns());
+  const inp=el('input',{id:'ans',maxlength:40,placeholder:'اكتب إجابتك هنا…','aria-label':'إجابتك',autocomplete:'off'});
+  inp.value=draft;inp.oninput=()=>draft=inp.value;inp.onkeydown=e=>{if(e.key==='Enter')sendAnswer()};
+  return show(title,timer(),P('ده سؤالك، ماتوريهوش لحد!'),el('div',{class:'q'},v.q),inp,B('ابعت',()=>draft.trim()?sendAnswer():inp.focus()),status(),hostBtns());
+ }
+ if(v.phase==='talk')return show(H('الكشف والرغي'),el('div',{class:'q'},v.q),answers(),P('مين إجابته برّه الليلة خالص؟ اتناقشوا!'),
+  isH?B('يلا نصوّت',()=>send({type:'tovote'})):P('صاحب القعدة هيفتح التصويت'),hostBtns());
+ if(v.phase==='vote'){
+  const picks=el('div',{class:'picks'},v.answers.filter(x=>x.id!==v.you).map(x=>{const b=B(x.n,()=>send({type:'vote',to:x.id,round:v.r}));b.setAttribute('aria-pressed',v.vote===x.id);return b}));
+  const done=B('اكشفوا الأطرش',()=>send({type:'result'}));done.disabled=!v.players.filter(p=>p.on&&v.answers.some(x=>x.id===p.id)).every(p=>p.done);
+  return show(H('التصويت'),timer(),el('div',{class:'q'},v.q),answers(),el('div',{class:'card'},el('b',{},'إنت شاكك في مين؟'),picks),
+   P('تقدر تغيّر صوتك لحد ما الوقت يخلص'),status(),isH&&done,hostBtns());
+ }
+ const r=v.res,deafAns=v.answers.find(x=>x.id===r.deaf);
+ show(H(r.caught?'اتقفش الأطرش!':'الأطرش فلت!'),el('div',{class:'box'},el('div',{class:'big red'},'الأطرش كان: '+name(r.deaf)+(r.deaf===v.you?' (إنت!)':'')),
+  P('سؤاله كان:'),el('div',{class:'q'},r.q),P('إجابته: '+(deafAns?deafAns.a:'')),P(r.caught?'كل واحد من الباقيين خد نقطة':'خد نقطتين لوحده')),
+  el('div',{class:'box'},v.players.map(p=>el('div',{class:'card'},`${p.n}: ${p.score} نقطة — أصوات عليه: ${r.count[p.id]||0}`))),
+  isH?B(v.r<v.rounds?'الدور اللي بعده':'مين الكسبان؟',()=>send({type:'next'})):P('مستنيين صاحب القعدة'),hostBtns());
+}
+home();
 </script>
 </body>
 </html>
