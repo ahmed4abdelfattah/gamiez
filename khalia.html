@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>خلية الحروف</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&family=Lalezar&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#4b2a86 radial-gradient(circle at 50% 0,#7a4fc0,#0000 65%);color:#fff;font:600 16px/1.6 Cairo,Tahoma,sans-serif;min-height:100vh}
+main{max-width:460px;margin:auto;padding:4px 14px 32px;display:flex;flex-direction:column;gap:10px}
+h1{font:400 46px/1.5 Lalezar,Cairo,sans-serif;color:#ffd23f;text-align:center;margin:0}p{margin:0;text-align:center}
+.home{display:block;max-width:460px;margin:8px auto 0;padding:0 14px;color:#ffd23f;font-weight:800;text-decoration:none}
+#net{color:#ffd23f;text-align:center;min-height:1.6em}
+button,input,select{font:inherit;border:0;border-radius:12px;min-height:48px}
+input,select{width:100%;padding:0 12px;background:#fff;color:#2a1a52;text-align:center}
+button{cursor:pointer;background:#ffd23f;color:#2a1a52;font-weight:800;padding:4px 14px}
+button.alt{background:#e83e72;color:#fff}button.ghost{background:#ffffff22;color:#fff}button:disabled{opacity:.45;cursor:default}
+.box{background:#ffffff14;border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.code{font:44px Lalezar,sans-serif;letter-spacing:8px;text-align:center;direction:ltr}
+hr{width:100%;border:0;border-top:1px solid #ffffff33}ul{margin:0;padding-inline-start:20px}.off{opacity:.45}
+.board{width:100%;display:block;border-radius:16px;direction:ltr}.cell{cursor:pointer}.cell text{font-family:Lalezar,Cairo,sans-serif;user-select:none}
+.teams,.row{display:flex;gap:8px}.row>button{flex:1}.team{flex:1;min-width:0;border-radius:14px;padding:8px;display:flex;flex-direction:column;text-align:center;overflow-wrap:anywhere}
+.winner{border-radius:12px;padding:6px;text-align:center;font:24px/1.6 Lalezar,Cairo,sans-serif}.bar{text-align:center;font:24px Lalezar,Cairo,sans-serif;color:#ffd23f}
+.q{font-size:20px;text-align:center}.ans{background:#fff;color:#2a1a52;border-radius:10px;text-align:center;padding:6px;font-weight:800}
+button.bell{min-height:96px;border-radius:60px;font-size:32px;background:#e5383b;color:#fff}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}.confetti i{position:absolute;top:-20px;width:8px;height:14px;animation:fall 3.5s linear infinite}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}@media(prefers-reduced-motion:reduce){.confetti{display:none}}
+</style>
+</head>
+<body>
+<a class="home" href="index.html">🏠 كل الألعاب</a>
+<div id="net" role="status"></div>
+<main id="app"></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
+<script>
+/* بنك الأسئلة: حرف ← [سؤال، إجابة] */
+const QS={"أ": [["ما عاصمة اليونان؟", "أثينا"], ["ما المحيط الذي يفصل أمريكا عن أوروبا؟", "الأطلسي"], ["محافظة في صعيد مصر فيها السد العالي؟", "أسوان"], ["حيوان بيتقال عليه ملك الغابة؟", "أسد"]], "ب": [["ما عاصمة العراق؟", "بغداد"], ["ما عاصمة ألمانيا؟", "برلين"], ["طائر لا يطير ويعيش في القطب الجنوبي؟", "البطريق"], ["فاكهة صيفي قشرتها خضرا وقلبها أحمر؟", "بطيخ"]], "ت": [["دولة عاصمتها أنقرة؟", "تركيا"], ["زاحف ضخم فكه قوي وبيعيش في النيل؟", "تمساح"], ["ثمرة النخلة اللي بنفطر عليها في رمضان؟", "تمر"], ["دولة عربية في شمال أفريقيا عاصمتها بنفس اسمها تقريبًا وفيها قرطاج؟", "تونس"]], "ث": [["حيوان مشهور بالمكر؟", "ثعلب"], ["زاحف طويل بلا أرجل؟", "ثعبان"], ["نبات ريحته قوية ورأسه متقسمة فصوص؟", "ثوم"], ["ذكر البقر؟", "ثور"]], "ج": [["حيوان لقبه سفينة الصحراء؟", "جمل"], ["خضار برتقالي مشهور إنه مفيد للنظر؟", "جزر"], ["المحافظة المصرية اللي فيها أهرامات خوفو وخفرع ومنقرع؟", "الجيزة"], ["دولة عربية صغيرة في القرن الأفريقي على مدخل البحر الأحمر؟", "جيبوتي"]], "ح": [["أضخم الثدييات البحرية؟", "الحوت"], ["طائر استخدموه زمان في نقل الرسائل؟", "الحمام"], ["مدينة سورية مشهورة بقلعتها؟", "حلب"], ["معدن بينجذب للمغناطيس وبيصدّي؟", "الحديد"]], "خ": [["ما عاصمة السودان؟", "الخرطوم"], ["ملك فرعوني بنى الهرم الأكبر؟", "خوفو"], ["خضار أخضر طويل بيدخل في السلطة وبيتخلل؟", "خيار"], ["فاكهة صيفي قشرتها ناعمة بزغب وجواها نواية كبيرة؟", "خوخ"]], "د": [["ما عاصمة سوريا؟", "دمشق"], ["ما عاصمة قطر؟", "الدوحة"], ["حيوان بحري ذكي من الثدييات بينط فوق المية؟", "الدولفين"], ["حيوان ضخم فروه تقيل وبيحب العسل؟", "الدب"]], "ذ": [["معدن أصفر ثمين؟", "الذهب"], ["حيوان مفترس بيعوي ومن فصيلة الكلبيات؟", "الذئب"], ["حشرة طايرة صغيرة بتقف على الأكل؟", "ذبابة"], ["نبات من حبوبه بنعمل الفشار؟", "الذرة"]], "ر": [["ما عاصمة السعودية؟", "الرياض"], ["ما عاصمة إيطاليا؟", "روما"], ["فاكهة مليانة حبوب حمرا ولها تاج؟", "رمان"], ["مدينة مصرية اتلقى عندها الحجر اللي فك رموز الهيروغليفية؟", "رشيد"]], "ز": [["أطول حيوان على وجه الأرض؟", "الزرافة"], ["شجرة مباركة بنعصر ثمارها زيت؟", "الزيتون"], ["عاصمة محافظة الشرقية؟", "الزقازيق"], ["حيوان أفريقي مخطط أبيض وأسود؟", "الزيبرا"]], "س": [["دولة عاصمتها دمشق؟", "سوريا"], ["محافظة في صعيد مصر بين أسيوط وقنا؟", "سوهاج"], ["زاحف بطيء شايل بيته على ضهره؟", "السلحفاة"], ["مدينة مصرية على البحر الأحمر عند المدخل الجنوبي للقناة؟", "السويس"]], "ش": [["أقرب نجم لكوكب الأرض؟", "الشمس"], ["محافظة مصرية عاصمتها الزقازيق؟", "الشرقية"], ["قرد من القردة العليا مشهور بالذكاء؟", "الشمبانزي"], ["فاكهة صيفي صفرا من عيلة البطيخ وريحتها حلوة؟", "شمام"]], "ص": [["ما عاصمة اليمن؟", "صنعاء"], ["طائر جارح بيستخدموه في الصيد؟", "الصقر"], ["دولة آسيوية فيها السور العظيم؟", "الصين"], ["مدينة ساحلية في جنوب لبنان؟", "صيدا"]], "ض": [["حيوان برمائي صوته نقيق؟", "الضفدع"], ["حيوان مفترس صوته شبه الضحك؟", "الضبع"], ["عكس كلمة قوي؟", "ضعيف"], ["سنّة عريضة في آخر الفم بتطحن الأكل؟", "ضرس"]], "ط": [["ما عاصمة اليابان؟", "طوكيو"], ["ما عاصمة إيران؟", "طهران"], ["مدينة مصرية فيها مسجد السيد البدوي؟", "طنطا"], ["طائر مشهور بذيله الملون الكبير؟", "الطاووس"]], "ظ": [["حيوان رشيق من الغزلان؟", "ظبي"], ["بينمو في أطراف الصوابع وبنقصّه؟", "ظفر"], ["عكس كلمة النور؟", "الظلام"], ["الجزء الخلفي من الجسم بين الرقبة والوسط؟", "الظهر"]], "ع": [["ما عاصمة الأردن؟", "عمّان"], ["كائن بثمان أرجل بينسج خيوط؟", "العنكبوت"], ["سائل حلو بينتجه النحل؟", "العسل"], ["طائر صغير بيزقزق؟", "عصفور"]], "غ": [["حيوان رشيق بيضرب بيه المثل في الجمال؟", "الغزال"], ["طائر أسود صوته نعيق؟", "الغراب"], ["دولة في غرب أفريقيا عاصمتها أكرا؟", "غانا"], ["محافظة مصرية عاصمتها طنطا؟", "الغربية"]], "ف": [["دولة عاصمتها باريس؟", "فرنسا"], ["أضخم حيوان بري؟", "الفيل"], ["محافظة مصرية فيها بحيرة قارون؟", "الفيوم"], ["حشرة بأجنحة ملونة جميلة؟", "فراشة"]], "ق": [["ما عاصمة مصر؟", "القاهرة"], ["التابع الطبيعي للأرض؟", "القمر"], ["حيوان أليف صوته مواء؟", "قطة"], ["محافظة في صعيد مصر فيها معبد دندرة؟", "قنا"]], "ك": [["دولة خليجية اسم عاصمتها من نفس اسمها؟", "الكويت"], ["حيوان أسترالي بينط وشايل صغيره في كيس؟", "الكنغر"], ["فاكهة صغيرة حمرا مدورة بنواية، بنزين بيها التورتة؟", "كرز"], ["ما عاصمة أوكرانيا؟", "كييف"]], "ل": [["ما عاصمة بريطانيا؟", "لندن"], ["دولة عربية عاصمتها بيروت؟", "لبنان"], ["فاكهة حمضية صفرا حامضة؟", "ليمون"], ["دولة عربية عاصمتها طرابلس؟", "ليبيا"]], "م": [["ما عاصمة إسبانيا؟", "مدريد"], ["ما عاصمة روسيا؟", "موسكو"], ["محافظة مصرية لقبها عروس الصعيد؟", "المنيا"], ["الكوكب المعروف بالكوكب الأحمر؟", "المريخ"]], "ن": [["ما أطول نهر في أفريقيا؟", "النيل"], ["أكبر طائر على الأرض، ما بيطيرش؟", "النعامة"], ["حشرة بتعمل العسل؟", "النحلة"], ["قط كبير مفترس فروه مخطط؟", "نمر"]], "ه": [["أكبر محيطات العالم؟", "الهادي"], ["دولة آسيوية عاصمتها نيودلهي؟", "الهند"], ["طائر اتذكر في قصة سيدنا سليمان؟", "الهدهد"], ["بناء فرعوني ضخم قاعدته مربعة وقمته مدببة؟", "الهرم"]], "و": [["زهرة بترمز للحب؟", "وردة"], ["مدينة مغربية قريبة من الحدود مع الجزائر؟", "وجدة"], ["عاصمة ناميبيا؟", "ويندهوك"], ["عكس كلمة «ضيّق»؟", "واسع"]], "ي": [["دولة عربية عاصمتها صنعاء؟", "اليمن"], ["دولة آسيوية عاصمتها طوكيو؟", "اليابان"], ["فاكهة شتوي من الحمضيات قشرتها بتتشال بسهولة؟", "يوسفي"], ["زهرة بيضا ريحتها حلوة بتتزرع في البلكونات؟", "الياسمين"]]};
+const BROKER=window.TEST_BROKER||'wss://broker.emqx.io:8084/mqtt', PREFIX='khalia-w5n3/';
+const LETTERS='أ ب ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك ل م ن ه و ي'.split(' ');
+const show_l=l=>l==='ه'?'هـ':l;
+const THEMES=[{c:['#2e9e4f','#ee7a2b'],n:['الأخضر','البرتقالي']},{c:['#1976c9','#dd3b6b'],n:['الأزرق','الوردي']},{c:['#0f9d96','#d63a32'],n:['التركواز','الأحمر']}];
+const app=document.getElementById('app');
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+function el(tag,props={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(props)){if(k.startsWith('on'))e[k]=v;else if(k==='class')e.className=v;else e.setAttribute(k,v)}e.append(...kids.flat().filter(x=>x!=null&&x!==false));return e}
+const P=t=>el('p',{},t), B=(t,f,c='',off=false)=>{const b=el('button',{type:'button',class:c,onclick:f},t);b.disabled=off;return b};
+const show=(...n)=>app.replaceChildren(...n.flat().filter(Boolean));
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const rid=()=>Math.random().toString(36).slice(2,10);
+let me=store.get('kh-id');if(!me){me=rid();store.set('kh-id',me)}
+let client,code='',isHost=false,S=null,V=null,last='',lastSeen=0,edit=false;
+const net=t=>document.getElementById('net').textContent=t;
+
+/* الاتصال */
+function connect(topic,onMsg,onReady){
+ if(typeof mqtt==='undefined')return net('تعذر تحميل مكتبة الاتصال، اتأكد من النت وحدّث الصفحة');
+ net('جاري الاتصال…');
+ client=mqtt.connect(BROKER,{clientId:'kh_'+me+rid(),reconnectPeriod:2000});
+ client.on('connect',()=>{net('');client.subscribe(topic,onReady)});
+ client.on('message',(t,m)=>{try{onMsg(JSON.parse(m.toString()))}catch(e){console.error(e)}});
+ client.on('reconnect',()=>net('بنعيد الاتصال…'));
+}
+const pub=(t,d)=>client&&client.publish(PREFIX+code+'/'+t,JSON.stringify(d));
+const send=a=>{a.id=me;isHost?handle(a):pub('up',a)};
+
+/* شبكة سداسية: الصفوف الفردية مزاحة نص خلية */
+function neighbors(i,n){
+ const c=i%n,r=i/n|0,s=r%2;
+ return [[c-1,r],[c+1,r],[c-1+s,r-1],[c+s,r-1],[c-1+s,r+1],[c+s,r+1]].filter(([x,y])=>x>=0&&y>=0&&x<n&&y<n).map(([x,y])=>y*n+x);
+}
+/* الفريق 0 يوصل فوق بتحت، والفريق 1 يوصل الشمال باليمين. بيرجّع مسار الفوز أو null */
+function path(owner,n,t){
+ const start=[...Array(n).keys()].map(k=>t===0?k:k*n).filter(i=>owner[i]===t);
+ const from=new Map(start.map(i=>[i,null])),queue=[...start];
+ while(queue.length){const i=queue.shift();
+  if(t===0?(i/n|0)===n-1:i%n===n-1){const p=[];for(let x=i;x!==null;x=from.get(x))p.push(x);return p}
+  for(const j of neighbors(i,n))if(owner[j]===t&&!from.has(j)){from.set(j,i);queue.push(j)}}
+ return null;
+}
+
+/* منطق اللعبة (على موبايل المقدّم) */
+const online=i=>i===me||Date.now()-S.p[i].seen<15000;
+function newBoard(){
+ let l=shuffle(LETTERS);while(l.length<S.size*S.size)l=l.concat(shuffle(LETTERS));
+ S.cells=l.slice(0,S.size*S.size);S.owner=S.cells.map(()=>null);S.cur=null;S.won=null;S.line=[];S.phase='pick';
+}
+function nextQ(letter){
+ if(!S.used[letter]||S.used[letter].length>=QS[letter].length)S.used[letter]=[];
+ const left=QS[letter].map((_,i)=>i).filter(i=>!S.used[letter].includes(i)&&!(S.cur&&S.cur.k===i));
+ const k=left.length?left[Math.random()*left.length|0]:0;S.used[letter].push(k);
+ return {k,q:QS[letter][k][0],a:QS[letter][k][1]};
+}
+function pick(i){S.cur={i,...nextQ(S.cells[i]),open:false,buzz:null,out:[]};S.phase='ask'}
+function win(t,line){
+ S.won=t;S.line=line||[];S.score[t]++;S.cur=null;S.phase=S.score[t]>=S.rounds?'end':'round';
+}
+function check(){if(!S.auto)return;for(const t of[0,1]){const p=path(S.owner,S.size,t);if(p)return win(t,p)}}
+function handle(a){
+ if(!S||typeof a.id!=='string'||!/^[a-z0-9]{4,12}$/.test(a.id))return;
+ const host=a.id===me;let p=S.p[a.id];
+ if(a.type==='hello'&&!host){
+  let name=String(a.name||'').trim().slice(0,14)||'لاعب';
+  if(!p){
+   if(S.order.length>=20){const gone=S.order.find(i=>!online(i));if(!gone)return pub('to/'+a.id,{full:true});S.order=S.order.filter(i=>i!==gone);delete S.p[gone]}
+   const base=name;for(let n=2;S.order.some(i=>S.p[i].n===name);n++)name=base+' '+n;
+   const count=t=>S.order.filter(i=>S.p[i].t===t).length;
+   p=S.p[a.id]={n:name,t:count(0)<=count(1)?0:1};S.order.push(a.id);
+  }
+ }
+ if(p)p.seen=Date.now();
+ if(!p&&!host)return;
+ const c=S.cur,idx=Number.isInteger(a.i)&&S.owner&&a.i>=0&&a.i<S.owner.length;
+ if(p&&a.type==='team'&&S.phase==='lobby')p.t=p.t?0:1;
+ if(p&&a.type==='pick'&&S.phase==='pick'&&p.t===S.turn&&idx&&S.owner[a.i]===null)pick(a.i);
+ if(p&&a.type==='buzz'&&S.phase==='ask'&&c.open&&!c.buzz&&!c.out.includes(p.t)&&a.k===c.i+':'+c.k)c.buzz=a.id;
+ if(host){
+  if(a.type==='settings'&&S.phase==='lobby'){
+   if([4,5,6].includes(a.size))S.size=a.size;if([1,2,3].includes(a.rounds))S.rounds=a.rounds;if(THEMES[a.theme])S.theme=a.theme;S.auto=!!a.auto;
+   const t=String(a.title||'').trim().slice(0,24);S.title=t||'خلية الحروف'}
+  if(a.type==='start'&&S.phase==='lobby'){S.score=[0,0];S.round=1;S.turn=0;S.used={};newBoard()}
+  if(a.type==='pick'&&S.phase==='pick'&&idx&&S.owner[a.i]===null)pick(a.i);
+  if(S.phase==='ask'){
+   if(a.type==='open')c.open=true;
+   if(a.type==='another')S.cur={...c,...nextQ(S.cells[c.i]),open:false,buzz:null,out:[]};
+   if(a.type==='right'&&c.buzz&&S.p[c.buzz])a={type:'give',t:S.p[c.buzz].t};
+   if(a.type==='wrong'&&c.buzz&&S.p[c.buzz]){c.out.push(S.p[c.buzz].t);c.buzz=null}
+   if(a.type==='reopen'){c.out=[];c.buzz=null;c.open=true}
+   if(a.type==='give'&&[0,1].includes(a.t)){S.owner[c.i]=a.t;S.turn=a.t;S.cur=null;S.phase='pick';check()}
+   else if(a.type==='nobody'){S.cur=null;S.turn=1-S.turn;S.phase='pick'}
+  }
+  if(a.type==='paint'&&(S.phase==='pick'||S.phase==='ask')&&idx){
+   S.owner[a.i]=S.owner[a.i]===null?0:S.owner[a.i]===0?1:null;if(c&&c.i===a.i){S.cur=null;S.phase='pick'}check()}
+  if(a.type==='turn'&&S.phase==='pick')S.turn=1-S.turn;
+  if(a.type==='declare'&&!S.auto&&(S.phase==='pick'||S.phase==='ask')&&[0,1].includes(a.t))win(a.t);
+  if(a.type==='next'&&S.phase==='round'){S.round++;S.turn=(S.round-1)%2;newBoard()}
+  if(a.type==='lobby')S.phase='lobby';
+ }
+ sync();
+}
+function viewFor(id){
+ const host=id===me,c=S.cur,g=S.phase!=='lobby';
+ return {you:id,isHost:host,phase:S.phase,title:S.title,size:S.size,rounds:S.rounds,auto:S.auto,theme:S.theme,
+  players:S.order.map(i=>({id:i,n:S.p[i].n,t:S.p[i].t,on:online(i)})),
+  cells:g?S.cells:null,owner:g?S.owner:null,score:g?S.score:null,turn:g?S.turn:0,round:g?S.round:0,won:g?S.won:null,line:g?S.line:[],
+  cur:g&&c?{i:c.i,k:c.i+':'+c.k,open:c.open,buzz:c.buzz,out:c.out,q:host||c.open?c.q:null,a:host?c.a:null}:null};
+}
+function sync(){
+ store.set('kh-room',JSON.stringify({code,S}));
+ S.order.forEach(i=>pub('to/'+i,viewFor(i)));
+ update(viewFor(me));
+}
+function host(saved){
+ isHost=true;
+ if(saved){code=saved.code;S=saved.S}
+ else{code=Array.from({length:5},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.random()*31|0]).join('');S={phase:'lobby',p:{},order:[],size:5,rounds:2,auto:true,theme:0,title:'خلية الحروف',used:{}}}
+ connect(PREFIX+code+'/up',handle,sync);
+ setInterval(sync,4000);
+}
+function join(name,c){
+ code=c;const hello=()=>pub('up',{type:'hello',id:me,name});
+ connect(PREFIX+code+'/to/'+me,v=>{lastSeen=Date.now();if(v.full)return net('القعدة كاملة');net('');update(v)},hello);
+ const t0=Date.now();
+ setInterval(()=>{hello();if(Date.now()-(lastSeen||t0)>12000)net('مفيش رد من المقدّم. اتأكد من الكود وإن صفحته مفتوحة')},4000);
+}
+
+/* الشاشات */
+const how=()=>el('details',{},el('summary',{},'إزاي نلعب؟'),el('ul',{},[
+ 'واحد بيبقى المقدّم (اللي بيفتح القعدة)، والباقي فريقين.',
+ 'الفريق صاحب الدور يختار حرف، والمقدّم يسأل سؤال إجابته بتبدأ بالحرف ده.',
+ 'أي فريق يدوس على الجرس الأول يجاوب. لو غلط، الفريق التاني ليه فرصة.',
+ 'اللي يجاوب صح ياخد الخلية ويختار الحرف اللي بعده.',
+ 'فريق يوصل من فوق لتحت، والتاني من اليمين للشمال. تقدر تقفل طريق المنافس!'].map(t=>el('li',{},t))));
+function home(){
+ const name=el('input',{maxlength:14,placeholder:'اسمك (للاعبين)','aria-label':'اسمك'});name.value=store.get('tr-name')||'';
+ const room=el('input',{maxlength:5,placeholder:'كود القعدة','aria-label':'كود القعدة'});room.value=location.hash.slice(1).toUpperCase();
+ let saved=null;try{saved=JSON.parse(store.get('kh-room'))}catch(e){}
+ show(el('h1',{},'خلية الحروف'),P('جاوب، لوّن الخلية، ووصّل طريقك'),
+  B('أنا المقدّم: افتح قعدة',()=>{show(P('لحظة…'));host()}),
+  saved&&saved.S&&B('ارجع لقعدتي كمقدّم ('+saved.code+')',()=>{show(P('لحظة…'));host(saved)},'ghost'),
+  el('hr'),name,room,
+  B('خش كلاعب',()=>{const n=name.value.trim(),c=room.value.trim().toUpperCase();if(!n){name.focus();return net('اكتب اسمك الأول')}if(c.length!==5)return net('الكود ٥ حروف');store.set('tr-name',n);show(P('لحظة…'));join(n,c)},'alt'),how());
+}
+function update(v){
+ const j=JSON.stringify(v);if(j===last)return;
+ /* ماتمسحش خانة اسم المسابقة وهو بيتكتب */
+ if(document.activeElement&&document.activeElement.id==='title')return;
+ last=j;V=v;const y=scrollY;render();scrollTo(0,y);
+}
+function board(onTap){
+ const v=V,n=v.size,[A,Bc]=THEMES[v.theme].c,NS='http://www.w3.org/2000/svg';
+ const W=Math.sqrt(3)*30,w=n*W+W/2+40,h=(n-1)*45+60+40;
+ const mk=(t,a,txt)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e};
+ const s=mk('svg',{viewBox:`0 0 ${w} ${h}`,class:'board'});
+ /* الإطار: فوق وتحت للفريق الأول، الجنبين للتاني */
+ const mid=`${w/2},${h/2}`;
+ [[`0,0 ${w},0 ${mid}`,A],[`0,${h} ${w},${h} ${mid}`,A],[`0,0 0,${h} ${mid}`,Bc],[`${w},0 ${w},${h} ${mid}`,Bc]].forEach(([pts,f])=>s.append(mk('polygon',{points:pts,fill:f})));
+ v.cells.forEach((l,i)=>{
+  const c=i%n,r=i/n|0,x=20+W/2+c*W+(r%2)*W/2,y=50+r*45,o=v.owner[i],cur=v.cur&&v.cur.i===i;
+  const pts=[0,1,2,3,4,5].map(k=>{const a=Math.PI/3*k-Math.PI/2;return `${x+29*Math.cos(a)},${y+29*Math.sin(a)}`}).join(' ');
+  const g=mk('g',{class:'cell','data-i':i,role:'button','aria-label':'حرف '+l});
+  g.append(mk('polygon',{points:pts,fill:cur?'#ffd23f':o===null?'#fff':o?Bc:A,stroke:v.line.includes(i)?'#ffd23f':'#2a1a52','stroke-width':v.line.includes(i)?6:3}));
+  g.append(mk('text',{x,y:y+2,'text-anchor':'middle','dominant-baseline':'central','font-size':26,fill:o===null||cur?'#2a1a52':'#fff'},show_l(l)));
+  if(onTap)g.onclick=()=>onTap(i);
+  s.append(g);
+ });
+ return s;
+}
+function render(){
+ const v=V,H=v.isHost,T=THEMES[v.theme],team=t=>'الفريق '+T.n[t],mine=v.players.find(p=>p.id===v.you);
+ const teams=()=>el('div',{class:'teams'},[0,1].map(t=>el('div',{class:'team',style:'background:'+T.c[t]},
+  el('b',{},team(t)+(v.score?' · '+v.score[t]:'')),el('small',{},t===0?'↕ فوق وتحت':'↔ يمين وشمال'),
+  v.players.filter(p=>p.t===t).map(p=>el('span',{class:p.on?'':'off'},p.n+(p.id===v.you?' (إنت)':''))))));
+ if(v.phase==='lobby'){
+  const link=location.protocol.startsWith('http')?location.href.split('#')[0]+'#'+code:null;
+  const kids=[el('h1',{},v.title),el('div',{class:'box'},P('كود القعدة'),el('div',{class:'code'},code),
+   link&&B('انسخ لينك الدعوة',e=>{const b=e.target;navigator.clipboard.writeText(link).then(()=>b.textContent='اتنسخ ✅',()=>b.textContent=link)})),teams()];
+  if(H){
+   const sel=(label,val,opts)=>{const s=el('select',{'aria-label':label},opts.map(([x,t])=>el('option',{value:x},label+': '+t)));s.value=val;return s};
+   const title=el('input',{id:'title',maxlength:24,'aria-label':'اسم المسابقة'});title.value=v.title;
+   const size=sel('الخلايا',v.size,[[4,'4×4'],[5,'5×5'],[6,'6×6']]),rounds=sel('جولات الفوز',v.rounds,[[1,'جولة'],[2,'جولتين'],[3,'تلات جولات']]),
+    theme=sel('الألوان',v.theme,THEMES.map((t,i)=>[i,t.n.join(' و')])),auto=sel('حساب الفوز',v.auto?1:0,[[1,'تلقائي'],[0,'المقدّم يحدده']]);
+   const save=()=>send({type:'settings',title:title.value,size:+size.value,rounds:+rounds.value,theme:+theme.value,auto:auto.value==='1'});
+   [title,size,rounds,theme,auto].forEach(x=>x.onchange=()=>{x.blur();save()});
+   kids.push(el('p',{},'إنت المقدّم'),title,size,rounds,theme,auto,B('يلا نبدأ',()=>send({type:'start'})),
+    ![0,1].every(t=>v.players.some(p=>p.t===t&&p.on))&&P('لسه محتاجين لاعب في كل فريق'));
+  }else kids.push(B('غيّر فريقي',()=>send({type:'team'}),'ghost'),P('مستنيين المقدّم يبدأ'));
+  return show(kids,how());
+ }
+ if(v.phase==='end'||v.phase==='round'){
+  const end=v.phase==='end';
+  return show(end&&el('div',{class:'confetti','aria-hidden':'true'},Array.from({length:40},(_,i)=>el('i',{style:`left:${Math.random()*100}%;background:${['#ffd23f','#ff5d73','#4fd1ff','#7ae582'][i%4]};animation-delay:${Math.random()*3}s`}))),
+   el('h1',{},end?'مبروك الفوز!':'الجولة خلصت'),el('div',{class:'winner',style:'background:'+T.c[v.won]},team(v.won)+(end?' كسب المسابقة 🏆':' كسب الجولة 🎉')),board(),teams(),
+   H?B(end?'مسابقة جديدة':'الجولة اللي بعدها',()=>send({type:end?'lobby':'next'})):P('مستنيين المقدّم'));
+ }
+ const c=v.cur,canPick=v.phase==='pick'&&(H||mine.t===v.turn);
+ const tap=H&&edit?i=>send({type:'paint',i}):canPick?i=>send({type:'pick',i}):null;
+ const kids=[el('div',{class:'bar'},el('span',{},v.title+' · جولة '+v.round)),
+  v.phase==='pick'&&el('div',{class:'winner',style:'background:'+T.c[v.turn]},!H&&mine.t===v.turn?'دور فريقك: اختاروا حرف':'دور '+team(v.turn)+' في اختيار الحرف')];
+ let panel=null;
+ if(c){
+  const l=show_l(v.cells[c.i]),buzzer=v.players.find(p=>p.id===c.buzz);
+  const buzzed=buzzer&&el('div',{class:'winner',style:'background:'+T.c[buzzer.t]},'🔔 '+buzzer.n+' ('+team(buzzer.t)+')');
+  if(H)panel=el('div',{class:'box'},el('b',{class:'q'},'حرف '+l+': '+c.q),el('div',{class:'ans'},'الإجابة: '+c.a),
+   !c.open&&B('اعرض السؤال وافتح الجرس',()=>send({type:'open'})),
+   c.open&&!buzzer&&P(c.out.length===2?'الفريقين جاوبوا غلط':'الجرس مفتوح…'),buzzed,
+   buzzer&&el('div',{class:'row'},B('✅ صح',()=>send({type:'right'})),B('❌ غلط',()=>send({type:'wrong'}),'alt')),
+   c.out.length===2&&B('افتح الجرس تاني للفريقين',()=>send({type:'reopen'})),
+   el('div',{class:'row'},[0,1].map(t=>{const b=B('لوّن '+T.n[t],()=>send({type:'give',t}));b.style.cssText='background:'+T.c[t]+';color:#fff';return b})),
+   el('div',{class:'row'},B('سؤال تاني',()=>send({type:'another'}),'ghost'),B('محدش عرف',()=>send({type:'nobody'}),'ghost')));
+  else{
+   const out=c.out.includes(mine.t);
+   panel=el('div',{class:'box'},el('b',{class:'q'},c.q?'حرف '+l+': '+c.q:'حرف '+l+'… المقدّم بيجهّز السؤال'),buzzed,
+    c.open&&!buzzer&&B(out?'فريقك جاوب غلط':'🔔 الجرس',()=>send({type:'buzz',k:c.k}),'bell',out),
+    buzzer&&P(c.buzz===v.you?'جاوب بصوت عالي!':'استنوا حكم المقدّم'));
+  }
+ }
+ show(kids,panel,board(tap),teams(),H&&el('div',{class:'box'},
+  B(edit?'✔ خلصت تعديل الألوان':'🎨 عدّل ألوان الخلايا',()=>{edit=!edit;render()},edit?'alt':'ghost'),
+  edit&&P('دوس على أي خلية: أبيض ← لون أول ← لون تاني'),
+  v.phase==='pick'&&B('بدّل الدور',()=>send({type:'turn'}),'ghost'),
+  !v.auto&&el('div',{class:'row'},[0,1].map(t=>B(T.n[t]+' كسب',()=>send({type:'declare',t}),'ghost'))),
+  B('رجوع للإعدادات (الجولة هتتلغي)',()=>send({type:'lobby'}),'ghost')));
+}
+home();
+</script>
+</body>
+</html>
